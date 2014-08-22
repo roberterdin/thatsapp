@@ -8,6 +8,7 @@ var JS_FILES = [
     'js/vendor/handlebars-1.1.2.js',
     'js/vendor/ember-1.7.0.js',
 //    'js/vendor/ember-data.js',
+    'js/utils/*.js',
     'js/app.js',
     'js/router.js',
     'js/controllers/*.js',

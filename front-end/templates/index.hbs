@@ -1,0 +1,45 @@
+<div id="index" class="container">
+    <div class="center-block">
+        <form role="form">
+            <div class="form-group">
+                <label for="exampleInputFile">Whats App Chat File</label>
+                <input type="file" id="inputFile">
+                <p class="help-block">Cold teleporters, to the moon?</p>
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox"> Check me out
+                </label>
+            </div>
+            <button {{action 'submitFile'}} type="submit" class="btn btn-default btn-lg">
+                <span class="glyphicon glyphicon-upload"></span>
+            </button>
+        </form>
+    </div>
+
+    {{#if parsed}}
+        <div id="output">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Sender</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {{#each messages}}
+                <tr>
+                    <td>{{unbound date}}</td>
+                    <td>{{unbound time}}</td>
+                    <td>{{unbound sender}}</td>
+                    <td>{{unbound content}}</td>
+                </tr>
+                {{/each}}
+                </tbody>
+            </table>
+
+        </div>
+    {{/if}}
+</div>
