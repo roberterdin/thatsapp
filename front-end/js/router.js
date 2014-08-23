@@ -3,6 +3,10 @@ App.Router.map(function() {
 
     });
 
+    this.resource('results', {path: '/results'}, function(){
+
+    });
+
 
 });
 

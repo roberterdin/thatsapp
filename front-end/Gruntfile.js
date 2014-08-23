@@ -4,6 +4,7 @@ var LESS_FILES = [
 
 var JS_FILES = [
     'js/vendor/jquery-2.1.1.js',
+    'js/vendor/bootstrap.file-input.js',
     'js/vendor/bootstrap/*.js',
     'js/vendor/handlebars-1.1.2.js',
     'js/vendor/ember-1.7.0.js',
@@ -11,7 +12,8 @@ var JS_FILES = [
     'js/utils/*.js',
     'js/app.js',
     'js/router.js',
-    'js/controllers/*.js',
+    'js/controllers/**/*.js',
+    'js/views/**/*.js',
     'js/models/*.js'];
 
 

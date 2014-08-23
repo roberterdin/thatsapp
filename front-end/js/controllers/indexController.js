@@ -2,17 +2,30 @@ App.IndexController = Ember.Controller.extend({
     init : function(){
         console.log('initialising Filey');
         Filey.init();
-    },
+},
 
 
     actions : {
         submitFile : function(){
             console.log('submitFile triggered');
             this._getFileContent();
-            this.set('parsed', true);
+            this.set('parsing', true);
         }
     },
 
+    parseProgress : 0,
+
+    widthStyle: function() {
+        console.log(this.get('parseProgress'));
+        return 'width: ' + this.get('parseProgress') + '%;';
+    }.property('parseProgress'),
+
+
+    /**
+     * Get file content and parse it.
+     * parsed output: date | time | sender | message
+     * @private
+     */
     _getFileContent : function(){
         console.log('Trying to retrieve file content...');
         var that = this;
@@ -23,7 +36,6 @@ App.IndexController = Ember.Controller.extend({
             fileContent = "bla\n" + fileContent;
             fileContent += "00:00 - ";
 
-
             var messages = [];
 
             // splits between date and content
@@ -32,34 +44,66 @@ App.IndexController = Ember.Controller.extend({
             // precompilation
             var dateSplitter = /\n(?=[^\n]*$)/;
             var dateTimeSeparator = /, /;
-//            var matchName = /.*(?=: )/;
             var matchName = /: /;
             var replaceDash = / - /;
 
             var splitTmp = [];
             var splitTmp2 = [];
 
-            for(var i = 1; i < firstSplit.length; i++){
-                var tmp = {};
+            // interval is necessary not to mess with the ember run loop:
+            // http://emberjs.com/guides/understanding-ember/run-loop/
+            // TODO: tweak interval time
+            var pointer = 1;
+            var endOfLoop = 0;
+            var finalInterval = false;
+            var interval = setInterval(function(){
 
-                splitTmp = firstSplit[i-1].split(dateSplitter);
-                splitTmp2 = splitTmp[1].split(dateTimeSeparator);
-                tmp.date = splitTmp2[0];
-                tmp.time = splitTmp2[1].replace(replaceDash, '');
+                if ((pointer + 500) < firstSplit.length){
+                    endOfLoop = pointer + 500;
+                }else{
+                    endOfLoop = firstSplit.length;
+                    finalInterval = true;
+                }
+
+                for(var i = pointer; i <endOfLoop; i++){
+                    var tmp = {};
+
+                    // split date of previous string
+                    splitTmp = firstSplit[i-1].split(dateSplitter);
+
+                    // split between date and time
+                    splitTmp2 = splitTmp[1].split(dateTimeSeparator);
+                    tmp.date = splitTmp2[0];
+                    tmp.time = splitTmp2[1].replace(replaceDash, '');
+
+                    // match sender' name
+                    splitTmp = firstSplit[i].split(matchName);
+                    tmp.sender = splitTmp[0];
+
+                    // get content
+                    tmp.content = splitTmp[1].split(dateSplitter)[0];
+
+                    console.log(tmp);
+                    messages.push(tmp);
+
+                    //update progress
+                    that.set('parseProgress', Math.ceil(i/firstSplit.length*100));
+                    that.notifyPropertyChange('widthStyle');
+                }
+
+                pointer = i;
+
+                if(finalInterval){
+                    clearInterval(interval);
+                    that.set('parsing', false);
+                    that.set('parsed', true);
+                    console.log('all records parsed');
+                    that.set('messages', messages);
+                }
+            }, 200);
 
 
-                splitTmp = firstSplit[i].split(matchName);
-                tmp.sender = splitTmp[0];
 
-
-                tmp.content = splitTmp[1].split(dateSplitter)[0];
-
-                console.log(tmp);
-                messages.push(tmp);
-            }
-            console.log('all records parsed');
-            that.set('messages', messages);
         });
     }
-
 });
