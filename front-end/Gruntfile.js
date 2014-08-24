@@ -3,12 +3,14 @@ var LESS_FILES = [
     'less/main.less'];
 
 var JS_FILES = [
+    'js/vendor/es6-shim.js',
     'js/vendor/jquery-2.1.1.js',
     'js/vendor/bootstrap.file-input.js',
     'js/vendor/bootstrap/*.js',
     'js/vendor/handlebars-1.1.2.js',
     'js/vendor/ember-1.7.0.js',
-//    'js/vendor/ember-data.js',
+    'js/vendor/ember-data.js',
+    'js/vendor/moment.min.js',
     'js/utils/*.js',
     'js/app.js',
     'js/router.js',

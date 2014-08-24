@@ -16,7 +16,6 @@ App.IndexController = Ember.Controller.extend({
     parseProgress : 0,
 
     widthStyle: function() {
-        console.log(this.get('parseProgress'));
         return 'width: ' + this.get('parseProgress') + '%;';
     }.property('parseProgress'),
 
@@ -73,8 +72,8 @@ App.IndexController = Ember.Controller.extend({
 
                     // split between date and time
                     splitTmp2 = splitTmp[1].split(dateTimeSeparator);
-                    tmp.date = splitTmp2[0];
-                    tmp.time = splitTmp2[1].replace(replaceDash, '');
+                    tmp.date = that._createDate(splitTmp2[0], splitTmp2[1].replace(replaceDash, ''));
+
 
                     // match sender' name
                     splitTmp = firstSplit[i].split(matchName);
@@ -84,7 +83,8 @@ App.IndexController = Ember.Controller.extend({
                     tmp.content = splitTmp[1].split(dateSplitter)[0];
 
                     console.log(tmp);
-                    messages.push(tmp);
+
+                    that.store.createRecord('message', tmp);
 
                     //update progress
                     that.set('parseProgress', Math.ceil(i/firstSplit.length*100));
@@ -98,12 +98,33 @@ App.IndexController = Ember.Controller.extend({
                     that.set('parsing', false);
                     that.set('parsed', true);
                     console.log('all records parsed');
-                    that.set('messages', messages);
+                    console.log('transitioning to results...');
+                    that.transitionToRoute('results.index');
                 }
             }, 200);
-
-
-
         });
+    },
+
+    /**
+     * Create a JavaSript date object
+     * @param {string}date
+     * @param {string}time
+     * @returns {*}
+     * @private
+     */
+    _createDate : function(date, time){
+        var resDate;
+        if(moment(date).isValid()){
+            resDate = moment(date);
+        }else if(moment(date, "DD.MM.YYYY").isValid()){
+            resDate = moment(date, "DD.MM.YYYY");
+        }
+
+        var tmpTime = moment(time, "H:mm");
+        resDate.hours(tmpTime.get('hour')).minutes(tmpTime.get('minute'));
+
+        console.log(resDate.format("DD. MMM YYYY HH:mm"));
+
+        return resDate.toDate();
     }
 });
