@@ -10,7 +10,28 @@ App.IndexController = Ember.Controller.extend({
             console.log('submitFile triggered');
             this._getFileContent();
             this.set('parsing', true);
+        },
+        /**
+         * Clear messages currently in store;
+         * TODO: built into interface if not first call
+         */
+        clearStore : function(){
+            // clear the store in case this is not the first call
+            // TODO: not working
+            this.store.unloadAll('message');
         }
+    },
+
+    /**
+     * Gets called by the router each time the index route is deactivated
+     * @returns {boolean}
+     * @private
+     */
+    _reset : function(){
+        this.set('parseProgress', 0);
+        this.set('parsing', false);
+        this.set('parsed', false);
+        return true;
     },
 
     parseProgress : 0,
@@ -122,8 +143,6 @@ App.IndexController = Ember.Controller.extend({
 
         var tmpTime = moment(time, "H:mm");
         resDate.hours(tmpTime.get('hour')).minutes(tmpTime.get('minute'));
-
-        console.log(resDate.format("DD. MMM YYYY HH:mm"));
 
         return resDate.toDate();
     }

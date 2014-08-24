@@ -56,7 +56,7 @@ module.exports = function (grunt) {
         uglify: {
             options: {
                 banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n',
-                sourceMap: true,
+                sourceMap: false,
                 mangle: {
                     except: ['jQuery', 'Backbone', 'Underscore', 'Ember']
                 }
@@ -64,7 +64,9 @@ module.exports = function (grunt) {
             dev: {
                 options: {
                     mangle: false,
-                    compress: false
+                    compress: false,
+                    beautify: true,
+                    preserveComments: 'all'
                 },
                 files: {
                     '../../bin/dev/front-end/js/bin/<%= pkg.shortname %>.<%= pkg.version %>.min.js': JS_FILES_DEV
