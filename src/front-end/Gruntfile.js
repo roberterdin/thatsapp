@@ -199,17 +199,16 @@ module.exports = function (grunt) {
             },
             dev: {
                 auth: {
-                    host: 'ftp.whatisticswhatistics.ch',
+                    host: 'ftp.erdin.eu',
                     port: 21,
                     authKey: 'key1'
                 },
-                src: '../../bin/prod/',
-                dest: 'dev.whatisticswhatistics.ch/',
-                exclusions: ['../../bin/prod/ws', '../../bin/prod/**/.DS_Store', 'robots.txt']
+                src: '../../bin/prod/front-end',
+                dest: 'robert.erdin.eu/whatistics',
+                exclusions: ['../../bin/prod/**/.DS_Store', 'robots.txt']
             }
         }
     });
-
 
 
     grunt.loadNpmTasks('grunt-text-replace');

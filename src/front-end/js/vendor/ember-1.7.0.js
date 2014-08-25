@@ -44583,7 +44583,7 @@ define("router/transition-intent",
     __exports__["default"] = TransitionIntent;
   });
 define("router/transition-intent/named-transition-intent",
-  ["../transition-intent","../transition-state","../handler-info/factory","../utils","exports"],
+  ["../transition-intent","../transition-state","../handler-info/factory",".","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     "use strict";
     var TransitionIntent = __dependency1__["default"];
@@ -44784,7 +44784,7 @@ define("router/transition-intent/named-transition-intent",
     });
   });
 define("router/transition-intent/url-transition-intent",
-  ["../transition-intent","../transition-state","../handler-info/factory","../utils","exports"],
+  ["../transition-intent","../transition-state","../handler-info/factory",".","exports"],
   function(__dependency1__, __dependency2__, __dependency3__, __dependency4__, __exports__) {
     "use strict";
     var TransitionIntent = __dependency1__["default"];
@@ -47848,7 +47848,7 @@ define("rsvp/promise/all",
     }
   });
 define("rsvp/promise/race",
-  ["../utils","../-internal","exports"],
+  [".","../-internal","exports"],
   function(__dependency1__, __dependency2__, __exports__) {
     "use strict";
     var isArray = __dependency1__.isArray;
