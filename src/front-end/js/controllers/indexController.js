@@ -2,23 +2,15 @@ App.IndexController = Ember.Controller.extend({
     init : function(){
         console.log('initialising Filey');
         Filey.init();
-},
+    },
 
 
     actions : {
         submitFile : function(){
             console.log('submitFile triggered');
+            this.store.unloadAll('message');
             this._getFileContent();
             this.set('parsing', true);
-        },
-        /**
-         * Clear messages currently in store;
-         * TODO: built into interface if not first call
-         */
-        clearStore : function(){
-            // clear the store in case this is not the first call
-            // TODO: not working
-            this.store.unloadAll('message');
         }
     },
 

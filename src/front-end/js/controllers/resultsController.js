@@ -9,27 +9,38 @@ function Sender(name){
     this.wordAmount = 0;
 }
 
+function GlobalStat(){
+    this.senderAmount = 0; //TODO: redundant information with senders.size()
+    this.messageAmount = 0;
+    this.wordAmount = 0;
+}
+
 App.ResultsController = Ember.ObjectController.extend({
     init : function(){
         this._super();
         console.log("Results controller created");
         console.log(this);
+        this.globalStat = new GlobalStat();
         this.senders = new Map(); // sender - >
         this.history = new Map(); // day -> message amount
     },
 
-    // aggregated statistics for all senders
-    globalStat : {
-        senderAmount : 0, //TODO: redundant information with senders.size()
-        messageAmount : 0,
-        wordAmount : 0
+
+    _reset : function(){
+        console.log("resetting ResultsController");
+        this.globalStat = new GlobalStat();
+        this.senders = new Map();
+        this.history = new Map();
     },
+
 
     getStartDate : function(){
         return  this.get('model.messages')[0].get('date');
     },
 
     _generateStatistics : function(){
+
+        this._reset();
 
         var that = this;
         this.get('model.messages').forEach(function(message){

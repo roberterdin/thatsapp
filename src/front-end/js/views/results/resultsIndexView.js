@@ -5,9 +5,5 @@ App.ResultsIndexView = Ember.View.extend({
         this._super();
         console.log("ResultsIndexView rendered");
         this.get('controller').historyChart();
-//        Ember.run.scheduleOnce('afterRender', this, function(){
-//            console.log("ResultsIndexView rendered");
-//            this.get('controller').historyChart();
-//        });
     }
 });
