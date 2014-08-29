@@ -19,10 +19,14 @@ App.ResultsIndexController = Ember.Controller.extend({
         $(function () {
             $('#history-chart').highcharts({
                 chart: {
-                    zoomType: 'x'
+                    zoomType: 'x',
+                    type: 'areaspline'
                 },
                 title: {
-                    text: 'Messages per Day'
+                    text: 'Messages per Day',
+                    style: {
+                        display: 'none'
+                    }
                 },
                 subtitle: {
                     text: document.ontouchstart === undefined ?
@@ -34,6 +38,7 @@ App.ResultsIndexController = Ember.Controller.extend({
                     minRange: 1 * 24 * 3600 * 1000 // every day
                 },
                 yAxis: {
+                    min: 0,
                     title: {
                         text: 'Messages'
                     }
@@ -42,7 +47,7 @@ App.ResultsIndexController = Ember.Controller.extend({
                     enabled: false
                 },
                 plotOptions: {
-                    area: {
+                    areaspline: {
                         fillColor: {
                             linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
                             stops: [
@@ -51,6 +56,7 @@ App.ResultsIndexController = Ember.Controller.extend({
                             ]
                         },
                         marker: {
+                            enabled: false,
                             radius: 2
                         },
                         lineWidth: 1,
@@ -64,7 +70,7 @@ App.ResultsIndexController = Ember.Controller.extend({
                 },
 
                 series: [{
-                    type: 'area',
+                    type: 'areaspline',
                     name: 'Messages per Day',
                     pointInterval: 24 * 3600 * 1000,
                     pointStart: moment(that.get('parentController').getStartDate()).unix(),
