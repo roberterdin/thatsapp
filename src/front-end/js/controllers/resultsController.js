@@ -13,9 +13,10 @@ App.ResultsController = Ember.ObjectController.extend({
     init : function(){
         this._super();
         console.log("Results controller created");
+        console.log(this);
+        this.senders = new Map();
+        this.history = new Map();
     },
-
-    senders : new Map(),
 
     // aggregated statistics for all senders
     globalStat : {
@@ -24,11 +25,14 @@ App.ResultsController = Ember.ObjectController.extend({
         wordAmount : 0
     },
 
+    getStartDate : function(){
+        return  this.get('model.messages')[0].get('date');
+    },
+
     _generateStatistics : function(){
 
         var that = this;
         this.get('model.messages').forEach(function(message){
-            console.log('blubb');
 
             // create sender if not already existing
             if(that.get('senders').get(message.get('sender')) === undefined){
@@ -47,6 +51,18 @@ App.ResultsController = Ember.ObjectController.extend({
             that.get('senders').get(message.get('sender')).messageAmount++;
             that.get('senders').get(message.get('sender')).wordAmount += tmpWordCount;
 
+            // generate history
+            var date = moment(message.get('date'));
+            if(that.get('history').has(date.format('DD.MM.YY')) === false){
+                that.get('history').set(date.format('DD.MM.YY'), 1);
+            }else{
+                that.get('history').set(date.format('DD.MM.YY'), that.get('history').get(date.format('DD.MM.YY')) + 1);
+            }
+        });
+
+        console.log("History by day");
+        this.get('history').forEach(function(value, key){
+            console.log(key + " " + value);
         });
     }
 });

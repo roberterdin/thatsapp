@@ -103,8 +103,6 @@ App.IndexController = Ember.Controller.extend({
                     // get content
                     tmp.content = splitTmp[1].split(dateSplitter)[0];
 
-                    console.log(tmp);
-
                     that.store.createRecord('message', tmp);
 
                     //update progress
