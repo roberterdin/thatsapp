@@ -4,7 +4,10 @@ App.Router.map(function() {
     });
 
     this.resource('results', {path: '/results'}, function(){
-
+        this.resource('results.ladder', {path: "/ladder"}, function(){
+        });
+        this.resource('results.individual', {path: "/individual"}, function(){
+        });
     });
 
 

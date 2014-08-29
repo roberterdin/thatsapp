@@ -3,12 +3,18 @@
         <h1>Statistics <small>Friendship, devastation, and resistance.</small></h1>
     </div>
     <ul class="nav nav-tabs" role="tablist">
-        <li class="active">{{#link-to 'results.index'}}Overview{{/link-to}}</li>
-        <li><a href="#">Participants</a></li>
-        <li><a href="#">Visual</a></li>
-        <li><a href="#">Tabular</a></li>
+        {{#link-to "results.index" tagName="li"}}
+            <a {{bind-attr href="view.href"}}>Overview</a>
+        {{/link-to}}
+        {{#link-to "results.ladder" tagName="li"}}
+            <a {{bind-attr href="view.href"}}>Ladder</a>
+        {{/link-to}}
+        {{#link-to "results.individual" tagName="li"}}
+            <a {{bind-attr href="view.href"}}>Individual</a>
+        {{/link-to}}
     </ul>
 
     {{outlet}}
 
 </div>
+

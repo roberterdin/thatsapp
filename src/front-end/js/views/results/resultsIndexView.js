@@ -3,9 +3,11 @@ App.ResultsIndexView = Ember.View.extend({
 
     didInsertElement : function(){
         this._super();
-        Ember.run.scheduleOnce('afterRender', this, function(){
-            console.log("ResultsIndexView rendered");
-            this.get('controller').historyChart();
-        });
+        console.log("ResultsIndexView rendered");
+        this.get('controller').historyChart();
+//        Ember.run.scheduleOnce('afterRender', this, function(){
+//            console.log("ResultsIndexView rendered");
+//            this.get('controller').historyChart();
+//        });
     }
 });
