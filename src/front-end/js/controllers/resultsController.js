@@ -59,10 +59,5 @@ App.ResultsController = Ember.ObjectController.extend({
                 that.get('history').set(date.format('DD.MM.YY'), that.get('history').get(date.format('DD.MM.YY')) + 1);
             }
         });
-
-        console.log("History by day");
-        this.get('history').forEach(function(value, key){
-            console.log(key + " " + value);
-        });
     }
 });

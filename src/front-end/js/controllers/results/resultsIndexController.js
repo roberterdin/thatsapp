@@ -16,6 +16,7 @@ App.ResultsIndexController = Ember.Controller.extend({
         });
 
 
+        // TODO: implement grouping into n groups
         $(function () {
             $('#history-chart').highcharts({
                 chart: {
@@ -72,10 +73,17 @@ App.ResultsIndexController = Ember.Controller.extend({
                 series: [{
                     type: 'areaspline',
                     name: 'Messages per Day',
+                    pointStart: Date.UTC(that.get('parentController').getStartDate().getYear(),
+                        that.get('parentController').getStartDate().getMonth(),
+                        that.get('parentController').getStartDate().getDay()),
                     pointInterval: 24 * 3600 * 1000,
-                    pointStart: moment(that.get('parentController').getStartDate()).unix(),
                     data: dateSeries
-                }]
+                }],
+
+                exporting: {
+                    filename: "Whatistics-Timeline",
+                    scale: 3
+                }
             });
         });
 

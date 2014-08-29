@@ -6,6 +6,7 @@ var JS_FILES = [
 //    'js/vendor/es6-shim.js',
     'js/vendor/jquery-2.1.1.js',
     'js/vendor/highcharts.js',
+    'js/vendor/exporting-highcharts.js',
     'js/vendor/bootstrap.file-input.js',
     'js/vendor/bootstrap/*.js',
     'js/vendor/handlebars-1.1.2.js',
