@@ -1,29 +1,38 @@
 # README #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+### Get Whatistics ###
+```
+#!basic
 
-### What is this repository for? ###
+git clone https://[bitbucketusername]@bitbucket.org/roberterdin/whatistics.git
+```
+Navigate to `/src/front-end/`
+```
+#!basic
+npm install
+```
+Installs project build dependencies to `node_modules`
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+### Build Whatistics ###
+Navigate to `/src/front-end/`
+```
+#!basic
+grunt
 
-### How do I get set up? ###
+```
+Builds to `/bin/dev/front-end`
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
 
-### Contribution guidelines ###
+### Deploy Whatistics ###
 
-* Writing tests
-* Code review
-* Other guidelines
+```
+#!basic
+grunt prod
+```
+Builds to `/bin/prod/front-end`
 
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+```
+#!basic
+grunt deploy-dev
+```
+Deploys to test-installation
