@@ -20,9 +20,6 @@ App.ResultsController = Ember.ObjectController.extend({
         this._super();
         console.log("Results controller created");
         console.log(this);
-        this.globalStat = new GlobalStat();
-        this.senders = new Map(); // sender - >
-        this.history = new Map(); // day -> message amount
     },
 
 
