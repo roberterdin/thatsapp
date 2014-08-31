@@ -8,6 +8,25 @@ App.ResultsLadderController = Ember.Controller.extend({
 
 	messagesChart : function(){
 		var that = this;
+		var chartData = [];
+
+		this.get("parentController").get("senders").forEach(function(value,key){
+			var entry = {};
+			entry.name = value.name;
+			entry.data = [value.messageAmount];
+			chartData.push(entry);
+		});
+
+		chartData.sort(function (a, b) {
+    		if (a.data[0] > b.data[0])
+      			return 1;
+      		if (a.data[0] < b.data[0])
+				return -1;
+			return 0;
+		});
+
+		console.log(chartData);
+
 
 		$(function () {
 		    $('#chart-ladder-messages').highcharts({
@@ -60,24 +79,7 @@ App.ResultsLadderController = Ember.Controller.extend({
 		        exporting: {
 		        	enabled: false
 		        },
-		        series: [
-		            {
-		                name: 'Robi',
-		                data: [112]
-		            },
-		            {
-		                name: 'Sibi',
-		                data: [245]
-		            },
-		            {
-		                name: 'Nita',
-		                data: [345]
-		            },
-		            {
-		                name: 'Michi',
-		                data: [400]
-		            }
-		        ]
+		        series: chartData
 		    });
 		});
 
