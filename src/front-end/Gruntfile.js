@@ -3,7 +3,7 @@ var LESS_FILES = [
     'less/main.less'];
 
 var JS_FILES = [
-//    'js/vendor/es6-shim.js',
+    'js/vendor/es6-shim.js',
     'js/vendor/jquery-2.1.1.js',
     'js/vendor/highcharts.js',
     'js/vendor/exporting-highcharts.js',
