@@ -51,19 +51,15 @@ App.IndexController = Ember.Controller.extend({
             var messages = [];
 
             // splits between date and content
-            var firstSplit = fileContent.match(/[\s\S]*? \d{1,2}:\d{2}( - | (AM|PM) - )/g);
+            var firstSplit = fileContent.match(/[\s\S]*?\n[\s\w.]{1,14} \d{1,2}:\d{2}( - | (AM|PM) - )/g);
 
-            // more robust but not working with all files
-//            var firstSplit = fileContent.match(/[\s\S]*?, \d{1,2}:\d{2} - /g);
 
             // precompilation
-            var dateSplitter = /\n(?=[^\n]*$)/;
-            var dateTimeSeparator = /, /;
+            var dateSplitter = /\n[^\n]{1,14}:\d{1,2}( - | (AM|PM) - )/;
+            var newLine = /\n/;
             var matchName = /: /;
-            var replaceDash = / - /;
 
             var splitTmp = [];
-            var splitTmp2 = [];
 
             // interval is necessary not to mess with the ember run loop:
             // http://emberjs.com/guides/understanding-ember/run-loop/
@@ -83,13 +79,7 @@ App.IndexController = Ember.Controller.extend({
                 for(var i = pointer; i <endOfLoop; i++){
                     var tmp = {};
 
-                    // split date of previous string
-                    splitTmp = firstSplit[i-1].split(dateSplitter);
-
-                    // split between date and time
-                    splitTmp2 = splitTmp[1].split(dateTimeSeparator);
-                    tmp.date = that._createDate(splitTmp2[0], splitTmp2[1].replace(replaceDash, ''));
-
+                    tmp.date = that._createDate(firstSplit[i-1].match(dateSplitter)[0].replace(newLine, ""));
 
                     // match sender' name
                     splitTmp = firstSplit[i].split(matchName);
@@ -121,21 +111,29 @@ App.IndexController = Ember.Controller.extend({
 
     /**
      * Create a JavaSript date object
-     * @param {string}date
-     * @param {string}time
+     * @param {string}rawDateTime
      * @returns {*}
      * @private
      */
-    _createDate : function(date, time){
+    _createDate : function(rawDateTime){
         var resDate;
-        if(moment(date).isValid()){
-            resDate = moment(date);
-        }else if(moment(date, "DD.MM.YYYY").isValid()){
-            resDate = moment(date, "DD.MM.YYYY");
+        if(moment(rawDateTime).isValid()){
+            resDate = moment(rawDateTime);
+        }else if(moment(rawDateTime, "D. MMM. HH:mm").isValid){ // android-de-24h: 1. Mär. 07:17
+            resDate = moment(rawDateTime, "D. MMM. HH:mm");
+        }else if(moment(rawDateTime, "D. MMM., H:mm").isValid()){ // android-de: 16. Jan., 14:40 | 9. Mär., 9:49
+            resDate = moment(date, "D. MMM., H:mm");
+        }else if(moment(rawDateTime, "DD.MM.YYYY, H:mm").isValid()){ // android-de: 05.12.2013, 9:59
+            resDate = moment(rawDateTime, "DD.MM.YYYY, H:mm");
+        }else if(moment(rawDateTime, "MMM D, HH:mm").isValid()){ // android-en_us-24h: Aug 3, 02:38
+            resDate = moment(rawDateTime, "MMM D, HH:mm");
+        }else if(moment(rawDateTime, "D MMM HH:mm").isValid()){ // android-en_gb-24h: 1 Mar 06:52
+            resDate = moment(rawDateTime, "D MMM HH:mm");
+        }else if(moment(rawDateTime, "D MMM YYYY HH:mm").isValid()){ // android-en_gb-24h: 28 Dec 2013 05:09
+            resDate = moment(rawDateTime, "D MMM HH:mm");
+        }else{
+            console.log("No known date: " + rawDateTime);
         }
-
-        var tmpTime = moment(time, "H:mm");
-        resDate.hours(tmpTime.get('hour')).minutes(tmpTime.get('minute'));
 
         return resDate.toDate();
     }
