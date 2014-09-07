@@ -7,12 +7,14 @@ function Sender(name){
     this.name = name;
     this.messageAmount = 0;
     this.wordAmount = 0;
+    this.mediaAmount = 0;
 }
 
 function GlobalStat(){
     this.senderAmount = 0; //TODO: redundant information with senders.size()
     this.messageAmount = 0;
     this.wordAmount = 0;
+    this.mediaAmount = 0;
 }
 
 App.ResultsController = Ember.ObjectController.extend({
@@ -39,6 +41,12 @@ App.ResultsController = Ember.ObjectController.extend({
 
         this._reset();
 
+
+        // precompile regEx
+        // TODO: extract for easy maintainability
+        var mediaPattern = /(<Media omitted>|<Mediendatei entfernt>|<Medien weggelassen>)/;
+
+
         var that = this;
         this.get('model.messages').forEach(function(message){
 
@@ -48,16 +56,24 @@ App.ResultsController = Ember.ObjectController.extend({
                 that.get('globalStat').senderAmount++;
             }
 
-            var tmpWordCount = countWords(message.get('content'));
 
-            // global adjustments
             that.get('globalStat').messageAmount++;
-            that.get('globalStat').wordAmount += tmpWordCount;
-
-
-            // sender adjustments
             that.get('senders').get(message.get('sender')).messageAmount++;
-            that.get('senders').get(message.get('sender')).wordAmount += tmpWordCount;
+
+
+            if(mediaPattern.test( message.get('content') )){ // message was some sort of media data
+
+                that.get('globalStat').mediaAmount++;
+                that.get('senders').get(message.get('sender')).mediaAmount++;
+
+            }else{// regular message
+
+                // adjust word count
+                var tmpWordCount = countWords(message.get('content'));
+                that.get('globalStat').wordAmount += tmpWordCount;
+                that.get('senders').get(message.get('sender')).wordAmount += tmpWordCount;
+            }
+
 
             // generate history
             var date = moment(message.get('date'));
