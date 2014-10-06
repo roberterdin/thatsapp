@@ -1,19 +1,19 @@
 package main;
 
 import java.io.BufferedReader;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.UUID;
 
-import javax.mail.Address;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
-
-import org.apache.commons.lang3.StringUtils;
 
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
@@ -55,7 +55,7 @@ public class Run {
 							isWhatsapp = checkLine(currentLine);
 						}
 						if (isWhatsapp && !currentLine.equals("")) {
-							breakLine(currentLine);
+							saveMessage(currentLine);
 						}
 						j++;
 					}
@@ -76,57 +76,54 @@ public class Run {
 		mr.closeInbox();
 	}
 
-	/*
-	 * checks if its a whatsapp message 1. first at chars are a date 2. contains
-	 * at least 4 ":"
-	 */
 	static public boolean checkLine(String line) {
-		System.out.println("?"+line);
-		boolean isDate = isValidDate(line.trim().substring(0, 9));
-		boolean colon = (2 < (line.length() - line.replace(":", "").length()));
-		if (isDate && colon) {
-			return true;
-		} else {
-			if (!isDate) {
-				System.out.println("Error with date");
-			}
-			if (!colon) {
-				System.out.println("Error with colon");
-			}
-			return false;
-		}
-	}
-
-	// TODO check other dates
-	static public boolean isValidDate(String inDate) {
-		/*
-		//inDate ="19.09.14";
-		System.out.println(inDate);
-		SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yy");
-		dateFormat.setLenient(false);
-		try {
-			dateFormat.parse(inDate.trim());
-		} catch (ParseException e) {
-			return false;
-		}*/
 		return true;
 	}
 
-	static public void breakLine(String line) {
-		String[] parts = line.split(":");
-
-		String date = parts[0].split(" ")[0];
-		String time = parts[0].split(" ")[1] + ":" + parts[1] + ":" + parts[2];
-		String author = parts[3];
-		String text = parts[4];
-		for (int i = 4; i < parts.length; i++) {
-			text = text + ":" + parts[i];
-		}
-
-		saveMessage(date + " " + time, author, text);
+	static public void saveMessage(String line) {
+		String[] strings = splitMessage(line);
+		saveinDB(strings[0], strings[1], strings[2]);
 	}
 
-	static public void saveMessage(String date, String author, String text) {
+	/*
+	 * Param: String line from file
+	 * 
+	 * Return: String[0] = Date String[1] = Author String[2] = text
+	 */
+	static public String[] splitMessage(String line) {
+		String author = "", text = "";
+		Date date = Calendar.getInstance().getTime();
+	
+		DateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+
+		if (tryParse(line.substring(0, 18), "dd.MM.yy HH:mm:ss") != null) {
+			date = tryParse(line.substring(0, 18), "dd.MM.yy HH:mm:ss");
+			String rest = line.substring(18, line.length());
+			author = rest.substring(0, rest.indexOf(":")).trim(); // TODO does
+																	// not work
+																	// if name
+																	// has a ":"
+			text = rest.substring(rest.indexOf(":") + 1, rest.length()).trim();
+		} else if (line.indexOf(" - ") > 0 && tryParse(line.substring(0, line.indexOf(" - ")), "HH:mma, MMM dd") != null) {
+			date = tryParse(line.substring(0, line.indexOf(" - ")) +" 14", "HH:mma, MMM dd yy");
+			String rest = line.substring(line.indexOf(" - "), line.length());
+			author = rest.substring(rest.indexOf("-") + 1, rest.indexOf(":")).trim();
+			text = rest.substring(rest.indexOf(": ") + 1, rest.length()).trim();
+		}
+
+		String[] strings = { df.format(date), author, text };
+		return strings;
+	}
+
+	static public Date tryParse(String dateString, String formatString) {
+		try {
+			return new SimpleDateFormat(formatString).parse(dateString);
+		} catch (ParseException e) {
+		}
+		return null;
+	}
+
+	static public void saveinDB(String date, String author, String text) {
 		DBObject doc = new BasicDBObject().append("chat_id", uuid).append("date", date).append("author", author)
 				.append("message", text);
 
