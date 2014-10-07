@@ -88,6 +88,15 @@ App.IndexController = Ember.Controller.extend({
                     splitTmp = firstSplit[i].split(matchName);
                     tmp.sender = splitTmp[0];
 
+                    // filter out lines like:
+                    // Robi hat den Betreff zu “workoholics & serienjunks” geändert
+                    // TODO: handle on android (not severe there because it does not create additional senders)
+                    if(splitTmp.length === 2){
+                        continue;
+                    }
+
+
+
                     // get content
                     tmp.content = splitTmp[1].split(dateSplitter)[0];
 
