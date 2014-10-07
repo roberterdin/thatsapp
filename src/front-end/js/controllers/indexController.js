@@ -50,12 +50,15 @@ App.IndexController = Ember.Controller.extend({
 
             var messages = [];
 
+            // remove empty lines
+            fileContent.replace(/^\n/gm, "");
+
             // splits between date and content
-            var firstSplit = fileContent.match(/[\s\S]*?\n[\s\w.]{1,14} \d{1,2}:\d{2}( - | (AM|PM) - )/g);
+            var firstSplit = fileContent.match(/[\s\S]*?\n[\s\w.]{1,14} \d{1,2}:\d{2}:{0,1}\d{0,2}( - | (AM|PM) - |:\s)/g);
 
 
             // precompilation
-            var dateSplitter = /\n[^\n]{1,14}:\d{1,2}( - | (AM|PM) - )/;
+            var dateSplitter = /\n[^\n]{1,14} \d{1,2}:\d{2}:{0,1}\d{0,2}( - | (AM|PM) - |:\s)/;
             var newLine = /\n/;
             var matchName = /: /;
 

@@ -10,6 +10,10 @@ function Sender(name){
     this.mediaAmount = 0;
 }
 
+/**
+ * @class
+ * @constructor
+ */
 function GlobalStat(){
     this.senderAmount = 0; //TODO: redundant information with senders.size()
     this.messageAmount = 0;
