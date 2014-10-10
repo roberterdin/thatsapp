@@ -91,7 +91,8 @@ App.IndexController = Ember.Controller.extend({
                     // filter out lines like:
                     // Robi hat den Betreff zu “workoholics & serienjunks” geändert
                     // TODO: handle on android (not severe there because it does not create additional senders)
-                    if(splitTmp.length === 2){
+                    if(splitTmp[1] === ""){
+                        console.log("Skipped info line: " + firstSplit[i-1]);
                         continue;
                     }
 
@@ -141,8 +142,10 @@ App.IndexController = Ember.Controller.extend({
             resDate = moment(rawDateTime, "MMM D, HH:mm");
         }else if(moment(rawDateTime, "D MMM HH:mm").isValid()){ // android-en_gb-24h: 1 Mar 06:52
             resDate = moment(rawDateTime, "D MMM HH:mm");
-        }else if(moment(rawDateTime, "D MMM YYYY HH:mm").isValid()){ // android-en_gb-24h: 28 Dec 2013 05:09
+        }else if(moment(rawDateTime, "D MMM YYYY HH:mm").isValid()) { // android-en_gb-24h: 28 Dec 2013 05:09
             resDate = moment(rawDateTime, "D MMM HH:mm");
+        }else if(moment(rawDateTime, "DD.MM.YY HH:mm:ss").isValid()){ // ios_de 20.12.13 16:48:24
+
         }else{
             console.log("No known date: " + rawDateTime);
         }
