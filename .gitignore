@@ -7,3 +7,7 @@ bin/
 .DS_Store
 .AppleDouble
 .LSOverride
+
+
+### Project Specific ###
+node_modules/

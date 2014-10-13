@@ -13,6 +13,7 @@ var JS_FILES = [
     'js/vendor/ember-1.7.0.js',
     'js/vendor/ember-data.js',
     'js/vendor/moment.min.js',
+    'js/resources/**/*.js',
     'js/utils/*.js',
     'js/app.js',
     'js/router.js',
@@ -33,7 +34,9 @@ module.exports = function (grunt) {
         jshint: {
             options: {
                 shadow: true,
-                sub: true
+                sub: true,
+                laxcomma: true,
+                loopfunc:true
             },
             all: ['js/**/*.js', '!js/vendor/**/*', '!js/bin/**/*']
         },

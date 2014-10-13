@@ -8,6 +8,7 @@ function Sender(name){
     this.messageAmount = 0;
     this.wordAmount = 0;
     this.mediaAmount = 0;
+    this.vocabulary = new Map();
 }
 
 /**
@@ -19,6 +20,7 @@ function GlobalStat(){
     this.messageAmount = 0;
     this.wordAmount = 0;
     this.mediaAmount = 0;
+    this.vocabulary = new Map();
 }
 
 App.ResultsController = Ember.ObjectController.extend({
@@ -76,6 +78,9 @@ App.ResultsController = Ember.ObjectController.extend({
                 var tmpWordCount = countWords(message.get('content'));
                 that.get('globalStat').wordAmount += tmpWordCount;
                 that.get('senders').get(message.get('sender')).wordAmount += tmpWordCount;
+
+                // build vocabulary
+                vocabBuilder.build(message.get('content'), that.get('globalStat').vocabulary, that.get('senders').get(message.get('sender')).vocabulary);
             }
 
 
@@ -87,5 +92,7 @@ App.ResultsController = Ember.ObjectController.extend({
                 that.get('history').set(date.format('DD.MM.YY'), that.get('history').get(date.format('DD.MM.YY')) + 1);
             }
         });
+
+        // order vocabulary maps
     }
 });
