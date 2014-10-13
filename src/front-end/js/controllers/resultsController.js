@@ -93,6 +93,8 @@ App.ResultsController = Ember.ObjectController.extend({
             }
         });
 
-        // order vocabulary maps
+        // bring things in order
+        console.log(this.globalStat.vocabulary.entries());
+
     }
 });
