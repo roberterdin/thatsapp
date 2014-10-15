@@ -14,10 +14,7 @@
     "ember-qunit-notifications": "0.0.4",
     "qunit": "~1.15.0",
     "moment": "~2.8.3",
-    "modernizr": "~2.8.3"
-  },
-  "devDependencies": {
-    "bootstrap": "~3.2.0",
-    "modernizr": "~2.8.3"
+    "modernizr": "~2.8.3",
+    "es6-shim": "~0.19.1"
   }
 }
