@@ -12,7 +12,7 @@ function Sender(name){
     this.messageAmount = 0;
     this.wordAmount = 0;
     this.mediaAmount = 0;
-    this.vocabulary = new Map();
+    this.vocabulary = [];
 }
 
 /**
@@ -24,7 +24,19 @@ function GlobalStat(){
     this.messageAmount = 0;
     this.wordAmount = 0;
     this.mediaAmount = 0;
-    this.vocabulary = new Map();
+    this.vocabulary = [];
+}
+
+function vocabComparator ( a, b ){
+    if(a.amount < b.amount){
+        return 1;
+    }else if( a.amount > b.amount ){
+        return -1;
+    }else if( a.amount === b.amount){
+        return 0;
+    }else{
+        console.error("Comparison of vocabulary objects failed");
+    }
 }
 
 export default Ember.ObjectController.extend({
@@ -56,6 +68,10 @@ export default Ember.ObjectController.extend({
         // TODO: extract for easy maintainability
         var mediaPattern = /(<Media omitted>|<Mediendatei entfernt>|<Medien weggelassen>)/;
 
+        // temp variables
+        var tmpGlobalVocab = new Map();
+        var tmpSenders = new Map(); // store temporary, sender-specific data for processing purposes
+
 
         var that = this;
         this.get('model.messages').forEach(function(message){
@@ -66,6 +82,12 @@ export default Ember.ObjectController.extend({
                 that.get('globalStat').senderAmount++;
             }
 
+            // create temporary sender
+            if(tmpSenders.get(message.get('sender')) === undefined){
+                tmpSenders.set(message.get('sender'), {
+                    vocabulary : new Map()
+                });
+            }
 
             that.get('globalStat').messageAmount++;
             that.get('senders').get(message.get('sender')).messageAmount++;
@@ -84,7 +106,7 @@ export default Ember.ObjectController.extend({
                 that.get('senders').get(message.get('sender')).wordAmount += tmpWordCount;
 
                 // build vocabulary
-                vocabBuilder.build(message.get('content'), that.get('globalStat').vocabulary, that.get('senders').get(message.get('sender')).vocabulary);
+                vocabBuilder.build(message.get('content'), tmpGlobalVocab, tmpSenders.get(message.get('sender')).vocabulary);
             }
 
 
@@ -98,7 +120,24 @@ export default Ember.ObjectController.extend({
         });
 
         // bring things in order
-        console.log(this.globalStat.vocabulary.entries());
 
+        tmpGlobalVocab.forEach( function(value, key){
+            that.globalStat.vocabulary.push({
+                word: key,
+                amount: value
+            });
+        });
+        this.globalStat.vocabulary.sort( vocabComparator );
+
+        tmpSenders.forEach( function( value, key ){
+            var sender = key;
+            value.vocabulary.forEach( function( value, key ){
+                that.senders.get(sender).vocabulary.push({
+                    word: key,
+                    amount: value
+                });
+            });
+            that.senders.get(sender).vocabulary.sort( vocabComparator );
+        });
     }
 });

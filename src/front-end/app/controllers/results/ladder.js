@@ -10,10 +10,9 @@ export default Ember.Controller.extend({
     },
 
 	messagesChart : function(){
-		var that = this;
 		var chartData = [];
 		
-		this.get("parentController").get("senders").forEach(function(value,key){
+		this.get("parentController").get("senders").forEach(function(value){
 			var entry = {};
 			entry.name = value.name;
 			entry.data = [value.messageAmount];

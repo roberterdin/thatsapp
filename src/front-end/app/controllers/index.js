@@ -55,8 +55,6 @@ export default Ember.Controller.extend({
             fileContent = "bla\n" + fileContent;
             fileContent += "00:00 - ";
 
-            var messages = [];
-
             // remove empty lines
             fileContent.replace(/^\n/gm, "");
 

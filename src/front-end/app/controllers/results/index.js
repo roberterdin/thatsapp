@@ -15,7 +15,7 @@ export default Ember.Controller.extend({
         var that = this;
         var dateSeries = [];
 
-        this.get('parentController').get('history').forEach(function(value, key){
+        this.get('parentController').get('history').forEach(function(value){
             dateSeries.push(value);
         });
 
