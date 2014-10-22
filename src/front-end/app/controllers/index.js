@@ -110,7 +110,6 @@ export default Ember.Controller.extend({
 
                     //update progress
                     that.set('parseProgress', Math.ceil(i/firstSplit.length*100));
-                    that.notifyPropertyChange('widthStyle');
                 }
 
                 pointer = i;
@@ -123,7 +122,7 @@ export default Ember.Controller.extend({
                     console.log('transitioning to results...');
                     that.transitionToRoute('results.index');
                 }
-            }, 200);
+            }, 10);
         });
     },
 
