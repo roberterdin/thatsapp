@@ -1,6 +1,7 @@
 import Ember from 'ember';
 /* global moment, countWords */
 /* global vocabBuilder */
+/* global XRegExp */
 
 /**
  * @class
@@ -13,6 +14,7 @@ function Sender(name){
     this.wordAmount = 0;
     this.mediaAmount = 0;
     this.vocabulary = [];
+    this.emojis = [];
 }
 
 /**
@@ -25,6 +27,7 @@ function GlobalStat(){
     this.wordAmount = 0;
     this.mediaAmount = 0;
     this.vocabulary = [];
+    this.emojis = [];
 }
 
 function vocabComparator ( a, b ){
@@ -70,6 +73,7 @@ export default Ember.ObjectController.extend({
 
         // temp variables
         var tmpGlobalVocab = new Map();
+        var tmpGlobalEmoji = new Map();
         var tmpSenders = new Map(); // store temporary, sender-specific data for processing purposes
 
 
@@ -85,7 +89,8 @@ export default Ember.ObjectController.extend({
             // create temporary sender
             if(tmpSenders.get(message.get('sender')) === undefined){
                 tmpSenders.set(message.get('sender'), {
-                    vocabulary : new Map()
+                    vocabulary : new Map(),
+                    emoji: new Map()
                 });
             }
 
@@ -107,6 +112,22 @@ export default Ember.ObjectController.extend({
 
                 // build vocabulary
                 vocabBuilder.build(message.get('content'), tmpGlobalVocab, tmpSenders.get(message.get('sender')).vocabulary);
+
+                // get emojis
+                var emojiRegEx = XRegExp('[\uD800-\uDBFF][\uDC00-\uDFFF]','g');
+                XRegExp.forEach(message.get('content'), emojiRegEx, function(match){
+                    // global
+                    if(tmpGlobalEmoji.get(match[0]) === undefined){
+                        tmpGlobalEmoji.set(match[0], 0);
+                    }
+                    tmpGlobalEmoji.set(match[0], tmpGlobalEmoji.get(match[0]) + 1);
+
+                    // sender
+                    if(tmpSenders.get(message.get('sender')).emoji.get(match[0]) === undefined){
+                        tmpSenders.get(message.get('sender')).emoji.set(match[0], 0);
+                    }
+                    tmpSenders.get(message.get('sender')).emoji.set(match[0], tmpSenders.get(message.get('sender')).emoji.get(match[0]) + 1);
+                });
             }
 
 
@@ -120,6 +141,9 @@ export default Ember.ObjectController.extend({
         });
 
         // bring things in order
+        // -----
+
+        // vocabulary
 
         tmpGlobalVocab.forEach( function(value, key){
             that.globalStat.vocabulary.push({
@@ -138,6 +162,27 @@ export default Ember.ObjectController.extend({
                 });
             });
             that.senders.get(sender).vocabulary.sort( vocabComparator );
+        });
+
+        // emojis
+
+        tmpGlobalEmoji.forEach( function (value, key){
+            that.globalStat.emojis.push({
+                    emoji: key,
+                    amount: value
+                });
+        });
+        that.globalStat.emojis.sort( vocabComparator );
+
+        tmpSenders.forEach( function( value, key){
+           var sender = key;
+            value.emoji.forEach( function( value, key){
+               that.senders.get(sender).emojis.push({
+                   emoji: key,
+                   amount: value
+               })
+            });
+            that.senders.get(sender).emojis.sort( vocabComparator );
         });
     }
 });

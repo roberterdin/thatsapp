@@ -33,6 +33,8 @@ app.import('bower_components/modernizr/modernizr.js');
 
 app.import('bower_components/es6-shim/es6-shim.js');
 
+app.import('bower_components/xregexp/min/xregexp-min.js');
+
 
 /* vendors */
 app.import('vendor/bootstrap.file-input.js');
