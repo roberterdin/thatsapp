@@ -42,6 +42,7 @@ function vocabComparator ( a, b ){
     }
 }
 
+
 export default Ember.ObjectController.extend({
      init : function(){
         this._super();
@@ -180,7 +181,7 @@ export default Ember.ObjectController.extend({
                that.senders.get(sender).emojis.push({
                    emoji: key,
                    amount: value
-               })
+               });
             });
             that.senders.get(sender).emojis.sort( vocabComparator );
         });
