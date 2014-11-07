@@ -9,11 +9,23 @@
 		<p class="ladder-subtitle text-center">Look at those cat pics!</p>
     </div>
     <div class="col-md-4 text-left">
-        <h2 class="text-center">Vocabulary used</h2>
+        <h2 class="text-center">Emoji's used</h2>
         <p class="ladder-subtitle text-center">whut m8, do u even english?</p>
+        <table class="table">
+            <thead>
+                <tr>
+                    <td>Emoji</td>
+                    <td>Amount</td>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each emojis}}
+                    <tr>
+                        <td class="emoji">{{emoji}}</td>
+                        <td>{{amount}}</td>
+                    </tr>
+                {{/each}}
+            </tbody>
+        </table>
     </div>
-</div>
-<div id="timeline" class="row">
-    <h1 class="text-center">Timeline</h1>
-    <div id="history-chart" class="col-md-12"></div>
 </div>

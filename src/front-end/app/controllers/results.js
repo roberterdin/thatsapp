@@ -180,7 +180,7 @@ export default Ember.ObjectController.extend({
                that.senders.get(sender).emojis.push({
                    emoji: key,
                    amount: value
-               })
+               });
             });
             that.senders.get(sender).emojis.sort( vocabComparator );
         });

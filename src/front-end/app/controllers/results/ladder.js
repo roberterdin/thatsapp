@@ -4,14 +4,17 @@ export default Ember.Controller.extend({
 
     needs: "results",
     parentController : Ember.computed.alias('controllers.results'),
+    emojis: [],
 
     init : function(){
         console.log("ResultsLadderController created");
+        this._generateStatistics();
     },
+
 
 	messagesChart : function(){
 		var chartData = [];
-		
+
 		this.get("parentController").get("senders").forEach(function(value){
 			var entry = {};
 			entry.name = value.name;
@@ -87,7 +90,14 @@ export default Ember.Controller.extend({
 		    });
 		});
 
-	}
+	},
 
+    _generateStatistics : function(){
+        var tmpList = []
+        for (var i = 0; i < 10; i++) {
+            this.get('emojis')[i] = this.get('parentController').get('globalStat').emojis[i];
+            //tmpList[i] = this.get('parentController').get('globalStat').emojis[i];
+        }
+        //this.set('emojis', tmpList);
+    }
 });
-
