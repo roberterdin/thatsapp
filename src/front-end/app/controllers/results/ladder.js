@@ -93,11 +93,8 @@ export default Ember.Controller.extend({
 	},
 
     _generateStatistics : function(){
-        var tmpList = []
         for (var i = 0; i < 10; i++) {
             this.get('emojis')[i] = this.get('parentController').get('globalStat').emojis[i];
-            //tmpList[i] = this.get('parentController').get('globalStat').emojis[i];
         }
-        //this.set('emojis', tmpList);
     }
 });
