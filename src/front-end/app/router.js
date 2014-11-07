@@ -6,11 +6,6 @@ var Router = Ember.Router.extend({
 });
 
 Router.map(function() {
-	/*
-  this.route('results/index');
-  this.route('results/ladder');
-  this.route('results/individual');
-  */
   this.resource('results', {path: '/results'}, function(){
         this.resource('results.ladder', {path: "/ladder"}, function(){
         });
@@ -22,4 +17,3 @@ Router.map(function() {
 export default Router;
 
 
-    
