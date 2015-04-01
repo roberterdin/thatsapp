@@ -115,7 +115,7 @@ export default Ember.ObjectController.extend({
                 vocabBuilder.build(message.get('content'), tmpGlobalVocab, tmpSenders.get(message.get('sender')).vocabulary);
 
                 // get emojis
-                var emojiRegEx = XRegExp('[\uD800-\uDBFF][\uDC00-\uDFFF]','g');
+                var emojiRegEx = new XRegExp('[\uD800-\uDBFF][\uDC00-\uDFFF]','g');
                 XRegExp.forEach(message.get('content'), emojiRegEx, function(match){
                     // global
                     if(tmpGlobalEmoji.get(match[0]) === undefined){

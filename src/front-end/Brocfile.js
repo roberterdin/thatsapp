@@ -46,4 +46,6 @@ app.import('vendor/stopwords_de_de.js');
 app.import('vendor/vocabBuilder.js');
 app.import('vendor/exporting-highcharts.js');
 
+
+
 module.exports = app.toTree();

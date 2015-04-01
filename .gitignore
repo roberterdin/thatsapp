@@ -11,3 +11,4 @@ bin/
 
 ### Project Specific ###
 node_modules/
+npm-debug.log
