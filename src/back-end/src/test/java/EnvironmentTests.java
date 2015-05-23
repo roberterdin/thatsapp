@@ -1,6 +1,7 @@
 import com.whatistics.backend.configuration.LocalConfig;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.Message;
+import org.bson.types.ObjectId;
 import org.junit.Test;
 import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Morphia;
@@ -26,6 +27,7 @@ public class EnvironmentTests {
 
     @Test
     public void testCRUD(){
+        // CREATE
         Datastore ds = new Morphia().createDatastore(LocalConfig.MONGO_CLIENT, LocalConfig.DB_NAME);
         Conversation conversation = new Conversation();
         conversation.getMessages().add(new Message().fillWithRandom());
@@ -33,8 +35,20 @@ public class EnvironmentTests {
         conversation.getMessages().add(new Message().fillWithRandom());
 
         ds.save(conversation);
-
         assertNotNull(conversation.getId());
+
+        // UPDATE and READ
+        ObjectId convId = conversation.getId();
+        conversation.getMessages().add(new Message().fillWithRandom());
+        ds.save(conversation);
+
+        Conversation retrievedConv = ds.find(Conversation.class, "id", convId).get();
+
+        assertEquals(retrievedConv.getMessages().size(), 4);
+
+        // DELETE
+        ds.findAndDelete(ds.createQuery(Conversation.class).filter("id", convId));
+        assertEquals(ds.find(Conversation.class, "id", convId).asList().size(), 0);
     }
 
 }
