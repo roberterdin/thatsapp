@@ -1,8 +1,12 @@
 package com.whatistics.backend.services;
 
+import com.sun.mail.imap.IMAPFolder;
+import com.sun.mail.imap.IMAPMessage;
+import com.whatistics.backend.model.*;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.mail.*;
+import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.search.FlagTerm;
@@ -15,7 +19,8 @@ import java.util.Properties;
 
 public class MailAdapterService {
 
-    Folder inbox;
+    IMAPFolder inbox;
+    Folder processed;
 
     Session session;
     Store store;
@@ -33,7 +38,7 @@ public class MailAdapterService {
             store.connect(host, email, pass);
 
 			/* Mention the folder name which you want to read. */
-            inbox = store.getFolder("Inbox");
+            inbox = (IMAPFolder)store.getFolder("Inbox");
             System.out.println("Nr. of Unread Messages : " + inbox.getUnreadMessageCount());
 			/* Open the inbox using store. */
             inbox.open(Folder.READ_WRITE);
@@ -58,11 +63,11 @@ public class MailAdapterService {
             FetchProfile fp = new FetchProfile();
             fp.add(FetchProfile.Item.ENVELOPE);
             fp.add(FetchProfile.Item.CONTENT_INFO);
+            fp.add(UIDFolder.FetchProfileItem.UID);
             inbox.fetch(messages, fp);
 
             // flag as seen
-            inbox.setFlags(messages, new Flags(Flags.Flag.SEEN), true);
-            // printAllMessages(messages);
+            //inbox.setFlags(messages, new Flags(Flags.Flag.SEEN), true);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -73,6 +78,7 @@ public class MailAdapterService {
     public Message[] getMails() {
         return messages;
     }
+
 
     public void printAllMessages(Message[] msgs) throws Exception {
         for (int i = 0; i < msgs.length; i++) {
@@ -108,7 +114,6 @@ public class MailAdapterService {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
     }
 
     public List<InputStream> getAttachments(Message message) {
@@ -131,7 +136,6 @@ public class MailAdapterService {
             e.printStackTrace();
             return null;
         }
-
     }
 
     private List<InputStream> getAttachments(BodyPart part) throws Exception {
@@ -195,4 +199,12 @@ public class MailAdapterService {
 
     }
 
+    public long getUID(Message message){
+        try {
+            return inbox.getUID(message);
+        } catch (MessagingException e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
 }
