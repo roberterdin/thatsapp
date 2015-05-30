@@ -1,8 +1,9 @@
-package com.whatistics.backend.services;
+package com.whatistics.backend.mail;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.sun.mail.imap.IMAPFolder;
-import com.sun.mail.imap.IMAPMessage;
-import com.whatistics.backend.model.*;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.mail.*;
@@ -17,7 +18,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-public class MailAdapterService {
+@Singleton
+public class IMAPMailAdapterService implements MailAdapterService {
 
     IMAPFolder inbox;
     Folder processed;
@@ -27,7 +29,9 @@ public class MailAdapterService {
 
     Message messages[]={};
     Transport transport;
-    public MailAdapterService(String host, String email, String pass) {
+
+    @Inject
+    public IMAPMailAdapterService(@Named("host") String host, @Named("email") String email,@Named("pass") String pass) {
 		/* Set the mail properties */
         Properties props = System.getProperties();
         props.setProperty("mail.store.protocol", "imaps");
@@ -55,7 +59,8 @@ public class MailAdapterService {
         }
     }
 
-    public void fetchMails() {
+    @Override
+    public synchronized void fetchMails() {
 		/* Get the messages which is unread in the Inbox */
         try {
             messages = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
@@ -75,6 +80,7 @@ public class MailAdapterService {
         }
     }
 
+    @Override
     public Message[] getMails() {
         return messages;
     }
@@ -116,6 +122,7 @@ public class MailAdapterService {
         }
     }
 
+    @Override
     public List<InputStream> getAttachments(Message message) {
         Object content;
         try {
@@ -160,6 +167,7 @@ public class MailAdapterService {
         return result;
     }
 
+    @Override
     public void sendMail(String[] to, String subject, String text) {
         MimeMessage message = new MimeMessage(session);
 
@@ -189,6 +197,7 @@ public class MailAdapterService {
 
     }
 
+    @Override
     public void closeInbox() {
         try {
             inbox.close(true);
@@ -199,6 +208,15 @@ public class MailAdapterService {
 
     }
 
+    /**
+     * Return UID. According to RFC3501: Unique identifiers
+     * are assigned in a strictly ascending fashion in the mailbox; as each
+     * message is added to the mailbox it is assigned a higher UID than the
+     * message(s) which were added previously.
+     * @param message
+     * @return UID value
+     */
+    @Override
     public long getUID(Message message){
         try {
             return inbox.getUID(message);
