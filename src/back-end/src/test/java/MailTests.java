@@ -10,6 +10,4 @@ public class MailTests {
         // This should be sufficient because the connection is made in the constructor
         IMAPMailAdapterService mailAdapterService = new IMAPMailAdapterService(GlobalConfig.HOST, GlobalConfig.EMAIL, GlobalConfig.PASSWORD);
     }
-
-
 }

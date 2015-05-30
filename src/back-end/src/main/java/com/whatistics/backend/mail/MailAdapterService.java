@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.util.List;
 
 /**
- * Created by robert on 30/05/15.
+ * @author robert
  */
 public interface MailAdapterService {
     void fetchMails();

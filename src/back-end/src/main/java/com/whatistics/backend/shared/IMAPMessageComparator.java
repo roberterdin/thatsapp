@@ -1,15 +1,14 @@
-package com.whatistics.backend.mail.utils;
+package com.whatistics.backend.shared;
 
-import com.google.inject.Guice;
 import com.sun.mail.imap.IMAPMessage;
 import com.whatistics.backend.WhatisticsBackend;
 import com.whatistics.backend.mail.MailAdapterService;
-import com.whatistics.backend.mail.MailModule;
 
 import java.util.Comparator;
 
 /**
- * @author Robert
+ * Sort IMAP Messages in ascending order.
+ * @author robert
  */
 public class IMAPMessageComparator implements Comparator<IMAPMessage> {
 

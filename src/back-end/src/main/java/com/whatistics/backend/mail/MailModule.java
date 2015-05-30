@@ -8,6 +8,7 @@ import com.whatistics.backend.configuration.GlobalConfig;
  * Module configuration.
  */
 public class MailModule extends AbstractModule {
+
     @Override
     protected void configure() {
 

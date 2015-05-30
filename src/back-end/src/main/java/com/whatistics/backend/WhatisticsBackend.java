@@ -2,8 +2,8 @@ package com.whatistics.backend;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.whatistics.backend.mail.MailFetcherTask;
 import com.whatistics.backend.mail.MailModule;
+import com.whatistics.backend.mail.MailService;
 
 /**
  * Main Whatistics class
@@ -17,8 +17,9 @@ public class WhatisticsBackend {
 
     injector = Guice.createInjector(new MailModule());
 
-    MailFetcherTask mailFetcherTask = injector.getInstance(MailFetcherTask.class);
-    mailFetcherTask.run();
+    MailService mailService = injector.getInstance(MailService.class);
+    mailService.start();
+
   }
 
   public static Injector getInjector(){
