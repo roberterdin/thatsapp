@@ -4,22 +4,22 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.sun.mail.imap.IMAPFolder;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.mail.*;
-import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.search.FlagTerm;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Properties;
 
 @Singleton
-public class IMAPMailAdapterService implements MailAdapterService {
+public class IMAPMailAdapter implements MailAdapter {
+
+    private String host;
+    private String email;
+    private String pass;
+
 
     IMAPFolder inbox;
     Folder processed;
@@ -30,11 +30,24 @@ public class IMAPMailAdapterService implements MailAdapterService {
     Message messages[]={};
     Transport transport;
 
+
+
     @Inject
-    public IMAPMailAdapterService(@Named("host") String host, @Named("email") String email,@Named("pass") String pass) {
-		/* Set the mail properties */
+    public IMAPMailAdapter(@Named("host") String host, @Named("email") String email, @Named("pass") String pass) {
+        this.host = host;
+        this.email = email;
+        this.pass = pass;
+    }
+
+    /**
+     * Connect to the IMAP server and open folders.
+     */
+    public void connectToServer(){
+
+        /* Set the mail properties */
         Properties props = System.getProperties();
         props.setProperty("mail.store.protocol", "imaps");
+
         try {
 			/* Create the session and get the store for read the mail. */
             session = Session.getDefaultInstance(props, null);
@@ -57,6 +70,23 @@ public class IMAPMailAdapterService implements MailAdapterService {
             e.printStackTrace();
             System.exit(2);
         }
+
+        // set all read messages in the inbox to unread in case there were leftovers from the last session
+        try {
+            messages = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), true));
+			/* Use a suitable FetchProfile */
+            FetchProfile fp = new FetchProfile();
+            fp.add(FetchProfile.Item.ENVELOPE);
+            fp.add(FetchProfile.Item.CONTENT_INFO);
+            fp.add(UIDFolder.FetchProfileItem.UID);
+            inbox.fetch(messages, fp);
+
+            // flag as seen
+            inbox.setFlags(messages, new Flags(Flags.Flag.SEEN), false);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -72,13 +102,14 @@ public class IMAPMailAdapterService implements MailAdapterService {
             inbox.fetch(messages, fp);
 
             // flag as seen
-            //inbox.setFlags(messages, new Flags(Flags.Flag.SEEN), true);
+            inbox.setFlags(messages, new Flags(Flags.Flag.SEEN), true);
 
         } catch (Exception e) {
             e.printStackTrace();
 
         }
     }
+
 
     @Override
     public Message[] getMails() {
@@ -120,51 +151,6 @@ public class IMAPMailAdapterService implements MailAdapterService {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public List<InputStream> getAttachments(Message message) {
-        Object content;
-        try {
-            content = message.getContent();
-            if (content instanceof String) {
-                return null;
-            }
-            if (content instanceof Multipart) {
-                Multipart multipart = (Multipart) content;
-                List<InputStream> result = new ArrayList<InputStream>();
-                for (int i = 0; i < multipart.getCount(); i++) {
-                    result.addAll(getAttachments(multipart.getBodyPart(i)));
-                }
-                return result;
-            }
-            return null;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private List<InputStream> getAttachments(BodyPart part) throws Exception {
-        List<InputStream> result = new ArrayList<InputStream>();
-        Object content = part.getContent();
-        if (content instanceof InputStream || content instanceof String) {
-            if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) || StringUtils.isNotBlank(part.getFileName())) {
-                result.add(part.getInputStream());
-                return result;
-            } else {
-                return new ArrayList<InputStream>();
-            }
-        }
-
-        if (content instanceof Multipart) {
-            Multipart multipart = (Multipart) content;
-            for (int i = 0; i < multipart.getCount(); i++) {
-                BodyPart bodyPart = multipart.getBodyPart(i);
-                result.addAll(getAttachments(bodyPart));
-            }
-        }
-        return result;
     }
 
     @Override

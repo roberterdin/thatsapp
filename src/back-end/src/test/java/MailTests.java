@@ -1,5 +1,5 @@
 import com.whatistics.backend.configuration.GlobalConfig;
-import com.whatistics.backend.mail.IMAPMailAdapterService;
+import com.whatistics.backend.mail.IMAPMailAdapter;
 import org.junit.Test;
 
 public class MailTests {
@@ -7,7 +7,7 @@ public class MailTests {
     @Test
     public void testConnection(){
 
-        // This should be sufficient because the connection is made in the constructor
-        IMAPMailAdapterService mailAdapterService = new IMAPMailAdapterService(GlobalConfig.HOST, GlobalConfig.EMAIL, GlobalConfig.PASSWORD);
+        IMAPMailAdapter mailAdapterService = new IMAPMailAdapter(GlobalConfig.HOST, GlobalConfig.EMAIL, GlobalConfig.PASSWORD);
+        mailAdapterService.connectToServer();
     }
 }

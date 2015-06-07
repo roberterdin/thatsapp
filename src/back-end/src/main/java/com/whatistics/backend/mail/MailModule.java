@@ -29,7 +29,7 @@ public class MailModule extends AbstractModule {
 
         // component binding
 
-        bind(MailAdapterService.class).to(IMAPMailAdapterService.class);
+        bind(MailAdapter.class).to(IMAPMailAdapter.class);
 
     }
 }

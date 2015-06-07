@@ -2,7 +2,8 @@ package com.whatistics.backend.mail;
 
 import com.google.inject.Inject;
 import com.sun.mail.imap.IMAPMessage;
-import com.whatistics.backend.shared.PendingMessagesProvider;
+import com.whatistics.backend.parser.ParserWorker;
+import com.whatistics.backend.shared.PendingMessagesExecutorServiceProvider;
 
 import javax.mail.Message;
 import java.util.TimerTask;
@@ -13,21 +14,21 @@ import java.util.TimerTask;
  */
 public class MailFetcherTask extends TimerTask {
 
-    private MailAdapterService mailAdapterService;
+    private MailAdapter mailAdapterService;
 
-    private PendingMessagesProvider pendingMessagesProvider;
+    private PendingMessagesExecutorServiceProvider pendingMessagesExecutorService;
 
     @Inject
-    public MailFetcherTask(MailAdapterService mailAdapterService, PendingMessagesProvider pendingMessagesProvider){
+    public MailFetcherTask(MailAdapter mailAdapterService, PendingMessagesExecutorServiceProvider pendingMessagesExecutorService){
         this.mailAdapterService = mailAdapterService;
-        this.pendingMessagesProvider = pendingMessagesProvider;
+        this.pendingMessagesExecutorService = pendingMessagesExecutorService;
     }
 
     @Override
     public void run() {
         mailAdapterService.fetchMails();
         for(Message message: mailAdapterService.getMails()) {
-            pendingMessagesProvider.get().add((IMAPMessage) message);
+            pendingMessagesExecutorService.get().submit(new ParserWorker(message));
         }
     }
 }

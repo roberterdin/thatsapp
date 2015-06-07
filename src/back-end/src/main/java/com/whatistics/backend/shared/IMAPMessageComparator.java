@@ -2,7 +2,7 @@ package com.whatistics.backend.shared;
 
 import com.sun.mail.imap.IMAPMessage;
 import com.whatistics.backend.WhatisticsBackend;
-import com.whatistics.backend.mail.MailAdapterService;
+import com.whatistics.backend.mail.MailAdapter;
 
 import java.util.Comparator;
 
@@ -12,8 +12,8 @@ import java.util.Comparator;
  */
 public class IMAPMessageComparator implements Comparator<IMAPMessage> {
 
-    MailAdapterService mailAdapterService = WhatisticsBackend.getInjector()
-            .getInstance(MailAdapterService.class);
+    MailAdapter mailAdapterService = WhatisticsBackend.getInjector()
+            .getInstance(MailAdapter.class);
 
     @Override
     public int compare(IMAPMessage o1, IMAPMessage o2) {

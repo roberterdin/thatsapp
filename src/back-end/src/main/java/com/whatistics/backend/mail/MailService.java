@@ -8,17 +8,18 @@ import com.whatistics.backend.Service;
  */
 public class MailService implements Service {
 
-    private MailAdapterService mailAdapterService;
+    private MailAdapter mailAdapterService;
     private MailFetcherTask mailFetcherTask;
 
     @Inject
-    public MailService(MailAdapterService mailAdapterService, MailFetcherTask mailFetcherTask){
+    public MailService(MailAdapter mailAdapterService, MailFetcherTask mailFetcherTask){
         this.mailAdapterService = mailAdapterService;
         this.mailFetcherTask = mailFetcherTask;
     }
 
     @Override
     public void start() {
+        this.mailAdapterService.connectToServer();
         this.mailFetcherTask.run();
     }
 
