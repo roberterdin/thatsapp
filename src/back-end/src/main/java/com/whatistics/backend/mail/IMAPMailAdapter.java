@@ -4,6 +4,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.sun.mail.imap.IMAPFolder;
+import com.whatistics.backend.configuration.GlobalConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -11,25 +14,28 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.search.FlagTerm;
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+
 
 @Singleton
 public class IMAPMailAdapter implements MailAdapter {
+
+    final Logger logger = LoggerFactory.getLogger(IMAPMailAdapter.class);
 
     private String host;
     private String email;
     private String pass;
 
 
-    IMAPFolder inbox;
-    Folder processed;
+    private Map<String, IMAPFolder> folders;
 
     Session session;
     Store store;
 
-    Message messages[]={};
+    Message messages[] = {};
     Transport transport;
-
 
 
     @Inject
@@ -37,31 +43,33 @@ public class IMAPMailAdapter implements MailAdapter {
         this.host = host;
         this.email = email;
         this.pass = pass;
+        this.folders = new HashMap<>();
     }
 
     /**
      * Connect to the IMAP server and open folders.
      */
-    public void connectToServer(){
+    public void connectToServer() {
+        logger.debug("trying to connect to mail server...");
 
         /* Set the mail properties */
         Properties props = System.getProperties();
         props.setProperty("mail.store.protocol", "imaps");
 
         try {
-			/* Create the session and get the store for read the mail. */
+            /* Create the session and get the store for read the mail. */
             session = Session.getDefaultInstance(props, null);
             store = session.getStore("imaps");
             store.connect(host, email, pass);
 
-			/* Mention the folder name which you want to read. */
-            inbox = (IMAPFolder)store.getFolder("Inbox");
-            System.out.println("Nr. of Unread Messages : " + inbox.getUnreadMessageCount());
-			/* Open the inbox using store. */
-            inbox.open(Folder.READ_WRITE);
+            this.openFolder(GlobalConfig.INBOX_NAME);
+            this.openFolder(GlobalConfig.PROCESSED_FOLDER);
+            this.openFolder(GlobalConfig.UNPROCESSABLE_FOLDER);
 
             transport = session.getTransport("smtps");
             transport.connect(host, email, pass);
+
+            logger.debug("... connected to mail server...");
 
         } catch (NoSuchProviderException e) {
             e.printStackTrace();
@@ -73,16 +81,18 @@ public class IMAPMailAdapter implements MailAdapter {
 
         // set all read messages in the inbox to unread in case there were leftovers from the last session
         try {
-            messages = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), true));
+            messages = folders.get(GlobalConfig.INBOX_NAME).search(new FlagTerm(new Flags(Flags.Flag.SEEN), true));
 			/* Use a suitable FetchProfile */
             FetchProfile fp = new FetchProfile();
             fp.add(FetchProfile.Item.ENVELOPE);
             fp.add(FetchProfile.Item.CONTENT_INFO);
             fp.add(UIDFolder.FetchProfileItem.UID);
-            inbox.fetch(messages, fp);
+            folders.get(GlobalConfig.INBOX_NAME).fetch(messages, fp);
 
             // flag as seen
-            inbox.setFlags(messages, new Flags(Flags.Flag.SEEN), false);
+            folders.get(GlobalConfig.INBOX_NAME).setFlags(messages, new Flags(Flags.Flag.SEEN), false);
+
+            logger.debug("setting all read, unprocessed messages to unread");
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -93,16 +103,16 @@ public class IMAPMailAdapter implements MailAdapter {
     public synchronized void fetchMails() {
 		/* Get the messages which is unread in the Inbox */
         try {
-            messages = inbox.search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
+            messages = folders.get(GlobalConfig.INBOX_NAME).search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
 			/* Use a suitable FetchProfile */
             FetchProfile fp = new FetchProfile();
             fp.add(FetchProfile.Item.ENVELOPE);
             fp.add(FetchProfile.Item.CONTENT_INFO);
             fp.add(UIDFolder.FetchProfileItem.UID);
-            inbox.fetch(messages, fp);
+            folders.get(GlobalConfig.INBOX_NAME).fetch(messages, fp);
 
             // flag as seen
-            inbox.setFlags(messages, new Flags(Flags.Flag.SEEN), true);
+            folders.get(GlobalConfig.INBOX_NAME).setFlags(messages, new Flags(Flags.Flag.SEEN), true);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -110,12 +120,10 @@ public class IMAPMailAdapter implements MailAdapter {
         }
     }
 
-
     @Override
     public Message[] getMails() {
         return messages;
     }
-
 
     public void printAllMessages(Message[] msgs) throws Exception {
         for (int i = 0; i < msgs.length; i++) {
@@ -184,10 +192,32 @@ public class IMAPMailAdapter implements MailAdapter {
     }
 
     @Override
-    public void closeInbox() {
+    public void closeOpenFolders() {
         try {
-            inbox.close(true);
+            for(IMAPFolder folder : folders.values()){
+                folder.close(true);
+            }
             store.close();
+        } catch (MessagingException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void moveToFolder(Message message, String sourceFolder, String destFolder) {
+        if(!folders.containsKey(destFolder)){
+            try {
+                openFolder(destFolder);
+            } catch (MessagingException e) {
+                e.printStackTrace();
+            }
+        }
+
+        try {
+            folders.get(destFolder).addMessages(new Message[]{message});
+
+            message.setFlag(Flags.Flag.DELETED, true);
+            folders.get(sourceFolder).expunge();
         } catch (MessagingException e) {
             e.printStackTrace();
         }
@@ -199,16 +229,25 @@ public class IMAPMailAdapter implements MailAdapter {
      * are assigned in a strictly ascending fashion in the mailbox; as each
      * message is added to the mailbox it is assigned a higher UID than the
      * message(s) which were added previously.
+     *
      * @param message
      * @return UID value
      */
     @Override
-    public long getUID(Message message){
+    public long getUID(Message message) {
         try {
-            return inbox.getUID(message);
+            return folders.get(GlobalConfig.INBOX_NAME).getUID(message);
         } catch (MessagingException e) {
             e.printStackTrace();
             return -1;
         }
+    }
+
+    private IMAPFolder openFolder(String folderName) throws MessagingException {
+        /* Mention the folder name which you want to read. */
+        folders.put(folderName, (IMAPFolder) store.getFolder(folderName));
+        /* Open the inbox using store. */
+        folders.get(folderName).open(Folder.READ_WRITE);
+        return folders.get(folderName);
     }
 }

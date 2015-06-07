@@ -25,6 +25,6 @@ public class MailService implements Service {
 
     @Override
     public void stop() {
-        mailAdapterService.closeInbox();
+        mailAdapterService.closeOpenFolders();
     }
 }

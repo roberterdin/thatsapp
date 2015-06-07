@@ -1,6 +1,8 @@
 package com.whatistics.backend.mail;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.mail.BodyPart;
 import javax.mail.Message;
@@ -14,6 +16,7 @@ import java.util.List;
  * @author robert
  */
 public class MailUtilities {
+    private static final Logger logger = LoggerFactory.getLogger(MailUtilities.class);
 
     public static List<InputStream> getAttachments(Message message) {
         Object content;
@@ -58,4 +61,16 @@ public class MailUtilities {
         }
         return result;
     }
+
+    static boolean isValid(Message message){
+        List<InputStream> attachments = MailUtilities.getAttachments(message);
+        if (attachments.size() == 1){
+            return true;
+        }else{
+            logger.info(
+                    "Number of attachments != 1, the actual number is: " + attachments.size());
+        }
+        return false;
+    }
+
 }

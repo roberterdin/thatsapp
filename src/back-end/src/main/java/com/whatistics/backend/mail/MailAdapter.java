@@ -22,7 +22,9 @@ public interface MailAdapter {
 
     void sendMail(String[] to, String subject, String text);
 
-    void closeInbox();
+    void closeOpenFolders();
+
+    void moveToFolder(Message message, String sourceFolder, String destFolder);
 
     long getUID(Message message);
 }

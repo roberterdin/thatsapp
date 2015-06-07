@@ -2,6 +2,7 @@ package com.whatistics.backend.mail;
 
 import com.google.inject.Inject;
 import com.sun.mail.imap.IMAPMessage;
+import com.whatistics.backend.configuration.GlobalConfig;
 import com.whatistics.backend.parser.ParserWorker;
 import com.whatistics.backend.shared.PendingMessagesExecutorServiceProvider;
 
@@ -19,7 +20,7 @@ public class MailFetcherTask extends TimerTask {
     private PendingMessagesExecutorServiceProvider pendingMessagesExecutorService;
 
     @Inject
-    public MailFetcherTask(MailAdapter mailAdapterService, PendingMessagesExecutorServiceProvider pendingMessagesExecutorService){
+    public MailFetcherTask(MailAdapter mailAdapterService, PendingMessagesExecutorServiceProvider pendingMessagesExecutorService) {
         this.mailAdapterService = mailAdapterService;
         this.pendingMessagesExecutorService = pendingMessagesExecutorService;
     }
@@ -27,8 +28,15 @@ public class MailFetcherTask extends TimerTask {
     @Override
     public void run() {
         mailAdapterService.fetchMails();
-        for(Message message: mailAdapterService.getMails()) {
-            pendingMessagesExecutorService.get().submit(new ParserWorker(message));
+        for (Message message : mailAdapterService.getMails()) {
+
+            // This check leads to retrieving the attachments twice.
+            if (MailUtilities.isValid(message)) {
+                pendingMessagesExecutorService.get().submit(new ParserWorker(message));
+            } else {
+                // TODO: do something with these messages
+                mailAdapterService.moveToFolder(message, GlobalConfig.INBOX_NAME, GlobalConfig.UNPROCESSABLE_FOLDER);
+            }
         }
     }
 }
