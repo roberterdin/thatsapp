@@ -8,6 +8,8 @@ import com.whatistics.backend.parser.ParserModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.format.DateTimeFormatter;
+
 /**
  * Main Whatistics class
  */

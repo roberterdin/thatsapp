@@ -1,23 +1,28 @@
 package com.whatistics.backend.parser;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.whatistics.backend.Service;
-import com.whatistics.backend.configuration.GlobalConfig;
-import com.whatistics.backend.shared.PendingMessagesExecutorServiceProvider;
 
+import javax.mail.Message;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * @author robert
  */
+@Singleton
 public class ParserService implements Service {
 
     ExecutorService pendingMessagesExecutorService;
+    List<TimeFormat> timeFormats;
 
     @Inject
-    public ParserService(PendingMessagesExecutorServiceProvider pendingMessagesExecutorServiceProvider){
+    public ParserService(PendingMessagesExecutorServiceProvider pendingMessagesExecutorServiceProvider,
+                         TimeFormatsProvider dateFormatsProvider){
+
         pendingMessagesExecutorService = pendingMessagesExecutorServiceProvider.get();
+        timeFormats = dateFormatsProvider.get();
     }
 
     @Override
@@ -25,7 +30,13 @@ public class ParserService implements Service {
     }
 
     @Override
-    public void stop() {
-        pendingMessagesExecutorService.shutdown();
+    public void stop(){
+
+    }
+
+    public void parseMessage(Message eMailMessage){
+        pendingMessagesExecutorService.submit(
+                new ParserWorker(eMailMessage, timeFormats)
+        );
     }
 }
