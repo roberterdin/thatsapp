@@ -3,10 +3,12 @@ package com.whatistics.backend.model;
 import com.thedeanda.lorem.Lorem;
 import org.mongodb.morphia.annotations.Embedded;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 /**
- * Created by robert on 18/05/15.
+ * @author robert
  */
 @Embedded
 public class Message {
@@ -16,7 +18,7 @@ public class Message {
 
     private String content;
 
-    private Date sendDate;
+    private LocalDateTime sendDate;
 
     public Message() {
     }
@@ -37,15 +39,15 @@ public class Message {
         this.sender = sender;
     }
 
-    public Date getSendDate() {
+    public LocalDateTime getSendDate() {
         return sendDate;
     }
-    public void setSendDate(Date sendDate) {
+    public void setSendDate(LocalDateTime sendDate) {
         this.sendDate = sendDate;
     }
 
     public Message fillWithRandom(){
-        this.sendDate = new Date();
+        this.sendDate = LocalDateTime.now();
         this.content = Lorem.getWords(5, 10);
         this.sender = new Person(Lorem.getFirstName());
 

@@ -33,7 +33,7 @@ public class TimeFormatsProvider implements Provider<List<TimeFormat>> {
 
         );
 
-        Collections.sort(timeFormats);
+        Collections.reverse(timeFormats);
 
         // make readonly for thread safety
         timeFormats = Collections.unmodifiableList(timeFormats);

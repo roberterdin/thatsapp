@@ -6,11 +6,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 /**
@@ -19,11 +22,21 @@ import java.util.List;
 public class ParserWorker implements Runnable {
     final Logger logger = LoggerFactory.getLogger(ParserWorker.class);
 
+    private List<TimeFormat> timeFormats;
+
     private Message eMailMessage;
     private TimeFormat currentTimeFormat;
 
+
     public ParserWorker(Message eMailMessage, List<TimeFormat> timeFormats){
         this.eMailMessage = eMailMessage;
+        this.timeFormats = timeFormats;
+
+        try {
+            logger.debug("Parser runnable created for message: " + ((InternetAddress)eMailMessage.getFrom()[0]).getAddress() + " writes " + eMailMessage.getSubject());
+        } catch (MessagingException e) {
+            logger.debug("Parser runnable created for message", eMailMessage);
+        }
     }
 
     @Override
@@ -48,14 +61,14 @@ public class ParserWorker implements Runnable {
                     // we need to figure out current time format
                     getTimeFormat(currentLine);
 
-                Date date = getDate(currentLine);
+                LocalDateTime dateTime = getDate(currentLine);
 
-                if (date == null){
+                if (dateTime == null){
                     // add to previous message
                     prevMessage.setContent(prevMessage.getContent() + currentLine);
                 }else {
                     // create new messaeg
-                    message.setSendDate(date);
+                    message.setSendDate(dateTime);
                     message.setContent(currentLine.substring(currentTimeFormat.getLength()));
                 }
 
@@ -70,10 +83,28 @@ public class ParserWorker implements Runnable {
     }
 
     private TimeFormat getTimeFormat(String line){
+
+        String possibleDate;
+        LocalDateTime dateTime = null;
+
+        for(TimeFormat timeFormat : timeFormats){
+
+            possibleDate = line.substring(0, timeFormat.getLength() - 1);
+
+            try {
+                dateTime = LocalDateTime.parse(possibleDate, timeFormat.asDateTimeFormatter());
+            }catch (DateTimeParseException e){
+                // can be ignored
+            }
+            if (dateTime != null)
+                return timeFormat;
+        }
+
+        logger.error("Line can't be parsed: " + line);
         return null;
     }
 
-    private Date getDate(String line){
-        return null;
+    private LocalDateTime getDate(String line){
+        return LocalDateTime.parse(line, currentTimeFormat.asDateTimeFormatter());
     }
 }
