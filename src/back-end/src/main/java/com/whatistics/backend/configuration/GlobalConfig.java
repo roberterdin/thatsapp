@@ -8,7 +8,7 @@ public class GlobalConfig {
     public static final String EMAIL = "whatistics@gmail.com";
     public static final String PASSWORD = "#uu^b4{fe-XS-!Z";
 
-    public static final int NO_OF_PARSERS = 4;
+    public static final int NO_OF_PARSERS = 1;
 
     // Mailbox settings
     public static final String INBOX_NAME = "Inbox";

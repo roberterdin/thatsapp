@@ -21,18 +21,24 @@ public class TimeFormatsProvider implements Provider<List<TimeFormat>> {
         timeFormats = Arrays.asList(
                 // Android en_gb 24h
                 // '3 Apr 2011 17:58 - '
-                new TimeFormat("d EEE yyyy hh:mm - "),
+                new TimeFormat("d MMM yyyy hh:mm - "),
 
                 // Android en_gb 24h
                 // '2 Jan 16:10 - '
-                new TimeFormat("d EEE hh:mm - "),
+                new TimeFormat("d MMM hh:mm - "),
 
                 // Android en_us 24h
                 // 'Jan 10, 18:14 - '
-                new TimeFormat("EEE d, hh:mm - ")
+                new TimeFormat("MMM d, hh:mm - "),
+
+                // IOS ??
+                // ﻿21.09.14 20:27:11: Moritz: Jou patrick!
+                new TimeFormat("dd.MM.uu HH:mm:ss: ")
+
 
         );
 
+        Collections.sort(timeFormats);
         Collections.reverse(timeFormats);
 
         // make readonly for thread safety
