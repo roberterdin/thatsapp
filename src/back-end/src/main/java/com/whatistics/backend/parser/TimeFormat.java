@@ -16,6 +16,11 @@ public class TimeFormat implements Comparable {
         this.rawFormat = rawFormat;
     }
 
+    /**
+     * Locale is ignored if the DateTimeFormatter is set directly later.
+     * @param rawFormat
+     * @param locale
+     */
     public TimeFormat(String rawFormat, Locale locale){
         this.rawFormat = rawFormat;
         this.locale = locale;

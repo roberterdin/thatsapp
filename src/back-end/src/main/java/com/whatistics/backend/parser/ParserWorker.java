@@ -31,6 +31,8 @@ public class ParserWorker implements Callable<Conversation> {
     private InputStream inputStream;
     private TimeFormat currentTimeFormat;
 
+    private boolean doubleDigitFlag = false;
+
 
     public ParserWorker(InputStream inputStream, List<TimeFormat> timeFormats){
         this.inputStream = inputStream;
@@ -69,7 +71,7 @@ public class ParserWorker implements Callable<Conversation> {
 
                 if (dateTime == null){
                     // add to previous message
-                    message.setContent(message.getContent() + currentLine);
+                    message.setContent(message.getContent() + System.lineSeparator() +  currentLine);
                 }else {
                     // add old message to conversation:
                     conversation.getMessages().add(message);
@@ -78,16 +80,27 @@ public class ParserWorker implements Callable<Conversation> {
                     message = new com.whatistics.backend.model.Message();
 
                     // remove date from message
-                    currentLine = currentLine.substring(currentTimeFormat.getLength());
-
-                    // get sender
-                    message.setSender(new Person(currentLine.split(":", 2)[0]));
+                    if(!doubleDigitFlag){
+                        currentLine = currentLine.substring(currentTimeFormat.getLength());
+                    }else {
+                        currentLine = currentLine.substring(currentTimeFormat.getLength() + 1);
+                        this.doubleDigitFlag = false;
+                    }
 
                     message.setSendDate(dateTime);
-                    message.setContent(currentLine.split(":", 2)[1]);
-                }
 
-                System.out.println(currentLine);
+                    String[] senderAndContent = currentLine.split(":", 2);
+                    if(senderAndContent.length == 2){
+                        // normal line
+                        // get sender
+                        message.setSender(new Person(senderAndContent[0]));
+                        message.setContent(senderAndContent[1]);
+                    }else if(senderAndContent.length == 1){
+                        // "system message"
+                        message.setSender(new Person("_dummy"));
+                        message.setContent(senderAndContent[0]);
+                    }
+                }
 
             }
 
@@ -122,6 +135,7 @@ public class ParserWorker implements Callable<Conversation> {
             }catch (DateTimeParseException e){
                 try {
                     dateTime2 = LocalDateTime.parse(possibleDate2, timeFormat.asDateTimeFormatter());
+                    this.doubleDigitFlag = true;
                 }catch (DateTimeParseException e2){
                     // can be ignored
                 }
@@ -130,7 +144,7 @@ public class ParserWorker implements Callable<Conversation> {
                 return timeFormat;
         }
 
-        logger.error("Line can't be parsed: " + line);
+        logger.info("Line can't be parsed: " + line);
         return null;
     }
 
@@ -140,7 +154,15 @@ public class ParserWorker implements Callable<Conversation> {
                 String possibleDate = line.substring(0, currentTimeFormat.getLength());
                 return LocalDateTime.parse(possibleDate, currentTimeFormat.asDateTimeFormatter());
             } catch (DateTimeParseException e){
-                // handled outside
+                try {
+                    String possibleDate = line.substring(0, currentTimeFormat.getLength() + 1);
+                    LocalDateTime result = LocalDateTime.parse(possibleDate, currentTimeFormat.asDateTimeFormatter());
+                    this.doubleDigitFlag = true;
+                    return result;
+
+                }catch (DateTimeParseException e1){
+                    // handled outside
+                }
             }
         }
         return null;

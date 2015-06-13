@@ -25,15 +25,16 @@ public class TimeFormatsProvider implements Provider<List<TimeFormat>> {
         timeFormats = Arrays.asList(
                 // Android en_gb 24h
                 // '3 Apr 2011 17:58 - '
-                new TimeFormat("d MMM yyyy hh:mm - "),
+                // 14 Dec 2013 18:23 - Nita: Bim ark i de nächi glauv
+                new TimeFormat("d MMM yyyy HH:mm - "),
 
                 // Android en_gb 24h
                 // '2 Jan 16:10 - '
-                new TimeFormat("d MMM hh:mm - "),
+                new TimeFormat("d MMM HH:mm - "),
 
                 // Android en_us 24h
                 // 'Jan 10, 18:14 - '
-                new TimeFormat("MMM d, hh:mm - "),
+                new TimeFormat("MMM d, HH:mm - "),
 
                 // IOS ??
                 // ﻿21.09.14 20:27:11: Moritz: Jou patrick!
