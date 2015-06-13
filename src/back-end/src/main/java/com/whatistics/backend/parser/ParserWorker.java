@@ -107,19 +107,26 @@ public class ParserWorker implements Callable<Conversation> {
 
     private TimeFormat getTimeFormat(String line){
 
-        String possibleDate;
-        LocalDateTime dateTime = null;
+        String possibleDate1;
+        String possibleDate2;
+        LocalDateTime dateTime1 = null;
+        LocalDateTime dateTime2 = null;
 
         for(TimeFormat timeFormat : timeFormats){
 
-            possibleDate = line.substring(0, timeFormat.getLength());
+            possibleDate1 = line.substring(0, timeFormat.getLength());
+            possibleDate2 = line.substring(0, timeFormat.getLength() + 1);
 
             try {
-                dateTime = LocalDateTime.parse(possibleDate, timeFormat.asDateTimeFormatter());
+                dateTime1 = LocalDateTime.parse(possibleDate1, timeFormat.asDateTimeFormatter());
             }catch (DateTimeParseException e){
-                // can be ignored
+                try {
+                    dateTime2 = LocalDateTime.parse(possibleDate2, timeFormat.asDateTimeFormatter());
+                }catch (DateTimeParseException e2){
+                    // can be ignored
+                }
             }
-            if (dateTime != null)
+            if (dateTime1 != null | dateTime2 != null)
                 return timeFormat;
         }
 

@@ -1,9 +1,12 @@
 package com.whatistics.backend.parser;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -46,7 +49,30 @@ public class TimeFormatsProvider implements Provider<List<TimeFormat>> {
 
                 // Android de 24h
                 // 10. Jan. 18:14 - David Schmid: Höt obe in bade?!
-                new TimeFormat("d. MMM. HH:mm - ", Locale.GERMANY)
+               // new TimeFormat("d. MMM. HH:mm - ", Locale.GERMANY),
+                new TimeFormat("d. XXX. HH:mm - ").setFormatter(
+                        new DateTimeFormatterBuilder()
+                                .appendPattern("d. ")
+                                .appendText(ChronoField.MONTH_OF_YEAR, ImmutableMap.<Long, String>builder()
+                                                .put(1L, "Jan.")
+                                                .put(2L, "Feb.")
+                                                .put(3L, "Mär.")
+                                                .put(4L, "Apr.")
+                                                .put(5L, "Mai")
+                                                .put(6L, "Juni")
+                                                .put(7L, "Juli")
+                                                .put(8L, "Aug.")
+                                                .put(9L, "Sep.")
+                                                .put(10L, "Okt.")
+                                                .put(11L, "Nov.")
+                                                .put(12L, "Dez.")
+                                                .build()
+                                )
+                                .appendPattern(" HH:mm - ")
+                                .parseDefaulting(ChronoField.YEAR, 2016)
+                                .toFormatter()
+                                .withLocale(Locale.GERMANY)
+                )
         );
 
         Collections.sort(timeFormats);

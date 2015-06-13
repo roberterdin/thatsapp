@@ -21,6 +21,13 @@ public class TimeFormat implements Comparable {
         this.locale = locale;
     }
 
+
+    public TimeFormat setFormatter(DateTimeFormatter formatter){
+        this.formatter = formatter;
+        return this;
+    }
+
+
     public DateTimeFormatter asDateTimeFormatter(){
         if (formatter == null && locale == null)
             formatter = DateTimeFormatter.ofPattern(rawFormat);
