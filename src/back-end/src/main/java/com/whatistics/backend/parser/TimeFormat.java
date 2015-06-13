@@ -1,8 +1,7 @@
 package com.whatistics.backend.parser;
 
-import java.sql.Time;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
+import java.util.Locale;
 
 /**
  * @author robert
@@ -10,15 +9,24 @@ import java.util.Comparator;
 public class TimeFormat implements Comparable {
 
     private String rawFormat;
+    private Locale locale;
     private DateTimeFormatter formatter;
 
     public TimeFormat(String rawFormat){
         this.rawFormat = rawFormat;
     }
 
+    public TimeFormat(String rawFormat, Locale locale){
+        this.rawFormat = rawFormat;
+        this.locale = locale;
+    }
+
     public DateTimeFormatter asDateTimeFormatter(){
-        if (formatter == null)
+        if (formatter == null && locale == null)
             formatter = DateTimeFormatter.ofPattern(rawFormat);
+        if (formatter == null && locale != null)
+            formatter = DateTimeFormatter.ofPattern(rawFormat).withLocale(locale);
+
         return formatter;
     }
 

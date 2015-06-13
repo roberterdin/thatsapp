@@ -7,6 +7,7 @@ import com.google.inject.Singleton;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author robert
@@ -33,9 +34,19 @@ public class TimeFormatsProvider implements Provider<List<TimeFormat>> {
 
                 // IOS ??
                 // ﻿21.09.14 20:27:11: Moritz: Jou patrick!
-                new TimeFormat("dd.MM.uu HH:mm:ss: ")
+                new TimeFormat("dd.MM.uu HH:mm:ss: "),
 
+                // ?? 12h
+                // 8:16am, Oct 1 - Nicole Yumi Bae: have a
+                new TimeFormat("h:mma, MMM d - "),
 
+                // Android de 24h
+                // 4. Mai 2013 00:34 - Sebastian Stephan: David Vögeli ist
+                new TimeFormat("d. MMM yyyy HH:mm - ", Locale.GERMAN),
+
+                // Android de 24h
+                // 10. Jan. 18:14 - David Schmid: Höt obe in bade?!
+                new TimeFormat("d. MMM. HH:mm - ", Locale.GERMANY)
         );
 
         Collections.sort(timeFormats);

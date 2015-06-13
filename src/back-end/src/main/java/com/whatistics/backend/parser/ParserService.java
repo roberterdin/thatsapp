@@ -3,8 +3,14 @@ package com.whatistics.backend.parser;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.whatistics.backend.Service;
+import com.whatistics.backend.mail.IMAPMailAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.internet.InternetAddress;
+import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -13,6 +19,7 @@ import java.util.concurrent.ExecutorService;
  */
 @Singleton
 public class ParserService implements Service {
+    final Logger logger = LoggerFactory.getLogger(ParserService.class);
 
     ExecutorService pendingMessagesExecutorService;
     List<TimeFormat> timeFormats;
@@ -34,9 +41,9 @@ public class ParserService implements Service {
 
     }
 
-    public void parseMessage(Message eMailMessage){
+    public void parseMessage(InputStream inputStream){
         pendingMessagesExecutorService.submit(
-                new ParserWorker(eMailMessage, timeFormats)
+                new ParserWorker(inputStream, timeFormats)
         );
     }
 }

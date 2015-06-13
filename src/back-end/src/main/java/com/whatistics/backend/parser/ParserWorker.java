@@ -18,37 +18,32 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * @author robert
  */
-public class ParserWorker implements Runnable {
+public class ParserWorker implements Callable<Conversation> {
     final Logger logger = LoggerFactory.getLogger(ParserWorker.class);
 
     private List<TimeFormat> timeFormats;
 
-    private Message eMailMessage;
+    private InputStream inputStream;
     private TimeFormat currentTimeFormat;
 
 
-    public ParserWorker(Message eMailMessage, List<TimeFormat> timeFormats){
-        this.eMailMessage = eMailMessage;
+    public ParserWorker(InputStream inputStream, List<TimeFormat> timeFormats){
+        this.inputStream = inputStream;
         this.timeFormats = timeFormats;
 
-        try {
-            logger.debug("Parser runnable created for message: " + ((InternetAddress)eMailMessage.getFrom()[0]).getAddress() + " writes " + eMailMessage.getSubject());
-        } catch (MessagingException e) {
-            logger.debug("Parser runnable created for message", eMailMessage);
-        }
+
     }
 
     @Override
-    public void run() {
-        List<InputStream> attachments = MailUtilities.getAttachments(eMailMessage);
+    public Conversation call() {
 
-
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(new BOMInputStream(attachments.get(0))));
+        // ignore Unicode BOM in input stream (breaks time parsing)
+        BufferedReader reader = new BufferedReader(new InputStreamReader(new BOMInputStream(inputStream)));
         String currentLine;
         Conversation conversation = new Conversation();
         com.whatistics.backend.model.Message message = new com.whatistics.backend.model.Message();
@@ -107,6 +102,7 @@ public class ParserWorker implements Runnable {
             e.printStackTrace();
         }
 
+        return conversation;
     }
 
     private TimeFormat getTimeFormat(String line){
@@ -121,7 +117,6 @@ public class ParserWorker implements Runnable {
             try {
                 dateTime = LocalDateTime.parse(possibleDate, timeFormat.asDateTimeFormatter());
             }catch (DateTimeParseException e){
-                System.out.println(e);
                 // can be ignored
             }
             if (dateTime != null)
@@ -134,8 +129,12 @@ public class ParserWorker implements Runnable {
 
     private LocalDateTime getDate(String line){
         if (currentTimeFormat != null) {
-            String possibleDate = line.substring(0, currentTimeFormat.getLength());
-            return LocalDateTime.parse(possibleDate, currentTimeFormat.asDateTimeFormatter());
+            try {
+                String possibleDate = line.substring(0, currentTimeFormat.getLength());
+                return LocalDateTime.parse(possibleDate, currentTimeFormat.asDateTimeFormatter());
+            } catch (DateTimeParseException e){
+                // handled outside
+            }
         }
         return null;
     }
