@@ -2,7 +2,7 @@ package com.whatistics.backend.mail;
 
 import com.google.inject.Inject;
 import com.whatistics.backend.configuration.GlobalConfig;
-import com.whatistics.backend.parser.ParserService;
+import com.whatistics.backend.parser.ParserServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,10 +20,10 @@ public class MailFetcherTask extends TimerTask {
     final Logger logger = LoggerFactory.getLogger(MailFetcherTask.class);
 
     private MailAdapter mailAdapterService;
-    private ParserService parserService;
+    private ParserServiceImpl parserService;
 
     @Inject
-    public MailFetcherTask(MailAdapter mailAdapterService, ParserService parserService) {
+    public MailFetcherTask(MailAdapter mailAdapterService, ParserServiceImpl parserService) {
         this.mailAdapterService = mailAdapterService;
         this.parserService = parserService;
     }

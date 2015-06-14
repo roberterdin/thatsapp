@@ -1,3 +1,4 @@
+import com.mongodb.MongoClient;
 import com.whatistics.backend.configuration.LocalConfig;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.Message;
@@ -21,14 +22,14 @@ public class EnvironmentTests {
 
     @Test
     public void testMongoConnection(){
-        Datastore ds = new Morphia().createDatastore(LocalConfig.MONGO_CLIENT, LocalConfig.DB_NAME);
+        Datastore ds = new Morphia().createDatastore(new MongoClient(LocalConfig.MONGO_CLIENT_HOSTNAME), LocalConfig.DB_NAME);
         assertNotNull(ds);
     }
 
     @Test
     public void testCRUD(){
         // CREATE
-        Datastore ds = new Morphia().createDatastore(LocalConfig.MONGO_CLIENT, LocalConfig.DB_NAME);
+        Datastore ds = new Morphia().createDatastore(new MongoClient(LocalConfig.MONGO_CLIENT_HOSTNAME), LocalConfig.DB_NAME);
         Conversation conversation = new Conversation();
         conversation.getMessages().add(new Message().fillWithRandom());
         conversation.getMessages().add(new Message().fillWithRandom());

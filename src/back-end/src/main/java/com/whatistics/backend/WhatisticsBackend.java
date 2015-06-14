@@ -2,9 +2,12 @@ package com.whatistics.backend;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.whatistics.backend.configuration.LocalConfig;
 import com.whatistics.backend.mail.MailModule;
 import com.whatistics.backend.mail.MailService;
 import com.whatistics.backend.parser.ParserModule;
+import org.mongodb.morphia.Datastore;
+import org.mongodb.morphia.Morphia;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +21,8 @@ public class WhatisticsBackend {
   public static void main(String[] args) {
 //    System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
 
-    final  Logger logger = LoggerFactory.getLogger(WhatisticsBackend.class);
+    final Logger logger = LoggerFactory.getLogger(WhatisticsBackend.class);
+
 
     logger.debug("Hello, Woorld!");
 
@@ -32,4 +36,5 @@ public class WhatisticsBackend {
   public static Injector getInjector(){
     return injector;
   }
+
 }

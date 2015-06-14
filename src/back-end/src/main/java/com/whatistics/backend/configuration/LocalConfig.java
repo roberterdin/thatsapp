@@ -8,6 +8,6 @@ import com.mongodb.MongoClient;
 public class LocalConfig {
 
     public static String DB_NAME = "whatistics";
-    public static MongoClient MONGO_CLIENT = new MongoClient( "localhost" );
+    public static String MONGO_CLIENT_HOSTNAME = "localhost";
 
 }

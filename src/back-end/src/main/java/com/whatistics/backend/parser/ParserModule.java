@@ -10,10 +10,12 @@ import com.whatistics.backend.configuration.GlobalConfig;
 public class ParserModule extends AbstractModule {
     @Override
     protected void configure() {
-
         bindConstant()
                 .annotatedWith(Names.named("parsers"))
                 .to(GlobalConfig.NO_OF_PARSERS);
 
+
+        // component binding
+        bind(ParserService.class).to(ParserServiceImpl.class);
     }
 }
