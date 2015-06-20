@@ -5,6 +5,7 @@ import java.util.Locale;
 
 /**
  * @author robert
+ * Note: this class has a natural ordering that is inconsistent with equals.
  */
 public class TimeFormat implements Comparable {
 
@@ -56,4 +57,15 @@ public class TimeFormat implements Comparable {
         else
             return 0;
     }
+
+
+    @Override
+    public int hashCode() {
+        int result = rawFormat != null ? rawFormat.hashCode() : 0;
+        result = 31 * result + (locale != null ? locale.hashCode() : 0);
+        result = 31 * result + (formatter != null ? formatter.hashCode() : 0);
+        return result;
+    }
+
+
 }

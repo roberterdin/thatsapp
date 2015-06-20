@@ -19,6 +19,10 @@ import java.util.Map;
 import java.util.Properties;
 
 
+/**
+ * @author moritz, robert
+ * TODO: disconnect dependency from global configuration
+ */
 @Singleton
 public class IMAPMailAdapter implements MailAdapter {
 
@@ -72,11 +76,9 @@ public class IMAPMailAdapter implements MailAdapter {
             logger.debug("... connected to mail server...");
 
         } catch (NoSuchProviderException e) {
-            e.printStackTrace();
-            System.exit(1);
+            logger.error("Can't connect to server", e);
         } catch (MessagingException e) {
-            e.printStackTrace();
-            System.exit(2);
+            logger.error("Can't connect to server", e);
         }
 
         // set all read messages in the inbox to unread in case there were leftovers from the last session
@@ -125,12 +127,6 @@ public class IMAPMailAdapter implements MailAdapter {
         return messages;
     }
 
-    public void printAllMessages(Message[] msgs) throws Exception {
-        for (int i = 0; i < msgs.length; i++) {
-            System.out.println("MESSAGE #" + (i + 1) + ":");
-            printEnvelope(msgs[i]);
-        }
-    }
 
     /* Print the envelope(FromAddress,ReceivedDate,Subject) */
     public void printEnvelope(Message message) {
@@ -166,26 +162,18 @@ public class IMAPMailAdapter implements MailAdapter {
         MimeMessage message = new MimeMessage(session);
 
         try {
-            message.setFrom(new InternetAddress("ffjfj@gmail.com"));
-            InternetAddress[] toAddress = new InternetAddress[1];
+            message.setFrom(new InternetAddress("whatistics@gmail.com"));
 
-            // To get the array of addresses
             for (int i = 0; i < to.length; i++) {
-                toAddress[i] = new InternetAddress("scmo@zhaw.ch");
-            }
-
-            for (int i = 0; i < toAddress.length; i++) {
-                message.addRecipient(Message.RecipientType.TO, toAddress[i]);
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress(to[i]));
             }
 
             message.setSubject(subject);
             message.setText(text);
 
             transport.sendMessage(message, message.getAllRecipients());
-            transport.close();
         } catch (MessagingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.error("Error sending mail", e);
         }
 
 
@@ -198,6 +186,7 @@ public class IMAPMailAdapter implements MailAdapter {
                 folder.close(true);
             }
             store.close();
+            transport.close();
         } catch (MessagingException e) {
             e.printStackTrace();
         }

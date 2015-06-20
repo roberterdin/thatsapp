@@ -25,7 +25,8 @@ public class ParserWorker implements Callable<Conversation> {
     final Logger logger = LoggerFactory.getLogger(ParserWorker.class);
 
     private List<TimeFormat> timeFormats;
-    private ParserService parserService;
+
+    Conversation conversation;
 
     private InputStream inputStream;
     private TimeFormat currentTimeFormat;
@@ -33,10 +34,10 @@ public class ParserWorker implements Callable<Conversation> {
     private boolean doubleDigitFlag = false;
 
 
-    public ParserWorker(InputStream inputStream, List<TimeFormat> timeFormats, ParserService parserService) {
+    public ParserWorker(InputStream inputStream, List<TimeFormat> timeFormats) {
         this.inputStream = inputStream;
         this.timeFormats = timeFormats;
-        this.parserService = parserService;
+        this.conversation = new Conversation();
     }
 
     @Override
@@ -45,7 +46,6 @@ public class ParserWorker implements Callable<Conversation> {
         // ignore Unicode BOM in input stream (breaks time parsing)
         BufferedReader reader = new BufferedReader(new InputStreamReader(new BOMInputStream(inputStream)));
         String currentLine;
-        Conversation conversation = new Conversation();
         com.whatistics.backend.model.Message message = new com.whatistics.backend.model.Message();
         try {
 

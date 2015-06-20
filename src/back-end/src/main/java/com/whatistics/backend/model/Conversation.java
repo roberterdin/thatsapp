@@ -1,10 +1,7 @@
 package com.whatistics.backend.model;
 
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Reference;
+import org.mongodb.morphia.annotations.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +17,16 @@ public class Conversation {
     @Embedded
     private List<Message> messages = new ArrayList<>();
 
+    private String submittedBy;
+
+    @Transient
+    private javax.mail.Message originalMessage;
+
     public Conversation() {
+    }
+
+    public Conversation(String submittedBy){
+        this.submittedBy = submittedBy;
     }
 
     public List<Message> getMessages() {
@@ -29,5 +35,21 @@ public class Conversation {
 
     public ObjectId getId() {
         return id;
+    }
+
+    public void setSubmittedBy(String submittedBy) {
+        this.submittedBy = submittedBy;
+    }
+
+    public String getSubmittedBy() {
+        return submittedBy;
+    }
+
+    public javax.mail.Message getOriginalMessage() {
+        return originalMessage;
+    }
+
+    public void setOriginalMessage(javax.mail.Message originalMessage) {
+        this.originalMessage = originalMessage;
     }
 }

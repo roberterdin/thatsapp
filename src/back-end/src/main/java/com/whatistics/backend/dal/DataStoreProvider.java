@@ -1,5 +1,6 @@
 package com.whatistics.backend.dal;
 
+import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -15,6 +16,7 @@ public class DataStoreProvider implements Provider<Datastore> {
 
     private Datastore ds;
 
+    @Inject
     public DataStoreProvider(@Named("hostname") String hostname, @Named("database") String database ){
         ds = new Morphia().createDatastore(new MongoClient(hostname), database);
     }

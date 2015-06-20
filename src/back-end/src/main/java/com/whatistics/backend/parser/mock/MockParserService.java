@@ -1,19 +1,20 @@
 package com.whatistics.backend.parser.mock;
 
 import com.google.inject.Inject;
+import com.whatistics.backend.mail.MailUtilities;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.parser.ParserService;
 import com.whatistics.backend.parser.ParserWorker;
 import com.whatistics.backend.parser.TimeFormat;
 import com.whatistics.backend.parser.TimeFormatsProvider;
 
-import java.io.InputStream;
+import javax.mail.Message;
 import java.util.List;
 
 /**
  * @author robert
  */
-public class MockParserService implements ParserService {
+public class MockParserService extends ParserService {
 
     List<TimeFormat> timeFormats;
 
@@ -23,14 +24,9 @@ public class MockParserService implements ParserService {
     }
 
     @Override
-    public void parseMessage(InputStream inputStream) {
+    public void parseMessage(Message message) {
         // this will trigger parsing but nothing will be stored in the database
-        new ParserWorker(inputStream, timeFormats, this);
-    }
-
-    @Override
-    public void storeConversation(Conversation conversation) {
-        // do nothing
+        new ParserWorker(MailUtilities.getAttachments(message).get(0), timeFormats).call();
     }
 
     @Override
@@ -42,4 +38,5 @@ public class MockParserService implements ParserService {
     public void stop() {
         // do nothing
     }
+
 }

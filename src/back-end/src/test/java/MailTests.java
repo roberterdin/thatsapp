@@ -4,10 +4,18 @@ import org.junit.Test;
 
 public class MailTests {
 
+    IMAPMailAdapter mailAdapterService = new IMAPMailAdapter(GlobalConfig.HOST, GlobalConfig.EMAIL, GlobalConfig.PASSWORD);
+
     @Test
     public void testConnection(){
-
-        IMAPMailAdapter mailAdapterService = new IMAPMailAdapter(GlobalConfig.HOST, GlobalConfig.EMAIL, GlobalConfig.PASSWORD);
         mailAdapterService.connectToServer();
+        mailAdapterService.closeOpenFolders();
+    }
+
+    @Test
+    public void testSendMail(){
+        mailAdapterService.connectToServer();
+        mailAdapterService.sendMail(new String[]{"robert.erdin@gmail.com"}, "Whatistics test mail", "Test successful");
+        mailAdapterService.closeOpenFolders();
     }
 }

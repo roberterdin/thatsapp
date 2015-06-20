@@ -1,3 +1,4 @@
+import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.parser.ParserWorker;
 import com.whatistics.backend.parser.TimeFormatsProvider;
 import com.whatistics.backend.parser.mock.MockParserService;
@@ -18,7 +19,9 @@ public class ParserTests {
 
         TimeFormatsProvider timeFormatsProvider = new TimeFormatsProvider();
         InputStream is = new FileInputStream("../../resources/mashup.txt");
-        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get(), new MockParserService(timeFormatsProvider));
+        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get()
+                , new MockParserService(timeFormatsProvider)
+                , new Conversation("test@whatistics.com"));
 
         parserWorker.call();
 

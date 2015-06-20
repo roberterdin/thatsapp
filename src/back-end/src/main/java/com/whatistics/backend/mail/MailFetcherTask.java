@@ -32,19 +32,9 @@ public class MailFetcherTask extends TimerTask {
     public void run() {
         mailAdapterService.fetchMails();
         for (Message message : mailAdapterService.getMails()) {
-
             // This check leads to retrieving the attachments twice.
             if (MailUtilities.isValid(message)) {
-                parserService.parseMessage(
-                        MailUtilities.getAttachments(message).get(0)
-                );
-
-                try {
-                    logger.debug("Parser runnable created for message: " + ((InternetAddress)message.getFrom()[0]).getAddress() + " writes " + message.getSubject());
-                } catch (MessagingException e) {
-                    logger.debug("Parser runnable created for message", message);
-                }
-
+                parserService.parseMessage(message );
             } else {
                 // TODO: do something with these messages
                 mailAdapterService.moveToFolder(message, GlobalConfig.INBOX_NAME, GlobalConfig.UNPROCESSABLE_FOLDER);

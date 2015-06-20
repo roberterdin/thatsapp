@@ -3,6 +3,7 @@ package com.whatistics.backend;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.whatistics.backend.configuration.LocalConfig;
+import com.whatistics.backend.dal.DataAccessLayerModule;
 import com.whatistics.backend.mail.MailModule;
 import com.whatistics.backend.mail.MailService;
 import com.whatistics.backend.parser.ParserModule;
@@ -26,10 +27,10 @@ public class WhatisticsBackend {
 
     logger.debug("Hello, Woorld!");
 
-    injector = Guice.createInjector(new MailModule(), new ParserModule());
+    injector = Guice.createInjector(new MailModule(), new ParserModule(), new DataAccessLayerModule());
 
-    MailService mailService = injector.getInstance(MailService.class);
-    mailService.start();
+    WhatisticsService whatisticsService = injector.getInstance(WhatisticsService.class);
+    whatisticsService.start();
 
   }
 
