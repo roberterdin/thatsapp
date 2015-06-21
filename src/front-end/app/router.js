@@ -6,7 +6,7 @@ var Router = Ember.Router.extend({
 });
 
 export default Router.map(function() {
-  this.resource('results', {path: '/results'}, function(){
+  this.resource('results', {path: '/results/:conversation_id'}, function(){
     this.resource('results.ladder', {path: "/ladder"}, function(){
     });
     this.resource('results.individual', {path: "/individual"}, function(){
