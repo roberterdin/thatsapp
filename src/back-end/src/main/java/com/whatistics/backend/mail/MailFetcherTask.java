@@ -1,6 +1,7 @@
 package com.whatistics.backend.mail;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.whatistics.backend.configuration.GlobalConfig;
 import com.whatistics.backend.parser.ParserServiceImpl;
 import org.slf4j.Logger;
@@ -17,15 +18,23 @@ import java.util.TimerTask;
  */
 public class MailFetcherTask extends TimerTask {
 
-    final Logger logger = LoggerFactory.getLogger(MailFetcherTask.class);
+    private final Logger logger = LoggerFactory.getLogger(MailFetcherTask.class);
 
-    private MailAdapter mailAdapterService;
-    private ParserServiceImpl parserService;
+    private final MailAdapter mailAdapterService;
+    private final ParserServiceImpl parserService;
+    private final String inboxName;
+    private final String unprocessableFolder;
 
     @Inject
-    public MailFetcherTask(MailAdapter mailAdapterService, ParserServiceImpl parserService) {
+    public MailFetcherTask(MailAdapter mailAdapterService,
+                           ParserServiceImpl parserService,
+                           @Named("inboxName") String inboxName,
+                           @Named("unprocessableFolder") String unprocessableFolder) {
         this.mailAdapterService = mailAdapterService;
         this.parserService = parserService;
+
+        this.inboxName = inboxName;
+        this.unprocessableFolder = unprocessableFolder;
     }
 
     @Override
@@ -37,7 +46,8 @@ public class MailFetcherTask extends TimerTask {
                 parserService.parseMessage(message );
             } else {
                 // TODO: do something with these messages
-                mailAdapterService.moveToFolder(message, GlobalConfig.INBOX_NAME, GlobalConfig.UNPROCESSABLE_FOLDER);
+                logger.info("Unprocessable mail. Move it to according folder", message);
+                mailAdapterService.moveToFolder(message, inboxName, unprocessableFolder);
             }
         }
     }

@@ -10,8 +10,8 @@ import javax.mail.Message;
  */
 public class MailService implements Service {
 
-    private MailAdapter mailAdapterService;
-    private MailFetcherTask mailFetcherTask;
+    private final MailAdapter mailAdapterService;
+    private final MailFetcherTask mailFetcherTask;
 
     @Inject
     public MailService(MailAdapter mailAdapterService, MailFetcherTask mailFetcherTask){

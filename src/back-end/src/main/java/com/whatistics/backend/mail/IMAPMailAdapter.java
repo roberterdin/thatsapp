@@ -21,32 +21,43 @@ import java.util.Properties;
 
 /**
  * @author moritz, robert
- * TODO: disconnect dependency from global configuration
  */
 @Singleton
 public class IMAPMailAdapter implements MailAdapter {
 
     final Logger logger = LoggerFactory.getLogger(IMAPMailAdapter.class);
 
-    private String host;
-    private String email;
-    private String pass;
+    private final String host;
+    private final String email;
+    private final String pass;
+    private final String inboxName;
+    private final String processedFolder;
+    private final String unprocessableFolder;
 
 
-    private Map<String, IMAPFolder> folders;
+    private final Map<String, IMAPFolder> folders;
 
-    Session session;
-    Store store;
+    private Session session;
+    private Store store;
 
-    Message messages[] = {};
-    Transport transport;
+    private Message messages[] = {};
+    private Transport transport;
 
 
     @Inject
-    public IMAPMailAdapter(@Named("host") String host, @Named("email") String email, @Named("pass") String pass) {
+    public IMAPMailAdapter(@Named("host") String host,
+                           @Named("email") String email,
+                           @Named("pass") String pass,
+                           @Named("inboxName") String inboxName,
+                           @Named("processedFolder") String processedFolder,
+                           @Named("unprocessableFolder") String unprocessableFolder){
         this.host = host;
         this.email = email;
         this.pass = pass;
+        this.inboxName = inboxName;
+        this.processedFolder = processedFolder;
+        this.unprocessableFolder = unprocessableFolder;
+
         this.folders = new HashMap<>();
     }
 
@@ -66,9 +77,9 @@ public class IMAPMailAdapter implements MailAdapter {
             store = session.getStore("imaps");
             store.connect(host, email, pass);
 
-            this.openFolder(GlobalConfig.INBOX_NAME);
-            this.openFolder(GlobalConfig.PROCESSED_FOLDER);
-            this.openFolder(GlobalConfig.UNPROCESSABLE_FOLDER);
+            this.openFolder(inboxName);
+            this.openFolder(processedFolder);
+            this.openFolder(unprocessableFolder);
 
             transport = session.getTransport("smtps");
             transport.connect(host, email, pass);
@@ -83,16 +94,16 @@ public class IMAPMailAdapter implements MailAdapter {
 
         // set all read messages in the inbox to unread in case there were leftovers from the last session
         try {
-            messages = folders.get(GlobalConfig.INBOX_NAME).search(new FlagTerm(new Flags(Flags.Flag.SEEN), true));
+            messages = folders.get(inboxName).search(new FlagTerm(new Flags(Flags.Flag.SEEN), true));
 			/* Use a suitable FetchProfile */
             FetchProfile fp = new FetchProfile();
             fp.add(FetchProfile.Item.ENVELOPE);
             fp.add(FetchProfile.Item.CONTENT_INFO);
             fp.add(UIDFolder.FetchProfileItem.UID);
-            folders.get(GlobalConfig.INBOX_NAME).fetch(messages, fp);
+            folders.get(inboxName).fetch(messages, fp);
 
             // flag as seen
-            folders.get(GlobalConfig.INBOX_NAME).setFlags(messages, new Flags(Flags.Flag.SEEN), false);
+            folders.get(inboxName).setFlags(messages, new Flags(Flags.Flag.SEEN), false);
 
             logger.debug("setting all read, unprocessed messages to unread");
 
@@ -105,16 +116,16 @@ public class IMAPMailAdapter implements MailAdapter {
     public synchronized void fetchMails() {
 		/* Get the messages which is unread in the Inbox */
         try {
-            messages = folders.get(GlobalConfig.INBOX_NAME).search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
+            messages = folders.get(inboxName).search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
 			/* Use a suitable FetchProfile */
             FetchProfile fp = new FetchProfile();
             fp.add(FetchProfile.Item.ENVELOPE);
             fp.add(FetchProfile.Item.CONTENT_INFO);
             fp.add(UIDFolder.FetchProfileItem.UID);
-            folders.get(GlobalConfig.INBOX_NAME).fetch(messages, fp);
+            folders.get(inboxName).fetch(messages, fp);
 
             // flag as seen
-            folders.get(GlobalConfig.INBOX_NAME).setFlags(messages, new Flags(Flags.Flag.SEEN), true);
+            folders.get(inboxName).setFlags(messages, new Flags(Flags.Flag.SEEN), true);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -225,7 +236,7 @@ public class IMAPMailAdapter implements MailAdapter {
     @Override
     public long getUID(Message message) {
         try {
-            return folders.get(GlobalConfig.INBOX_NAME).getUID(message);
+            return folders.get(inboxName).getUID(message);
         } catch (MessagingException e) {
             e.printStackTrace();
             return -1;

@@ -26,6 +26,18 @@ public class MailModule extends AbstractModule {
                 .annotatedWith(Names.named("pass"))
                 .to(GlobalConfig.PASSWORD);
 
+        bindConstant()
+                .annotatedWith(Names.named("inboxName"))
+                .to(GlobalConfig.INBOX_NAME);
+
+        bindConstant()
+                .annotatedWith(Names.named("processedFolder"))
+                .to(GlobalConfig.PROCESSED_FOLDER);
+
+        bindConstant()
+                .annotatedWith(Names.named("unprocessableFolder"))
+                .to(GlobalConfig.UNPROCESSABLE_FOLDER);
+
 
         // component binding
 

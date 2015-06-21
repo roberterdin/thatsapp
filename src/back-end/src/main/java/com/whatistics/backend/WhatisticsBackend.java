@@ -27,7 +27,10 @@ public class WhatisticsBackend {
 
     logger.debug("Hello, Woorld!");
 
-    injector = Guice.createInjector(new MailModule(), new ParserModule(), new DataAccessLayerModule());
+    injector = Guice.createInjector(new MailModule(),
+            new ParserModule(),
+            new DataAccessLayerModule(),
+            new WhatisticsModule());
 
     WhatisticsService whatisticsService = injector.getInstance(WhatisticsService.class);
     whatisticsService.start();

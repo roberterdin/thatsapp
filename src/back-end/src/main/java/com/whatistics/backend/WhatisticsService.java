@@ -2,6 +2,7 @@ package com.whatistics.backend;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.whatistics.backend.configuration.GlobalConfig;
 import com.whatistics.backend.dal.DataStoreProvider;
 import com.whatistics.backend.mail.MailService;
@@ -17,20 +18,31 @@ import org.slf4j.LoggerFactory;
 @Singleton
 public class WhatisticsService implements ObservingService<Conversation> {
 
-    final Logger logger = LoggerFactory.getLogger(WhatisticsService.class);
+    private final Logger logger = LoggerFactory.getLogger(WhatisticsService.class);
 
-    MailService mailService;
-    ParserService parserService;
-    Datastore ds;
+    private final MailService mailService;
+    private final ParserService parserService;
+    private final Datastore ds;
+
+    private final String inboxName;
+    private final String processedFolder;
+    private final String unprocessableFolder;
 
     @Inject
     public WhatisticsService(MailService mailService,
                              ParserService parserService,
-                             DataStoreProvider dataStoreProvider){
+                             DataStoreProvider dataStoreProvider,
+                             @Named("inboxName") String inboxName,
+                             @Named("processedFolder") String processedFolder,
+                             @Named("unprocessableFolder") String unprocessableFolder){
 
         this.mailService = mailService;
         this.parserService = parserService;
         this.ds = dataStoreProvider.get();
+
+        this.inboxName = inboxName;
+        this.processedFolder = processedFolder;
+        this.unprocessableFolder = unprocessableFolder;
     }
 
 
@@ -39,12 +51,12 @@ public class WhatisticsService implements ObservingService<Conversation> {
         if(data.getMessages().size() > 1){
             ds.save(data);
             if (data.getId() != null){
-                mailService.moveToFolder(data.getOriginalMessage(), GlobalConfig.INBOX_NAME, GlobalConfig.PROCESSED_FOLDER);
+                mailService.moveToFolder(data.getOriginalMessage(), inboxName, processedFolder);
                 mailService.sendMail(data.getSubmittedBy(), "Here are yor statistics", data.getId().toHexString());
             }
         }else {
             logger.error("Parsing failed for message", data.getOriginalMessage());
-            mailService.moveToFolder(data.getOriginalMessage(), GlobalConfig.INBOX_NAME, GlobalConfig.UNPROCESSABLE_FOLDER);
+            mailService.moveToFolder(data.getOriginalMessage(), inboxName, unprocessableFolder);
         }
     }
 

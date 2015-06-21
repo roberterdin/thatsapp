@@ -2,12 +2,7 @@ package com.whatistics.backend.parser;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.whatistics.backend.configuration.GlobalConfig;
-import com.whatistics.backend.dal.DataStoreProvider;
-import com.whatistics.backend.mail.MailService;
 import com.whatistics.backend.mail.MailUtilities;
-import com.whatistics.backend.model.Conversation;
-import org.mongodb.morphia.Datastore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,10 +18,10 @@ import java.util.concurrent.ExecutorService;
  */
 @Singleton
 public class ParserServiceImpl extends ParserService {
-    final Logger logger = LoggerFactory.getLogger(ParserServiceImpl.class);
+    private final Logger logger = LoggerFactory.getLogger(ParserServiceImpl.class);
 
-    ExecutorService pendingMessagesExecutorService;
-    List<TimeFormat> timeFormats;
+    private final ExecutorService pendingMessagesExecutorService;
+    private final List<TimeFormat> timeFormats;
 
     @Inject
     public ParserServiceImpl(PendingMessagesExecutorServiceProvider pendingMessagesExecutorServiceProvider,

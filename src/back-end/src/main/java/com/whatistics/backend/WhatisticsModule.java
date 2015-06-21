@@ -1,18 +1,16 @@
-package com.whatistics.backend.parser;
+package com.whatistics.backend;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import com.whatistics.backend.configuration.GlobalConfig;
 
 /**
- * @author Robert
+ * @author robert
  */
-public class ParserModule extends AbstractModule {
+public class WhatisticsModule extends AbstractModule{
+
     @Override
     protected void configure() {
-        bindConstant()
-                .annotatedWith(Names.named("parsers"))
-                .to(GlobalConfig.NO_OF_PARSERS);
 
         bindConstant()
                 .annotatedWith(Names.named("inboxName"))
@@ -26,8 +24,5 @@ public class ParserModule extends AbstractModule {
                 .annotatedWith(Names.named("unprocessableFolder"))
                 .to(GlobalConfig.UNPROCESSABLE_FOLDER);
 
-
-        // component binding
-        bind(ParserService.class).to(ParserServiceImpl.class);
     }
 }

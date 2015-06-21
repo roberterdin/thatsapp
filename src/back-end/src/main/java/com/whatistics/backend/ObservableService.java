@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * Service that can be observed by a class implementing the {@link ObservingService ObservingService} interface.
  * @author robert
  */
 public abstract class ObservableService<ObservedType> implements Service {
