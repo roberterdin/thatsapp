@@ -2,7 +2,7 @@
 
 ## Back-End
 
-The back-end is written in plain Java 8. The philosophy is that the data is the interface, i.e. the relevant data will be exposed with a RESTful API running on top of the database. MongoDB and RESTHeart are used for the persistence and exposure, respectively.
+The back-end is written in plain Java 8. The philosophy is that the data is the interface, i.e. the relevant data will be exposed with a RESTful API running on top of the database. [MongoDB](https://www.mongodb.org/) and [RESTHeart](http://restheart.org/) are used for the persistence and exposure, respectively.
 
 ### RESTful API
 RESTHeart is currently installed and started seperately. This way it is easier to distribute the application to multiple cluster nodes compared to having an embedded API.
