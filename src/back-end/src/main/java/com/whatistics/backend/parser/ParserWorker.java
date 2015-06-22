@@ -12,7 +12,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -30,6 +32,8 @@ public class ParserWorker implements Callable<Conversation> {
 
     private InputStream inputStream;
     private TimeFormat currentTimeFormat;
+
+    private Map<String, Person> senderMap = new HashMap<>();
 
     private boolean doubleDigitFlag = false;
 
@@ -91,8 +95,11 @@ public class ParserWorker implements Callable<Conversation> {
                     String[] senderAndContent = currentLine.split(":", 2);
                     if (senderAndContent.length == 2) {
                         // normal line
-                        // get sender
-                        message.setSender(new Person(senderAndContent[0]));
+
+                        if (!senderMap.containsKey(senderAndContent[0]))
+                            senderMap.put(senderAndContent[0], new Person(senderAndContent[0]));
+
+                        message.setSender(senderMap.get(senderAndContent[0]));
                         message.setContent(senderAndContent[1]);
                     } else if (senderAndContent.length == 1) {
                         // "system message"

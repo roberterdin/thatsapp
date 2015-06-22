@@ -14,7 +14,7 @@ import java.util.UUID;
 public class Person {
 
     // not used for persistence! object is embedded in mongodb. Used for Ember
-    private ObjectId id = ObjectId.get();
+    private ObjectId _id = ObjectId.get();
 
     private String name;
 

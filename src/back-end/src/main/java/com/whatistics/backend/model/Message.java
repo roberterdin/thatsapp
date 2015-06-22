@@ -19,7 +19,7 @@ import java.util.UUID;
 public class Message {
 
     // not used for persistence! object is embedded in mongodb. Used for Ember
-    private ObjectId id = ObjectId.get();
+    private ObjectId _id = ObjectId.get();
 
     @Embedded
     private Person sender;
@@ -56,7 +56,6 @@ public class Message {
         Instant instant = sendDate.toInstant(ZoneOffset.UTC);
         this.sendDate = Date.from(instant);
     }
-
 
     public Message fillWithRandom(){
         this.sendDate = new Date();
