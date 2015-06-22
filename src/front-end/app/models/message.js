@@ -5,8 +5,9 @@ import DS from 'ember-data';
  */
  /* global moment */
 export default DS.Model.extend({
-    date: DS.attr('date'),
-    sender: DS.attr('string'),
+    sendDate: DS.attr('date'),
+
+    sender: DS.belongsTo('person'),
     content: DS.attr('string'),
 
     strDate : function(){

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by robert on 18/05/15.
+ * @author robert
  */
 @Entity("conversations")
 public class Conversation {

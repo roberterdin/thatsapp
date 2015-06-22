@@ -1,19 +1,25 @@
 package com.whatistics.backend.model;
 
 import com.thedeanda.lorem.Lorem;
+import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Embedded;
+import org.mongodb.morphia.annotations.Id;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * @author robert
  */
 @Embedded
 public class Message {
+
+    // not used for persistence! object is embedded in mongodb. Used for Ember
+    private ObjectId id = ObjectId.get();
 
     @Embedded
     private Person sender;
@@ -51,12 +57,12 @@ public class Message {
         this.sendDate = Date.from(instant);
     }
 
+
     public Message fillWithRandom(){
         this.sendDate = new Date();
         this.content = Lorem.getWords(5, 10);
         this.sender = new Person(Lorem.getFirstName());
 
         return this;
-
     }
 }

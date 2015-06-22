@@ -1,12 +1,21 @@
 package com.whatistics.backend.model;
 
+import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Embedded;
+import org.mongodb.morphia.annotations.Id;
+import org.mongodb.morphia.annotations.Property;
+
+import java.util.UUID;
 
 /**
- * Created by robert on 18/05/15.
+ * @author robert
  */
 @Embedded
 public class Person {
+
+    // not used for persistence! object is embedded in mongodb. Used for Ember
+    private ObjectId id = ObjectId.get();
+
     private String name;
 
     public Person(){
@@ -19,4 +28,5 @@ public class Person {
     public String getName() {
         return name;
     }
+
 }
