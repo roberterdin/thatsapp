@@ -18,7 +18,6 @@ export default DS.JSONSerializer.extend(DS.EmbeddedRecordsMixin, {
       delete message.sendDate.$date;
     });
 
-    console.log(payload);
     return payload;
   }
 });
