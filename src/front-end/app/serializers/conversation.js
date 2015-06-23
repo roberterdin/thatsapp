@@ -13,7 +13,7 @@ export default DS.JSONSerializer.extend(DS.EmbeddedRecordsMixin, {
     payload.messages.forEach(function(message){
       message.id = message._id.$oid;
       message.sender.id = message.sender._id.$oid;
-    })
+    });
 
     console.log(payload);
     return payload;
