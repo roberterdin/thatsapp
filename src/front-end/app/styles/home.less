@@ -1,5 +1,41 @@
-.parseProgress {
-  font-size: 100px;
-  font-weight: bold;
-  color: #505050;
+#index {
+  .parseProgress {
+    font-size: 100px;
+    font-weight: bold;
+    color: #505050;
+  }
+
+  .front-glyphicon{
+    font-size: 5em;
+    color: @text-light;
+  }
+
+  .front-lead{
+    font-size: 2.5em;
+    color: @text-light;
+  }
+
+  span.circle{
+    @size: 100px;
+
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 12px;
+    margin-bottom: 12px;
+
+    height: @size;
+    width: @size;
+    line-height: @size;
+
+    -moz-border-radius: @size/2;
+    border-radius: @size/2;
+    border: 2px solid;
+
+    background-color: #fff;
+    color: @text-light;
+    text-align: center;
+    font-size: 4em;
+  }
 }
+
