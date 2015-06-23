@@ -13,6 +13,9 @@ export default DS.JSONSerializer.extend(DS.EmbeddedRecordsMixin, {
     payload.messages.forEach(function(message){
       message.id = message._id.$oid;
       message.sender.id = message.sender._id.$oid;
+
+      message.sendDate = message.sendDate.$date;
+      delete message.sendDate.$date;
     });
 
     console.log(payload);
