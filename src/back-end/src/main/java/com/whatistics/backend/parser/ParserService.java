@@ -1,15 +1,13 @@
 package com.whatistics.backend.parser;
 
-import com.whatistics.backend.ObservableService;
 import com.whatistics.backend.Service;
-import com.whatistics.backend.model.Conversation;
 
 import javax.mail.Message;
-import java.io.InputStream;
+import java.util.Observable;
 
 /**
  * @author robert
  */
-public abstract class ParserService extends ObservableService {
+public abstract class ParserService extends Observable implements Service {
     public abstract void parseMessage(Message message);
 }

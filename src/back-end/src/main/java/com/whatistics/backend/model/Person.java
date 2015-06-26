@@ -1,25 +1,24 @@
 package com.whatistics.backend.model;
 
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.annotations.Embedded;
+import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Property;
-
-import java.util.UUID;
 
 /**
  * @author robert
  */
-@Embedded
+@Entity("persons")
 public class Person {
 
-    // not used for persistence! object is embedded in mongodb. Used for Ember
-    private ObjectId _id = ObjectId.get();
+    @Id
+    private ObjectId id;
 
     private String name;
 
-    public Person(){
+    private Statistics statistics;
 
+    public Person(){
+        this.statistics = new Statistics();
     }
     public Person(String name) {
         this.name = name;
@@ -28,5 +27,10 @@ public class Person {
     public String getName() {
         return name;
     }
+
+    public Statistics getStatistics() {
+        return statistics;
+    }
+
 
 }

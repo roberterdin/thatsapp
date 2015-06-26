@@ -3,14 +3,11 @@ package com.whatistics.backend.model;
 import com.thedeanda.lorem.Lorem;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.Id;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Date;
-import java.util.UUID;
 
 /**
  * @author robert
@@ -21,7 +18,6 @@ public class Message {
     // not used for persistence! object is embedded in mongodb. Used for Ember
     private ObjectId _id = ObjectId.get();
 
-    @Embedded
     private Person sender;
 
     private String content;

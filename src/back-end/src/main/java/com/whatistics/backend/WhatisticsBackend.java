@@ -7,6 +7,7 @@ import com.whatistics.backend.dal.DataAccessLayerModule;
 import com.whatistics.backend.mail.MailModule;
 import com.whatistics.backend.mail.MailService;
 import com.whatistics.backend.parser.ParserModule;
+import com.whatistics.backend.statistics.StatisticsModule;
 import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Morphia;
 import org.slf4j.Logger;
@@ -30,7 +31,8 @@ public class WhatisticsBackend {
     injector = Guice.createInjector(new MailModule(),
             new ParserModule(),
             new DataAccessLayerModule(),
-            new WhatisticsModule());
+            new WhatisticsModule(),
+            new StatisticsModule());
 
     WhatisticsService whatisticsService = injector.getInstance(WhatisticsService.class);
     whatisticsService.start();

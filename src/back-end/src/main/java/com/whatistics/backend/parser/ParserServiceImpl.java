@@ -64,6 +64,7 @@ public class ParserServiceImpl extends ParserService {
             }
 
             // pass to observer
+            this.setChanged();
             this.notifyObservers(conversation);
             return conversation;
         });
