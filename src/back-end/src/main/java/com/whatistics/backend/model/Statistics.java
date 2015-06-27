@@ -4,9 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Id;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author robert
@@ -97,22 +95,24 @@ public class Statistics {
      * @param size the size to which the maps are reduced
      */
     public void sortAndTrim(int size){
-        ImmutableMap.Builder<String, Integer> builder = ImmutableMap.builder();
 
-        vocabulary.entrySet().stream()
+        vocabulary = sortByValueAndTrim(vocabulary, size);
+        emoticons = sortByValueAndTrim(emoticons, size);
+
+    }
+
+    private static <K, V extends Comparable<? super V>> Map<K, V>
+    sortByValueAndTrim(Map<K, V> map, int size)
+    {
+        ImmutableMap.Builder<K, V> builder = ImmutableMap.builder();
+
+        map.entrySet().stream()
                 .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
                 .limit(size)
                 .forEachOrdered(builder::put);
 
-        vocabulary = builder.build();
+        Map<K, V> result = builder.build();
 
-        builder = ImmutableMap.builder();
-
-        emoticons.entrySet().stream()
-                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
-                .limit(size)
-                .forEachOrdered(builder::put);
-
-        emoticons = builder.build();
+        return result;
     }
 }
