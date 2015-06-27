@@ -1,17 +1,14 @@
 package com.whatistics.backend.model;
 
-import com.google.common.base.Functions;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Ordering;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Id;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * TODO: Implement trim to reduce vocabulary size. Vocabulary can always be recomputed from the conversation.
  * @author robert
  */
 public class Statistics {
@@ -99,7 +96,7 @@ public class Statistics {
      *
      * @param size the size to which the maps are reduced
      */
-    public void sort(int size){
+    public void sortAndTrim(int size){
         ImmutableMap.Builder<String, Integer> builder = ImmutableMap.builder();
 
         vocabulary.entrySet().stream()
@@ -117,13 +114,5 @@ public class Statistics {
                 .forEachOrdered(builder::put);
 
         emoticons = builder.build();
-    }
-
-    /**
-     * Trim the statistics to reduce storage size and bandwidth consumption.
-     * @param length
-     */
-    public void trim(int length){
-        throw new UnsupportedOperationException("Not implemented");
     }
 }

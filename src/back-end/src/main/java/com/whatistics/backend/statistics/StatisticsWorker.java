@@ -1,6 +1,7 @@
 package com.whatistics.backend.statistics;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.GlobalStatistics;
 import com.whatistics.backend.model.Message;
@@ -22,6 +23,8 @@ public class StatisticsWorker {
 
     private final Logger logger = LoggerFactory.getLogger(StatisticsWorker.class);
 
+    private final int statisticsLength;
+
     private Pattern mediaPattern;
     private Pattern emojiPattern;
 
@@ -34,7 +37,9 @@ public class StatisticsWorker {
 
     @Inject
     public StatisticsWorker(MediaPatternProvider mediaPatternProvider,
-                            EmojiPatternProvider emojiPatternProvider){
+                            EmojiPatternProvider emojiPatternProvider,
+                            @Named("statisticsLength") int statisticsLength){
+        this.statisticsLength = statisticsLength;
         this.mediaPattern = mediaPatternProvider.get();
         this.emojiPattern = emojiPatternProvider.get();
     }

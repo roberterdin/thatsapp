@@ -48,12 +48,12 @@ public class GlobalStatistics {
     }
 
     /**
-     * Simply calls {@link Statistics#sort()} on all statistics.
+     * Simply calls {@link Statistics#sortAndTrim(int)} on all statistics.
      */
     public void sort(int size){
-        this.statistics.sort(size);
+        this.statistics.sortAndTrim(size);
         for (Map.Entry<Person, Statistics> entry : composingStatistics.entrySet()){
-            entry.getValue().sort(size);
+            entry.getValue().sortAndTrim(size);
         }
     }
 }

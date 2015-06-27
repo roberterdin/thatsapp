@@ -1,5 +1,5 @@
+import com.whatistics.backend.configuration.GlobalConfig;
 import com.whatistics.backend.model.Conversation;
-import com.whatistics.backend.model.GlobalStatistics;
 import com.whatistics.backend.parser.ParserWorker;
 import com.whatistics.backend.parser.TimeFormatsProvider;
 import com.whatistics.backend.statistics.EmojiPatternProvider;
@@ -24,9 +24,8 @@ public class StatisticsTests {
 
         Conversation conversation = parserWorker.call();
 
-        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(), new EmojiPatternProvider());
+        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(), new EmojiPatternProvider(), GlobalConfig.STATISTICS_LENGTH);
 
         statisticsWorker.compute(conversation);
-
     }
 }

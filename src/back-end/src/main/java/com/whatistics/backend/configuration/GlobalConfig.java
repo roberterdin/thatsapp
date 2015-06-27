@@ -18,4 +18,5 @@ public class GlobalConfig {
 
     // Performance settings
     public static final int NO_OF_PARSERS = 1;
+    public static final int STATISTICS_LENGTH = Integer.MAX_VALUE;
 }
