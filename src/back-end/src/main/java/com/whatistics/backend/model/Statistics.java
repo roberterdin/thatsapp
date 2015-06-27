@@ -2,13 +2,16 @@ package com.whatistics.backend.model;
 
 import com.google.common.collect.ImmutableMap;
 import org.bson.types.ObjectId;
+import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * @author robert
  */
+@Entity("statistics")
 public class Statistics {
 
     @Id
@@ -98,9 +101,16 @@ public class Statistics {
 
         vocabulary = sortByValueAndTrim(vocabulary, size);
         emoticons = sortByValueAndTrim(emoticons, size);
-
     }
 
+    /**
+     * Sorts a map in descending order and trims it.
+     * @param map The map to be sorted and trimmed
+     * @param size The size the given map is to be trimmed down
+     * @param <K> The type of the key
+     * @param <V> The type of the value
+     * @return Returns a {@link ImmutableMap}
+     */
     private static <K, V extends Comparable<? super V>> Map<K, V>
     sortByValueAndTrim(Map<K, V> map, int size)
     {
@@ -112,6 +122,25 @@ public class Statistics {
                 .forEachOrdered(builder::put);
 
         Map<K, V> result = builder.build();
+
+        return result;
+    }
+
+    /**
+     * Unused, redundant version to {@link Statistics#sortByValueAndTrim(Map, int)}. Does not rely on Guava.
+     * @param map Map to be sorted
+     * @param <K> Type of Key
+     * @param <V> Type of Value
+     * @return Returns a {@link LinkedHashMap}
+     */
+    public static <K, V extends Comparable<? super V>> Map<K, V>
+    sortByValue( Map<K, V> map )
+    {
+        Map<K,V> result = new LinkedHashMap<>();
+        Stream<Map.Entry<K,V>> st = map.entrySet().stream();
+
+        st.sorted(Collections.reverseOrder(Comparator.comparing(e -> e.getValue())))
+                .forEach(e -> result.put(e.getKey(), e.getValue()));
 
         return result;
     }
