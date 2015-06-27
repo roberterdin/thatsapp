@@ -1,13 +1,14 @@
 package com.whatistics.backend.model;
 
 import com.google.common.base.Functions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.google.common.collect.Ordering;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Id;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * TODO: Implement trim to reduce vocabulary size. Vocabulary can always be recomputed from the conversation.
@@ -95,13 +96,27 @@ public class Statistics {
 
     /**
      * Sort all results according to natural ordering. In the maps, e.g. word-->amount the results are sorted according to the natural ordering of the <b>VALUE</b>.
+     *
+     * @param size the size to which the maps are reduced
      */
-    public void sort(){
-        vocabulary = ImmutableSortedMap.copyOf(vocabulary,
-                Ordering.natural().onResultOf(Functions.forMap(vocabulary)));
+    public void sort(int size){
+        ImmutableMap.Builder<String, Integer> builder = ImmutableMap.builder();
 
-        emoticons = ImmutableSortedMap.copyOf(emoticons,
-                Ordering.natural().onResultOf(Functions.forMap(emoticons)));
+        vocabulary.entrySet().stream()
+                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                .limit(size)
+                .forEachOrdered(builder::put);
+
+        vocabulary = builder.build();
+
+        builder = ImmutableMap.builder();
+
+        emoticons.entrySet().stream()
+                .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                .limit(size)
+                .forEachOrdered(builder::put);
+
+        emoticons = builder.build();
     }
 
     /**

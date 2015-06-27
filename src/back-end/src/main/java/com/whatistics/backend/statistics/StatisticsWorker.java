@@ -99,6 +99,7 @@ public class StatisticsWorker {
             }
         }
 
+        globalStatistics.sort(Integer.MAX_VALUE);
         return globalStatistics;
     }
 

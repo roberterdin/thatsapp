@@ -46,4 +46,14 @@ public class GlobalStatistics {
     public Statistics getStatistics() {
         return statistics;
     }
+
+    /**
+     * Simply calls {@link Statistics#sort()} on all statistics.
+     */
+    public void sort(int size){
+        this.statistics.sort(size);
+        for (Map.Entry<Person, Statistics> entry : composingStatistics.entrySet()){
+            entry.getValue().sort(size);
+        }
+    }
 }
