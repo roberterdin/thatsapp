@@ -92,7 +92,7 @@ public class ParserWorker implements Callable<Conversation> {
 
                     message.setSendDate(dateTime);
 
-                    String[] senderAndContent = currentLine.split(":", 2);
+                    String[] senderAndContent = currentLine.split(": ", 2);
                     if (senderAndContent.length == 2) {
                         // normal line
 

@@ -15,11 +15,8 @@ public class Person {
 
     private String name;
 
-    private Statistics statistics;
+    private Statistics statistics = new Statistics();
 
-    public Person(){
-        this.statistics = new Statistics();
-    }
     public Person(String name) {
         this.name = name;
     }
@@ -31,6 +28,4 @@ public class Person {
     public Statistics getStatistics() {
         return statistics;
     }
-
-
 }

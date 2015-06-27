@@ -4,7 +4,7 @@ import org.junit.Test;
 
 public class MailTests {
 
-    IMAPMailAdapter mailAdapterService = new IMAPMailAdapter(GlobalConfig.HOST, GlobalConfig.EMAIL, GlobalConfig.PASSWORD);
+    IMAPMailAdapter mailAdapterService = new IMAPMailAdapter(GlobalConfig.HOST, GlobalConfig.EMAIL, GlobalConfig.PASSWORD, GlobalConfig.INBOX_NAME, GlobalConfig.PROCESSED_FOLDER, GlobalConfig.UNPROCESSABLE_FOLDER);
 
     @Test
     public void testConnection(){

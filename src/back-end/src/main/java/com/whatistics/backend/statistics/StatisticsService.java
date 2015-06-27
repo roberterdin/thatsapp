@@ -1,5 +1,6 @@
 package com.whatistics.backend.statistics;
 
+import com.google.inject.Inject;
 import com.whatistics.backend.Service;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.GlobalStatistics;
@@ -14,6 +15,12 @@ import java.util.Observable;
 public class StatisticsService extends Observable implements Service {
     private final Logger logger = LoggerFactory.getLogger(StatisticsService.class);
 
+    private StatisticsWorker statisticsWorker;
+
+    @Inject
+    public StatisticsService(StatisticsWorker statisticsWorker){
+        this.statisticsWorker = statisticsWorker;
+    }
 
     @Override
     public void start() {
@@ -26,6 +33,6 @@ public class StatisticsService extends Observable implements Service {
     }
 
     public GlobalStatistics generateStatistics(Conversation conversation){
-        return new StatisticsWorker(conversation).call();
+        return statisticsWorker.compute(conversation);
     }
 }
