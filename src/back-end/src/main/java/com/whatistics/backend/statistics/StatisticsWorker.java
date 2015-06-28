@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 
 /**
  * @author robert
- * TODO: clean up, a lot of chaos due to global declarations. Not sure if this really brings more performance.
+ * Class should be threadsafe (not tested)
  */
 public class StatisticsWorker {
 
@@ -27,12 +27,7 @@ public class StatisticsWorker {
 
     private Pattern mediaPattern;
     private Pattern emojiPattern;
-
-    // temp variables to prevent allocation for every message or even overy word
-    private byte[] utf8 = new byte[0];
-    private String token;
-    private Matcher emojiMatcher;
-    private String wordCarryover;
+    private Pattern cleaningPattern;
 
 
     @Inject
@@ -42,19 +37,19 @@ public class StatisticsWorker {
         this.statisticsLength = statisticsLength;
         this.mediaPattern = mediaPatternProvider.get();
         this.emojiPattern = emojiPatternProvider.get();
+
+        /* (\p{Punct}+) --> punctuation
+         * ((?<=\s)\s+) --> all whitespaces following a whitespace
+         * (^\s+|\s+$) --> leading and trailing whitespaces
+         */
+        this.cleaningPattern = Pattern.compile("((\\p{Punct}+)|((?<=\\s)\\s+)|(^\\s+|\\s+$))", Pattern.UNICODE_CHARACTER_CLASS);
     }
 
     public GlobalStatistics compute(Conversation conversation){
 
-        // reusable temporary variables to prevent memory allocation with each iteration
-        int wordCount;
-        List<String> tmpEmojis = new ArrayList<>();
-        String cleanMessage;
-
         GlobalStatistics globalStatistics = new GlobalStatistics(conversation);
 
         for (Message message : conversation.getMessages()) {
-
             // Increment message count
             globalStatistics.getStatistics().incrementMessageAmount();
             globalStatistics.getPersonalStats(message.getSender()).incrementMessageAmount();
@@ -68,30 +63,31 @@ public class StatisticsWorker {
 
             // Increment word count, emojis and vocabulary
             // strip punctuaiton
-            cleanMessage = message.getContent().replaceAll("\\p{Punct}+", "");
-            cleanMessage = message.getContent().trim();
-            wordCount = 0;
+            String cleanMessage = this.cleaningPattern.matcher(message.getContent()).replaceAll("");
+            // TODO: include into cleanMessage pattern
+            cleanMessage = cleanMessage.trim();
+            int wordCount = 0;
             if (!cleanMessage.isEmpty()) {
                 String[] possibleWords = message.getContent().split("\\s+");
 
                 for (String token : possibleWords) {
-                    tmpEmojis = extractEmoji(token);
-                    if (tmpEmojis.size() > 0) {
+                    ExtractEmojiResult emojiResult = extractEmoji(token);
+                    if (emojiResult.emojis.size() > 0) {
                         // there are emojis... yaay!
-                        for (String emoji : tmpEmojis) {
+                        for (String emoji : emojiResult.emojis) {
                             globalStatistics.getStatistics().incrementEmoji(emoji);
                             globalStatistics.getPersonalStats(message.getSender()).incrementEmoji(emoji);
                             logger.debug("Emoji found: " + token);
                         }
 
                         // check if it was a combination of emojis and a word
-                        if(this.wordCarryover.length() > 0){
-                            globalStatistics.getStatistics().incrementVocuabulary(this.wordCarryover);
-                            globalStatistics.getPersonalStats(message.getSender()).incrementVocuabulary(this.wordCarryover);
+                        if(emojiResult.wordCarryover.length() > 0){
+                            globalStatistics.getStatistics().incrementVocuabulary(emojiResult.wordCarryover);
+                            globalStatistics.getPersonalStats(message.getSender()).incrementVocuabulary(emojiResult.wordCarryover);
                             wordCount++;
                         }
 
-                    } else if (tmpEmojis.size() == 0) {
+                    } else if (emojiResult.emojis.size() == 0) {
                         // it's (hopefully) a word.
                         globalStatistics.getStatistics().incrementVocuabulary(token);
                         globalStatistics.getPersonalStats(message.getSender()).incrementVocuabulary(token);
@@ -114,25 +110,27 @@ public class StatisticsWorker {
      * @param possibleWord
      * @return
      */
-    private List<String> extractEmoji(String possibleWord){
+    private ExtractEmojiResult extractEmoji(String possibleWord){
         try {
-            this.utf8 = possibleWord.getBytes("UTF-8");
 
+            ExtractEmojiResult result = new ExtractEmojiResult();
+
+            byte[] utf8 = possibleWord.getBytes("UTF-8");
             // there are two bits for each character here
-            this.token = new String(utf8, "UTF-8");
-            this.emojiMatcher = emojiPattern.matcher(token);
+            String token = new String(utf8, "UTF-8");
+            Matcher emojiMatcher = emojiPattern.matcher(token);
 
-            List<String> result = new ArrayList<>();
+            result.emojis = new ArrayList<>();
 
             while (emojiMatcher.find()){
-                result.add(emojiMatcher.group());
+                result.emojis.add(emojiMatcher.group());
             }
 
             // carry over possible characters, e.g. from cake🍹
-            if (result.size() > 0 ){
-                this.wordCarryover = emojiMatcher.replaceAll(""); //cake? --> cake
+            if (result.emojis.size() > 0 ){
+                result.wordCarryover = emojiMatcher.replaceAll(""); //cake? --> cake
             }else {
-                this.wordCarryover = "";
+                result.wordCarryover = "";
             }
 
             return result;
@@ -141,5 +139,10 @@ public class StatisticsWorker {
             logger.error("Encoding error while checking for emoji", e);
             return null;
         }
+    }
+
+    private static class ExtractEmojiResult{
+        String wordCarryover;
+        List<String> emojis;
     }
 }

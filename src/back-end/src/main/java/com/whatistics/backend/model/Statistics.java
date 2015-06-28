@@ -128,6 +128,7 @@ public class Statistics {
 
     /**
      * Unused, redundant version to {@link Statistics#sortByValueAndTrim(Map, int)}. Does not rely on Guava.
+     * TODO: Test if faster than Guava version
      * @param map Map to be sorted
      * @param <K> Type of Key
      * @param <V> Type of Value
