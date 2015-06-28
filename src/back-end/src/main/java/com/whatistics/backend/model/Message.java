@@ -3,6 +3,7 @@ package com.whatistics.backend.model;
 import com.thedeanda.lorem.Lorem;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Embedded;
+import org.mongodb.morphia.annotations.Reference;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -18,6 +19,7 @@ public class Message {
     // not used for persistence! object is embedded in mongodb. Used for Ember
     private ObjectId _id = ObjectId.get();
 
+    @Reference
     private Person sender;
 
     private String content;
@@ -51,6 +53,10 @@ public class Message {
     public void setSendDate(LocalDateTime sendDate) {
         Instant instant = sendDate.toInstant(ZoneOffset.UTC);
         this.sendDate = Date.from(instant);
+    }
+
+    public void setSendDate(Date date){
+        this.sendDate = date;
     }
 
     public Message fillWithRandom(){

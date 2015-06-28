@@ -1,6 +1,7 @@
 import com.mongodb.MongoClient;
 import com.whatistics.backend.configuration.LocalConfig;
 import com.whatistics.backend.model.Conversation;
+import com.whatistics.backend.model.GlobalStatistics;
 import com.whatistics.backend.model.Message;
 import org.bson.types.ObjectId;
 import org.junit.Test;
@@ -29,18 +30,33 @@ public class EnvironmentTests {
     @Test
     public void testCRUD(){
         // CREATE
-        Datastore ds = new Morphia().createDatastore(new MongoClient(LocalConfig.MONGO_CLIENT_HOSTNAME), LocalConfig.DB_NAME);
+        Datastore ds = new Morphia().createDatastore(new MongoClient(LocalConfig.MONGO_CLIENT_HOSTNAME), LocalConfig.DB_TEST_NAME);
         Conversation conversation = new Conversation();
-        conversation.getMessages().add(new Message().fillWithRandom());
-        conversation.getMessages().add(new Message().fillWithRandom());
-        conversation.getMessages().add(new Message().fillWithRandom());
+        conversation.addMessage(new Message().fillWithRandom());
+        conversation.addMessage(new Message().fillWithRandom());
+        conversation.addMessage(new Message().fillWithRandom());
 
-        ds.save(conversation);
+        GlobalStatistics globalStatistics = new GlobalStatistics(conversation);
+        globalStatistics.getStatistics().fillWithRandom();
+
+        for (Message message : conversation.getMessages()){
+            message.getSender().getStatistics().fillWithRandom();
+        }
+
+        globalStatistics.saveObjectGraph(ds);
         assertNotNull(conversation.getId());
 
         // UPDATE and READ
         ObjectId convId = conversation.getId();
-        conversation.getMessages().add(new Message().fillWithRandom());
+        conversation.addMessage(new Message().fillWithRandom());
+
+        conversation.getParticipants().stream()
+                .forEach(e -> {
+                            ds.save(e.getStatistics());
+                            ds.save(e);
+                        }
+                );
+
         ds.save(conversation);
 
         Conversation retrievedConv = ds.find(Conversation.class, "id", convId).get();

@@ -4,7 +4,9 @@ import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author robert
@@ -17,6 +19,9 @@ public class Conversation {
     @Embedded
     private List<Message> messages = new ArrayList<>();
 
+    @Reference
+    private Set<Person> participants = new HashSet<>();
+
     private String submittedBy;
 
     @Transient
@@ -27,6 +32,12 @@ public class Conversation {
 
     public Conversation(String submittedBy){
         this.submittedBy = submittedBy;
+    }
+
+    public void addMessage(Message message){
+        this.messages.add(message);
+        if(!this.participants.contains(message.getSender()))
+            this.participants.add(message.getSender());
     }
 
     public List<Message> getMessages() {
@@ -51,5 +62,9 @@ public class Conversation {
 
     public void setOriginalMessage(javax.mail.Message originalMessage) {
         this.originalMessage = originalMessage;
+    }
+
+    public Set<Person> getParticipants() {
+        return participants;
     }
 }

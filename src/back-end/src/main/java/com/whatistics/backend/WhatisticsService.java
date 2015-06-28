@@ -58,14 +58,15 @@ public class WhatisticsService implements Observer, Service {
         if (data instanceof Conversation){
             Conversation conversation = (Conversation)data;
             if(conversation.getMessages().size() > 1){
-                ds.save(conversation);
+//                ds.save(conversation);
 
                 // reuses parsing thread to generate statistics
+
                 GlobalStatistics globalStatistics = statisticsService.generateStatistics(conversation);
 
-                ds.save(globalStatistics);
+                globalStatistics.saveObjectGraph(ds);
 
-                if (conversation.getId() != null){
+                if (globalStatistics.getId() != null){
                     mailService.moveToFolder(conversation.getOriginalMessage(), inboxName, processedFolder);
                     mailService.sendMail(conversation.getSubmittedBy(), "Here are yor statistics", "http://127.0.0.1:4200/results/" + globalStatistics.getId().toHexString());
                 }

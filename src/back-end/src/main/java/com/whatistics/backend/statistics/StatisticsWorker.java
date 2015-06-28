@@ -46,18 +46,19 @@ public class StatisticsWorker {
     }
 
     public GlobalStatistics compute(Conversation conversation){
+        long startTime = System.nanoTime();
 
         GlobalStatistics globalStatistics = new GlobalStatistics(conversation);
 
         for (Message message : conversation.getMessages()) {
             // Increment message count
             globalStatistics.getStatistics().incrementMessageAmount();
-            globalStatistics.getPersonalStats(message.getSender()).incrementMessageAmount();
+            message.getSender().getStatistics().incrementMessageAmount();
 
             // Increment media count
             if (mediaPattern.matcher(message.getContent()).matches()) {
                 globalStatistics.getStatistics().incrementMediaAmount();
-                globalStatistics.getPersonalStats(message.getSender()).incrementMediaAmount();
+                message.getSender().getStatistics().incrementMediaAmount();
                 continue;
             }
 
@@ -68,39 +69,40 @@ public class StatisticsWorker {
             cleanMessage = cleanMessage.trim();
             int wordCount = 0;
             if (!cleanMessage.isEmpty()) {
-                String[] possibleWords = message.getContent().split("\\s+");
+                String[] possibleWords = cleanMessage.split("\\s+");
 
                 for (String token : possibleWords) {
                     ExtractEmojiResult emojiResult = extractEmoji(token);
                     if (emojiResult.emojis.size() > 0) {
-                        // there are emojis... yaay!
+
                         for (String emoji : emojiResult.emojis) {
                             globalStatistics.getStatistics().incrementEmoji(emoji);
-                            globalStatistics.getPersonalStats(message.getSender()).incrementEmoji(emoji);
-                            logger.debug("Emoji found: " + token);
+                            message.getSender().getStatistics().incrementEmoji(emoji);
                         }
 
                         // check if it was a combination of emojis and a word
                         if(emojiResult.wordCarryover.length() > 0){
                             globalStatistics.getStatistics().incrementVocuabulary(emojiResult.wordCarryover);
-                            globalStatistics.getPersonalStats(message.getSender()).incrementVocuabulary(emojiResult.wordCarryover);
+                            message.getSender().getStatistics().incrementVocuabulary(emojiResult.wordCarryover);
                             wordCount++;
                         }
 
                     } else if (emojiResult.emojis.size() == 0) {
                         // it's (hopefully) a word.
                         globalStatistics.getStatistics().incrementVocuabulary(token);
-                        globalStatistics.getPersonalStats(message.getSender()).incrementVocuabulary(token);
+                        message.getSender().getStatistics().incrementVocuabulary(token);
                         wordCount++;
                     }
 
                     globalStatistics.getStatistics().incrementWordAmount(wordCount);
-                    globalStatistics.getPersonalStats(message.getSender()).incrementWordAmount(wordCount);
+                    message.getSender().getStatistics().incrementWordAmount(wordCount);
                 }
             }
         }
 
-        globalStatistics.sort(Integer.MAX_VALUE);
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+        logger.info("Time to generate statistics: " + duration / 1000000 + "ms");
         return globalStatistics;
     }
 
@@ -141,6 +143,9 @@ public class StatisticsWorker {
         }
     }
 
+    /**
+     * Result tuple for {@link StatisticsWorker#extractEmoji(String)}
+     */
     private static class ExtractEmojiResult{
         String wordCarryover;
         List<String> emojis;

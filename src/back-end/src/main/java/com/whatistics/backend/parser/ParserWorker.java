@@ -46,15 +46,15 @@ public class ParserWorker implements Callable<Conversation> {
 
     @Override
     public Conversation call() {
+        long startTime = System.nanoTime();
 
         // ignore Unicode BOM in input stream (breaks time parsing)
         BufferedReader reader = new BufferedReader(new InputStreamReader(new BOMInputStream(inputStream)));
         String currentLine;
-        com.whatistics.backend.model.Message message = new com.whatistics.backend.model.Message();
+
         try {
-
+            com.whatistics.backend.model.Message message = null;
             while ((currentLine = reader.readLine()) != null) {
-
                 // skip newlines
                 if (currentLine.equals(""))
                     continue;
@@ -69,14 +69,21 @@ public class ParserWorker implements Callable<Conversation> {
                 }
 
 
+
                 LocalDateTime dateTime = getDate(currentLine);
 
                 if (dateTime == null) {
-                    // add to previous message
-                    message.setContent(message.getContent() + System.lineSeparator() + currentLine);
+                    // add to previous {
+                    if(message != null){
+                        message.setContent(message.getContent() + System.lineSeparator() + currentLine);
+                    }else {
+                        logger.error("First line can't be part of multiline message",  new IllegalStateException("First line can't be part of multiline message"));
+                    }
+
                 } else {
                     // add old message to conversation:
-                    conversation.getMessages().add(message);
+                    if (message != null)
+                        conversation.addMessage(message);
 
                     // create new message;
                     message = new com.whatistics.backend.model.Message();
@@ -110,17 +117,15 @@ public class ParserWorker implements Callable<Conversation> {
 
             }
 
-            // add last message to conversation
-            conversation.getMessages().add(message);
-
-            // clean up first empty message
-            conversation.getMessages().remove(0);
-
         } catch (IOException e) {
             logger.error("Error while reading attachment", e);
             e.printStackTrace();
         }
 
+
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+        logger.info("Time to parse message: " + duration/1000000 + "ms");
 
         return conversation;
     }

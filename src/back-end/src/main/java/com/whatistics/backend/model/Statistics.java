@@ -1,12 +1,12 @@
 package com.whatistics.backend.model;
 
 import com.google.common.collect.ImmutableMap;
+import com.whatistics.backend.WhatisticsBackend;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * @author robert
@@ -92,6 +92,14 @@ public class Statistics {
         emoticons.put(emoji, emoticons.get(emoji) + 1);
     }
 
+    public ObjectId getId() {
+        return id;
+    }
+
+    public void setId(ObjectId id) {
+        this.id = id;
+    }
+
     /**
      * Sort all results according to natural ordering. In the maps, e.g. word-->amount the results are sorted according to the natural ordering of the <b>VALUE</b>.
      *
@@ -104,6 +112,7 @@ public class Statistics {
     }
 
     /**
+     * Unused because MongoDB does not preserve order!
      * Sorts a map in descending order and trims it.
      * @param map The map to be sorted and trimmed
      * @param size The size the given map is to be trimmed down
@@ -135,14 +144,20 @@ public class Statistics {
      * @return Returns a {@link LinkedHashMap}
      */
     public static <K, V extends Comparable<? super V>> Map<K, V>
-    sortByValue( Map<K, V> map )
+    sortByValue( Map<K, V> map, int size )
     {
         Map<K,V> result = new LinkedHashMap<>();
-        Stream<Map.Entry<K,V>> st = map.entrySet().stream();
-
-        st.sorted(Collections.reverseOrder(Comparator.comparing(e -> e.getValue())))
-                .forEach(e -> result.put(e.getKey(), e.getValue()));
+        map.entrySet().stream()
+                .sorted(Collections.reverseOrder(Comparator.comparing(e -> e.getValue())))
+                .limit(size)
+                .forEachOrdered(e -> result.put(e.getKey(), e.getValue()));
 
         return result;
+    }
+
+    public void fillWithRandom(){
+        this.mediaAmount = WhatisticsBackend.rand.nextInt((100 - 1) + 1) + 1;
+        this.messageAmount = WhatisticsBackend.rand.nextInt((100 - 1) + 1) + 1;
+        this.wordAmount = WhatisticsBackend.rand.nextInt((100 - 1) + 1) + 1;
     }
 }

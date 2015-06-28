@@ -1,14 +1,16 @@
 package com.whatistics.backend.model;
 
 import org.bson.types.ObjectId;
+import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
+import org.mongodb.morphia.annotations.Reference;
+import org.mongodb.morphia.annotations.Transient;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
- * This class is only used to transfer all Statistics objects relevant for a conversation to the client. It can entirely be reconstructed with the information.
+ * This class is only used to transfer all Statistics objects relevant for a conversation to the client. It can entirely be reconstructed with the information contained in the Conversation object graph.
  * It should thus be a virtual class. Because the database is the interface to the client it has to be precomputed and stored in the database.
  * @author robert
  */
@@ -18,29 +20,22 @@ public class GlobalStatistics {
     @Id
     private ObjectId id;
 
-    // shortcut for serialisation
-    private final Map<Person, Statistics> composingStatistics = new HashMap<>();
-
+    @Reference
     private Conversation conversation;
+
+    // Proxy to Conversation.participants for ease of use in client
+    @Reference
+    private Set<Person> participants;
+
     private final Statistics statistics = new Statistics();
 
     public GlobalStatistics(Conversation conversation){
         this.conversation = conversation;
+        this.participants = conversation.getParticipants();
     }
 
     public ObjectId getId() {
         return id;
-    }
-
-    public Map<Person, Statistics> getComposingStatistics() {
-        return composingStatistics;
-    }
-
-    public Statistics getPersonalStats(Person person){
-        if(!composingStatistics.containsKey(person)){
-            composingStatistics.put(person, person.getStatistics());
-        }
-        return composingStatistics.get(person);
     }
 
     public Statistics getStatistics() {
@@ -52,8 +47,24 @@ public class GlobalStatistics {
      */
     public void sort(int size){
         this.statistics.sortAndTrim(size);
-        for (Map.Entry<Person, Statistics> entry : composingStatistics.entrySet()){
-            entry.getValue().sortAndTrim(size);
-        }
+
+        conversation.getParticipants().forEach(e -> {
+            e.getStatistics().sortAndTrim(size);
+        });
+
     }
+
+    public void saveObjectGraph(Datastore ds){
+
+
+        for (Person e : conversation.getParticipants()){
+            ds.save(e.getStatistics());
+            ds.save(e);
+        }
+
+        ds.save(conversation);
+        ds.save(this);
+
+    }
+
 }

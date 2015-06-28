@@ -13,12 +13,16 @@ import org.mongodb.morphia.Morphia;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Random;
+
 /**
  * Main Whatistics class
  */
 public class WhatisticsBackend {
 
   private static Injector injector;
+
+  public static Random rand = new Random();
 
   public static void main(String[] args) {
 //    System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "DEBUG");
