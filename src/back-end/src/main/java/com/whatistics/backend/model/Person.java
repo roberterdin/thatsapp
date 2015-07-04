@@ -8,7 +8,7 @@ import org.mongodb.morphia.annotations.Reference;
 /**
  * @author robert
  */
-@Entity("persons")
+@Entity("people")
 public class Person {
 
     @Id

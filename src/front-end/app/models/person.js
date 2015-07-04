@@ -4,5 +4,5 @@ import DS from 'ember-data';
  */
 export default DS.Model.extend({
   name: DS.attr('string'),
-  message: DS.belongsTo('message')
+  statistics: DS.belongsTo('statistics', {async: true})
 });
