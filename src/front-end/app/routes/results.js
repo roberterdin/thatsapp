@@ -5,7 +5,7 @@ export default Ember.Route.extend({
 
         // LOCAL call only!
         //return {messages : this.store.all('message').toArray()};
-        return this.store.find('conversation', params.conversation_id);
+        return this.store.find('globalstatistics', params.statistics_id);
     },
     setupController: function(controller, model){
         this._super(controller, model);

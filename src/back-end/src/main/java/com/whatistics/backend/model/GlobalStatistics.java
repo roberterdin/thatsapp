@@ -65,6 +65,7 @@ public class GlobalStatistics {
         }
 
         ds.save(conversation);
+        ds.save(statistics);
         ds.save(this);
 
     }
