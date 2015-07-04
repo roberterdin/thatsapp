@@ -23,10 +23,11 @@ public class GlobalStatistics {
     @Reference
     private Conversation conversation;
 
-    // Proxy to Conversation.participants for ease of use in client
+    // Proxy to Conversation.participants for ease of use in client (messages are embedded in conversations. Would be an overkill to get the whole object for the participants)
     @Reference
     private Set<Person> participants;
 
+    @Reference
     private final Statistics statistics = new Statistics();
 
     public GlobalStatistics(Conversation conversation){
@@ -44,6 +45,7 @@ public class GlobalStatistics {
 
     /**
      * Simply calls {@link Statistics#sortAndTrim(int)} on all statistics.
+     * Unused because neither MongoDB nor JSON have a contract for ordering elements.
      */
     public void sort(int size){
         this.statistics.sortAndTrim(size);

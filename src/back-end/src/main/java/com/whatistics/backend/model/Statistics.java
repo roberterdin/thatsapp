@@ -112,7 +112,7 @@ public class Statistics {
     }
 
     /**
-     * Unused because MongoDB does not preserve order!
+     * <b>Unused because MongoDB does not preserve order! This is ok because neither does JSON make this guarantee</b>
      * Sorts a map in descending order and trims it.
      * @param map The map to be sorted and trimmed
      * @param size The size the given map is to be trimmed down
