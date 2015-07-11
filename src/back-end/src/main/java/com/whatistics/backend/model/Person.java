@@ -19,10 +19,6 @@ public class Person {
     @Reference
     private Statistics statistics = new Statistics();
 
-    public Person(){
-
-    }
-
     public Person(String name) {
         this.name = name;
     }

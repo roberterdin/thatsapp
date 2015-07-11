@@ -10,8 +10,8 @@ import org.mongodb.morphia.annotations.Transient;
 import java.util.*;
 
 /**
- * This class is only used to transfer all Statistics objects relevant for a conversation to the client. It can entirely be reconstructed with the information contained in the Conversation object graph.
- * It should thus be a virtual class. Because the database is the interface to the client it has to be precomputed and stored in the database.
+ * Virtual class. This class is only used to transfer all Statistics objects relevant for a conversation to the client. It can entirely be reconstructed with the information contained in the Conversation object graph.
+ *  Because the database is the interface to the client it has to be precomputed and stored in the database. The precomputation also increases the query performance which is desirable.
  * @author robert
  */
 @Entity("globalstatistics")
@@ -23,12 +23,16 @@ public class GlobalStatistics {
     @Reference
     private Conversation conversation;
 
-    // Proxy to Conversation.participants for ease of use in client (messages are embedded in conversations. Would be an overkill to get the whole object for the participants)
+    // Proxy to Conversation.participants for ease of use in client (all messages are embedded in conversations. Would be an overkill to get the whole object for the participants)
     @Reference
     private Set<Person> participants;
 
+    private Map<Date, Integer> aggregatedHistory = new LinkedHashMap<>();
+
     @Reference
     private final Statistics statistics = new Statistics();
+
+
 
     public GlobalStatistics(Conversation conversation){
         this.conversation = conversation;
@@ -41,6 +45,10 @@ public class GlobalStatistics {
 
     public Statistics getStatistics() {
         return statistics;
+    }
+
+    public Map<Date, Integer> getAggregatedHistory() {
+        return aggregatedHistory;
     }
 
     /**
@@ -57,7 +65,6 @@ public class GlobalStatistics {
     }
 
     public void saveObjectGraph(Datastore ds){
-
 
         for (Person e : conversation.getParticipants()){
             ds.save(e.getStatistics());
