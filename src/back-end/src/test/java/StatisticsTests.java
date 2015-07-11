@@ -19,7 +19,7 @@ public class StatisticsTests {
     @Test
     public void testStatistics() throws FileNotFoundException {
         TimeFormatsProvider timeFormatsProvider = new TimeFormatsProvider();
-        InputStream is = new FileInputStream("../../resources/mashup.txt");
+        InputStream is = new FileInputStream("../../resources/android-de-24h.txt");
         ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get());
 
         Conversation conversation = parserWorker.call();

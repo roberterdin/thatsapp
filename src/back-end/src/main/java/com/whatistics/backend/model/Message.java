@@ -5,9 +5,7 @@ import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Embedded;
 import org.mongodb.morphia.annotations.Reference;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.util.Date;
 
 /**
@@ -51,8 +49,8 @@ public class Message {
     }
 
     public void setSendDate(LocalDateTime sendDate) {
-        Instant instant = sendDate.toInstant(ZoneOffset.UTC);
-        this.sendDate = Date.from(instant);
+        ZonedDateTime zdt = sendDate.atZone(ZoneId.of("Z")); // UTC
+        this.sendDate = Date.from(zdt.toInstant());
     }
 
     public void setSendDate(Date date){

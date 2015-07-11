@@ -139,6 +139,10 @@ public class ParserWorker implements Callable<Conversation> {
 
         for (TimeFormat timeFormat : timeFormats) {
 
+            if(line.length() < timeFormat.getLength()){
+                logger.info("message too short, probably multiline");
+                return null;
+            }
             possibleDate1 = line.substring(0, timeFormat.getLength());
             possibleDate2 = line.substring(0, timeFormat.getLength() + 1);
 
@@ -161,7 +165,7 @@ public class ParserWorker implements Callable<Conversation> {
     }
 
     private LocalDateTime getDate(String line) {
-        if (currentTimeFormat != null) {
+        if (currentTimeFormat != null && currentTimeFormat.getLength() < line.length()) {
             try {
                 String possibleDate = line.substring(0, currentTimeFormat.getLength());
                 return LocalDateTime.parse(possibleDate, currentTimeFormat.asDateTimeFormatter());

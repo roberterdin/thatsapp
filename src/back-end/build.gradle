@@ -13,6 +13,7 @@ apply plugin: 'idea'
 
 mainClassName = "com.whatistics.backend.WhatisticsBackend"
 
+
 // In this section you declare where to find the dependencies of your project
 repositories {
     jcenter()

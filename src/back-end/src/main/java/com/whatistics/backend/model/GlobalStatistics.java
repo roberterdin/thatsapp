@@ -7,6 +7,10 @@ import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.Reference;
 import org.mongodb.morphia.annotations.Transient;
 
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 
 /**
@@ -27,7 +31,7 @@ public class GlobalStatistics {
     @Reference
     private Set<Person> participants;
 
-    private Map<Date, Integer> aggregatedHistory = new LinkedHashMap<>();
+    private LinkedHashMap<Date, Integer> aggregatedHistory = new LinkedHashMap<>();
 
     @Reference
     private final Statistics statistics = new Statistics();
@@ -52,6 +56,38 @@ public class GlobalStatistics {
     }
 
     /**
+     * Fills gaps in the aggregated history map with 0.
+     * For example if there are 3 messages on 15.02.XXXX and 2 messages on 18.02.XXXX it will create two entries on the 16.02 and 17.02 with 0 messages.
+     * TODO: This could also done in the initial traversal of the messages array.
+     */
+    public void inflateAggregatedHistory(){
+        LinkedHashMap<Date, Integer> inflated = new LinkedHashMap<>();
+
+        LocalDateTime previousDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(this.aggregatedHistory.entrySet().iterator().next().getKey().getTime()), ZoneOffset.UTC);
+
+        for(Map.Entry<Date, Integer> entry : this.aggregatedHistory.entrySet()){
+            LocalDateTime currentDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(entry.getKey().getTime()), ZoneOffset.UTC);
+
+            if(previousDateTime.getYear() != currentDateTime.getYear()){
+                previousDateTime = currentDateTime;
+                inflated.put(Date.from(currentDateTime.toInstant(ZoneOffset.UTC)), entry.getValue());
+                continue;
+            }
+
+            while ((currentDateTime.getDayOfYear() - previousDateTime.getDayOfYear()) > 1){
+                inflated.put(Date.from(previousDateTime.plusDays(1).toInstant(ZoneOffset.UTC)), 0);
+                System.out.println(previousDateTime.plusDays(1));
+                previousDateTime = previousDateTime.plusDays(1);
+            }
+            previousDateTime = currentDateTime;
+            inflated.put(Date.from(currentDateTime.toInstant(ZoneOffset.UTC)), entry.getValue());
+            System.out.println(currentDateTime);
+
+        }
+        this.aggregatedHistory = inflated;
+    }
+
+    /**
      * Simply calls {@link Statistics#sortAndTrim(int)} on all statistics.
      * Unused because neither MongoDB nor JSON have a contract for ordering elements.
      */
@@ -64,8 +100,12 @@ public class GlobalStatistics {
 
     }
 
+    /**
+     * Saves the whole object graph.
+     * TODO: make a generic version for non circular graphs
+     * @param ds
+     */
     public void saveObjectGraph(Datastore ds){
-
         for (Person e : conversation.getParticipants()){
             ds.save(e.getStatistics());
             ds.save(e);
@@ -74,7 +114,6 @@ public class GlobalStatistics {
         ds.save(conversation);
         ds.save(statistics);
         ds.save(this);
-
     }
 
 }

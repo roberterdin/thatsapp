@@ -102,6 +102,9 @@ public class StatisticsWorker {
         LocalDateTime yesterday = prevMessage.getSendDate().minusDays(1);
         globalStatistics.getAggregatedHistory().put(Date.from(yesterday.toInstant(ZoneOffset.UTC)), messagesPerDay);
 
+        // get things in order
+        globalStatistics.inflateAggregatedHistory();
+
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
         logger.info("Time to generate statistics: " + duration / 1000000 + "ms");
