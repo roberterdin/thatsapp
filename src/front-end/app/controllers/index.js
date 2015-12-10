@@ -4,6 +4,10 @@ import Ember from 'ember';
 /* global moment */
 /* global Filey */
 
+
+/*
+TODO: needs to be completely rewritten to use the Ember models and push it to the back-end with ember data. low prio
+ */
 export default Ember.Controller.extend({
 
     init : function(){

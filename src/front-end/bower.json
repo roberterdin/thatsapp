@@ -15,7 +15,6 @@
     "moment": "~2.8.3",
     "modernizr": "~2.8.3",
     "es6-shim": "~0.19.1",
-    "xregexp": "~2.0.0",
     "bootstrap": "~3.3.0",
     "chartist": "~0.9.5"
   }

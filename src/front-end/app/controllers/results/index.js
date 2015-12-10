@@ -21,7 +21,7 @@ export default Ember.Controller.extend({
         ]
       }
     }
-  }.property('historyChart'),
+  }.property('historyChart')
 
 
 });
