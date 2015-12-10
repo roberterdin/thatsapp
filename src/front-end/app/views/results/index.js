@@ -5,7 +5,6 @@ export default Ember.View.extend({
 
     didInsertElement : function(){
         this._super();
-        console.log("ResultsIndexView rendered");
         //this.get('controller').historyChart();
     }
 });
