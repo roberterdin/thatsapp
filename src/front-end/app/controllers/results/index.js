@@ -20,7 +20,7 @@ export default Ember.Controller.extend({
           [8, 3, 6]
         ]
       }
-    }
+    };
   }.property('historyChart')
 
 

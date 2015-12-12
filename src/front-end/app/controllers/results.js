@@ -1,8 +1,4 @@
 import Ember from 'ember';
-/* global moment, countWords */
-/* global vocabBuilder */
-
-// TODO remove countWords and vocabBuilder if rebuilt in back-end
 
 export default Ember.Controller.extend({
   init: function() {
