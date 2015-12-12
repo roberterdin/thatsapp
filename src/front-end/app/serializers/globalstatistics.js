@@ -19,6 +19,8 @@ export default DS.JSONSerializer.extend(DS.EmbeddedRecordsMixin, {
     for(var i = 0; i < payload.aggregatedHistory.length; i++) {
       payload.aggregatedHistory[i].id = payload.aggregatedHistory[i]._id.$oid;
       payload.aggregatedHistory[i].statistics.id = payload.aggregatedHistory[i]._id.$oid;
+      payload.aggregatedHistory[i].startInstant = payload.aggregatedHistory[i].startInstant.$date;
+      payload.aggregatedHistory[i].endInstant = payload.aggregatedHistory[i].endInstant.$date;
     }
 
 
