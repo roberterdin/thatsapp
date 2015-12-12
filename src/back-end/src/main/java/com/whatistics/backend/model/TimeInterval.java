@@ -18,21 +18,21 @@ public class TimeInterval{
     @Id
     private ObjectId id;
 
-    private Date startMoment;
-    private Date endMoment;
+    private Date startInstant;
+    private Date endInstant;
     private String label;
     private Statistics statistics = new Statistics();
 
     public TimeInterval(){
     }
 
-    public TimeInterval(LocalDateTime startMoment, LocalDateTime endMoment) {
-        this.startMoment = Date.from(startMoment.atZone(ZoneId.systemDefault()).toInstant());
-        this.endMoment = Date.from(endMoment.atZone(ZoneId.systemDefault()).toInstant());
+    public TimeInterval(LocalDateTime startInstant, LocalDateTime endInstant) {
+        this.startInstant = Date.from(startInstant.atZone(ZoneId.systemDefault()).toInstant());
+        this.endInstant = Date.from(endInstant.atZone(ZoneId.systemDefault()).toInstant());
     }
 
-    public TimeInterval(LocalDateTime startMoment, LocalDateTime endMoment, String label) {
-        this(startMoment, endMoment);
+    public TimeInterval(LocalDateTime startInstant, LocalDateTime endInstant, String label) {
+        this(startInstant, endInstant);
         this.label = label;
     }
 
@@ -50,20 +50,20 @@ public class TimeInterval{
         return new TimeInterval(startOfDay, tomorrowStart);
     }
 
-    public LocalDateTime getStartMoment() {
-        return LocalDateTime.ofInstant(this.startMoment.toInstant(), ZoneId.systemDefault());
+    public LocalDateTime getStartInstant() {
+        return LocalDateTime.ofInstant(this.startInstant.toInstant(), ZoneId.systemDefault());
     }
 
-    public void setStartMoment(Date startMoment) {
-        this.startMoment = startMoment;
+    public void setStartInstant(Date startInstant) {
+        this.startInstant = startInstant;
     }
 
-    public LocalDateTime getEndMoment() {
-        return LocalDateTime.ofInstant(this.endMoment.toInstant(), ZoneId.systemDefault());
+    public LocalDateTime getEndInstant() {
+        return LocalDateTime.ofInstant(this.endInstant.toInstant(), ZoneId.systemDefault());
     }
 
-    public void setEndMoment(Date endMoment) {
-        this.endMoment = endMoment;
+    public void setEndInstant(Date endInstant) {
+        this.endInstant = endInstant;
     }
 
     public String getLabel() {

@@ -5,14 +5,8 @@ import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.Reference;
-import org.mongodb.morphia.annotations.Transient;
 
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Virtual class. This class is only used to transfer all Statistics objects relevant for a conversation to the client. It can entirely be reconstructed with the information contained in the Conversation object graph.
@@ -74,14 +68,14 @@ public class GlobalStatistics {
                 iter.previous(); // reset
 
                 // TODO handle new year better
-                if(next.getStartMoment().getYear() != current.getStartMoment().getYear()){
+                if(next.getStartInstant().getYear() != current.getStartInstant().getYear()){
                     continue;
                 }
 
-                while ((next.getStartMoment().getDayOfYear() - current.getStartMoment().getDayOfYear()) > 1){
+                while ((next.getStartInstant().getDayOfYear() - current.getStartInstant().getDayOfYear()) > 1){
                     // insert
-                    TimeInterval toInsert = new TimeInterval(next.getStartMoment().minusDays(1),
-                            next.getEndMoment().minusDays(1));
+                    TimeInterval toInsert = new TimeInterval(next.getStartInstant().minusDays(1),
+                            next.getEndInstant().minusDays(1));
                     iter.add(toInsert);
                     next = toInsert;
                 }
