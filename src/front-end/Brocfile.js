@@ -33,18 +33,14 @@ app.import('bower_components/modernizr/modernizr.js');
 
 app.import('bower_components/es6-shim/es6-shim.js');
 
-app.import('bower_components/xregexp/min/xregexp-min.js');
-
 
 /* vendors */
 app.import('vendor/bootstrap.file-input.js');
 app.import('vendor/file-reader.js');
 app.import('vendor/wordCounter.js');
-app.import('vendor/highcharts.js');
 app.import('vendor/stopwords_de_ch.js');
 app.import('vendor/stopwords_de_de.js');
 app.import('vendor/vocabBuilder.js');
-app.import('vendor/exporting-highcharts.js');
 
 
 
