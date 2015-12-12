@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Virtual class. This class is only used to transfer all Statistics objects relevant for a conversation to the client. It can entirely be reconstructed with the information contained in the Conversation object graph.
@@ -31,7 +32,10 @@ public class GlobalStatistics {
     @Reference
     private Set<Person> participants;
 
-    private LinkedHashMap<Date, Integer> aggregatedHistory = new LinkedHashMap<>();
+    // List instead of a LinkedHashMap to preserve order in the database and serialization.
+//    private LinkedHashMap<Date, Integer> aggregatedHistory = new LinkedHashMap<>();
+    private List<TimeInterval> aggregatedHistory = new LinkedList<>();
+
 
     @Reference
     private final Statistics statistics = new Statistics();
@@ -51,7 +55,7 @@ public class GlobalStatistics {
         return statistics;
     }
 
-    public Map<Date, Integer> getAggregatedHistory() {
+    public List<TimeInterval> getAggregatedHistory() {
         return aggregatedHistory;
     }
 
@@ -63,28 +67,26 @@ public class GlobalStatistics {
     public void inflateAggregatedHistory(){
         LinkedHashMap<Date, Integer> inflated = new LinkedHashMap<>();
 
-        LocalDateTime previousDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(this.aggregatedHistory.entrySet().iterator().next().getKey().getTime()), ZoneOffset.UTC);
+        for(ListIterator<TimeInterval> iter = this.aggregatedHistory.listIterator(); iter.hasNext();){
+            TimeInterval current = iter.next();
+            if(iter.hasNext()){
+                TimeInterval next = iter.next();
+                iter.previous(); // reset
 
-        for(Map.Entry<Date, Integer> entry : this.aggregatedHistory.entrySet()){
-            LocalDateTime currentDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(entry.getKey().getTime()), ZoneOffset.UTC);
+                // TODO handle new year better
+                if(next.getStartMoment().getYear() != current.getStartMoment().getYear()){
+                    continue;
+                }
 
-            if(previousDateTime.getYear() != currentDateTime.getYear()){
-                previousDateTime = currentDateTime;
-                inflated.put(Date.from(currentDateTime.toInstant(ZoneOffset.UTC)), entry.getValue());
-                continue;
+                while ((next.getStartMoment().getDayOfYear() - current.getStartMoment().getDayOfYear()) > 1){
+                    // insert
+                    TimeInterval toInsert = new TimeInterval(next.getStartMoment().minusDays(1),
+                            next.getEndMoment().minusDays(1));
+                    iter.add(toInsert);
+                    next = toInsert;
+                }
             }
-
-            while ((currentDateTime.getDayOfYear() - previousDateTime.getDayOfYear()) > 1){
-                inflated.put(Date.from(previousDateTime.plusDays(1).toInstant(ZoneOffset.UTC)), 0);
-                System.out.println(previousDateTime.plusDays(1));
-                previousDateTime = previousDateTime.plusDays(1);
-            }
-            previousDateTime = currentDateTime;
-            inflated.put(Date.from(currentDateTime.toInstant(ZoneOffset.UTC)), entry.getValue());
-            System.out.println(currentDateTime);
-
         }
-        this.aggregatedHistory = inflated;
     }
 
     /**

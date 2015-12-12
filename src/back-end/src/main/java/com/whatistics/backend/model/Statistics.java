@@ -44,6 +44,10 @@ public class Statistics {
         return messageAmount;
     }
 
+    public void setMessageAmount(int messageAmount) {
+        this.messageAmount = messageAmount;
+    }
+
     /**
      * Increment by 1.
      */

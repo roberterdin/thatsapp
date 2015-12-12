@@ -5,10 +5,12 @@ import com.google.inject.name.Named;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.GlobalStatistics;
 import com.whatistics.backend.model.Message;
+import com.whatistics.backend.model.TimeInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
+import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -89,7 +91,10 @@ public class StatisticsWorker {
                     // new day
                     LocalDateTime yesterday = message.getSendDate().minusDays(1);
 
-                    globalStatistics.getAggregatedHistory().put(Date.from(yesterday.toInstant(ZoneOffset.UTC)), messagesPerDay);
+                    TimeInterval currentDay = TimeInterval.createDay(yesterday);
+                    currentDay.getStatistics().setMessageAmount(messagesPerDay);
+
+                    globalStatistics.getAggregatedHistory().add(currentDay);
                 }
                 messagesPerDay = 1;
             }
@@ -99,8 +104,10 @@ public class StatisticsWorker {
         }
 
         // put last message into aggregated history
-        LocalDateTime yesterday = prevMessage.getSendDate().minusDays(1);
-        globalStatistics.getAggregatedHistory().put(Date.from(yesterday.toInstant(ZoneOffset.UTC)), messagesPerDay);
+        LocalDateTime yesterdayDate = prevMessage.getSendDate().minusDays(1);
+        TimeInterval yesterday = TimeInterval.createDay(yesterdayDate);
+        yesterday.getStatistics().setMessageAmount(messagesPerDay);
+        globalStatistics.getAggregatedHistory().add(yesterday);
 
         // get things in order
         globalStatistics.inflateAggregatedHistory();
