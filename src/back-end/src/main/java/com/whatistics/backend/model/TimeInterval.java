@@ -16,7 +16,7 @@ import java.util.Date;
 @Entity("timeinverval")
 public class TimeInterval{
     @Id
-    private ObjectId id;
+    private ObjectId id = new ObjectId();
 
     private Date startInstant;
     private Date endInstant;

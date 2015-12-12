@@ -15,7 +15,7 @@ import java.util.*;
 public class Statistics {
 
     @Id
-    private ObjectId id;
+    private ObjectId id = new ObjectId();
 
     private int wordAmount = 0;
     private int messageAmount = 0;
