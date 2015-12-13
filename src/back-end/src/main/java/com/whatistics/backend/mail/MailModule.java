@@ -15,6 +15,14 @@ public class MailModule extends AbstractModule {
         // configuration / constant binding
 
         bindConstant()
+                .annotatedWith(Names.named("maxMailFetcherAmount"))
+                .to(GlobalConfig.MAX_CONCURRENT_MAIL_FETCHER_TASKS);
+
+        bindConstant()
+                .annotatedWith(Names.named("mailFetchingInterval"))
+                .to(GlobalConfig.MAIL_FETCHING_INTERVAL);
+
+        bindConstant()
                 .annotatedWith(Names.named("host"))
                 .to(GlobalConfig.HOST);
 

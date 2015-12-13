@@ -35,13 +35,15 @@ public class IMAPMailAdapter implements MailAdapter {
     private final String unprocessableFolder;
 
 
-    private final Map<String, IMAPFolder> folders;
+    private final Map<String, IMAPFolder> folders = new HashMap<>();
 
     private Session session;
     private Store store;
 
     private Message messages[] = {};
     private Transport transport;
+
+    private FetchProfile fetchProfile = new FetchProfile();
 
 
     @Inject
@@ -58,7 +60,9 @@ public class IMAPMailAdapter implements MailAdapter {
         this.processedFolder = processedFolder;
         this.unprocessableFolder = unprocessableFolder;
 
-        this.folders = new HashMap<>();
+        this.fetchProfile.add(FetchProfile.Item.ENVELOPE);
+        this.fetchProfile.add(FetchProfile.Item.CONTENT_INFO);
+        this.fetchProfile.add(UIDFolder.FetchProfileItem.UID);
     }
 
     /**
@@ -95,14 +99,10 @@ public class IMAPMailAdapter implements MailAdapter {
         // set all read messages in the inbox to unread in case there were leftovers from the last session
         try {
             messages = folders.get(inboxName).search(new FlagTerm(new Flags(Flags.Flag.SEEN), true));
-			/* Use a suitable FetchProfile */
-            FetchProfile fp = new FetchProfile();
-            fp.add(FetchProfile.Item.ENVELOPE);
-            fp.add(FetchProfile.Item.CONTENT_INFO);
-            fp.add(UIDFolder.FetchProfileItem.UID);
-            folders.get(inboxName).fetch(messages, fp);
 
-            // flag as seen
+            folders.get(inboxName).fetch(messages, this.fetchProfile);
+
+            // flag as unseen
             folders.get(inboxName).setFlags(messages, new Flags(Flags.Flag.SEEN), false);
 
             logger.debug("setting all read, unprocessed messages to unread");
@@ -114,22 +114,19 @@ public class IMAPMailAdapter implements MailAdapter {
 
     @Override
     public synchronized void fetchMails() {
-		/* Get the messages which is unread in the Inbox */
-        try {
-            messages = folders.get(inboxName).search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
-			/* Use a suitable FetchProfile */
-            FetchProfile fp = new FetchProfile();
-            fp.add(FetchProfile.Item.ENVELOPE);
-            fp.add(FetchProfile.Item.CONTENT_INFO);
-            fp.add(UIDFolder.FetchProfileItem.UID);
-            folders.get(inboxName).fetch(messages, fp);
+        if(folders.get(inboxName).isOpen()){
+            try {
+                messages = folders.get(inboxName).search(new FlagTerm(new Flags(Flags.Flag.SEEN), false));
+                folders.get(inboxName).fetch(messages, fetchProfile);
 
-            // flag as seen
-            folders.get(inboxName).setFlags(messages, new Flags(Flags.Flag.SEEN), true);
+                // flag as seen
+                folders.get(inboxName).setFlags(messages, new Flags(Flags.Flag.SEEN), true);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }else {
+            logger.error("Inbox not open");
         }
     }
 

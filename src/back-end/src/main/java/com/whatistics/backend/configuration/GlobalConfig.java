@@ -18,5 +18,7 @@ public class GlobalConfig {
 
     // Performance settings
     public static final int NO_OF_PARSERS = 1;
+    public static final int MAX_CONCURRENT_MAIL_FETCHER_TASKS = 1;
+    public static final int MAIL_FETCHING_INTERVAL = 5; // seconds
     public static final int STATISTICS_LENGTH = Integer.MAX_VALUE;
 }

@@ -39,6 +39,7 @@ public class MailFetcherTask extends TimerTask {
 
     @Override
     public void run() {
+        logger.debug("Running MailFetcherTask");
         mailAdapterService.fetchMails();
         for (Message message : mailAdapterService.getMails()) {
             // This check leads to retrieving the attachments twice.
