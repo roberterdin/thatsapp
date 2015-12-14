@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>AuthenticationCallHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.security.handlers</a> &gt; <span class="el_source">AuthenticationCallHandler.java</span></div><h1>AuthenticationCallHandler.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.security.handlers;
+
+import io.undertow.security.api.SecurityContext;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import org.restheart.handlers.PipedHttpHandler;
+import org.restheart.handlers.RequestContext;
+
+/**
+ * This is the PipedHttpHandler version of io.undertow.security.handlers.AuthenticationCallHandler
+ * that is the final {@link HttpHandler} in the security chain, it's purpose is to act as a barrier at the end of the chain to
+ * ensure authenticate is called after the mechanisms have been associated with the context and the constraint checked.
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class AuthenticationCallHandler extends PipedHttpHandler {
+
+    public AuthenticationCallHandler(final PipedHttpHandler next) {
+<span class="nc" id="L36">        super(next);</span>
+<span class="nc" id="L37">    }</span>
+    
+    /**
+     * Only allow the request through if successfully authenticated or if authentication is not required.
+     *
+     * @throws java.lang.Exception
+     * @see io.undertow.server.HttpHandler#handleRequest(io.undertow.server.HttpServerExchange)
+     */
+    @Override
+    public void handleRequest(HttpServerExchange exchange, RequestContext context) throws Exception {
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        if(exchange.isInIoThread()) {</span>
+<span class="nc" id="L48">            exchange.dispatch(this);</span>
+<span class="nc" id="L49">            return;</span>
+        }
+<span class="nc" id="L51">        SecurityContext rcontext = exchange.getSecurityContext();</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (rcontext.authenticate()) {</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">            if(!exchange.isComplete()) {</span>
+<span class="nc" id="L54">               getNext().handleRequest(exchange, context);</span>
+            }
+        } else {
+<span class="nc" id="L57">            exchange.endExchange();</span>
+        }
+<span class="nc" id="L59">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

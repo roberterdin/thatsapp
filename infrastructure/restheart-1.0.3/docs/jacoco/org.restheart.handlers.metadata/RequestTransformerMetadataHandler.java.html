@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>RequestTransformerMetadataHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.handlers.metadata</a> &gt; <span class="el_source">RequestTransformerMetadataHandler.java</span></div><h1>RequestTransformerMetadataHandler.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.handlers.metadata;
+
+import io.undertow.server.HttpServerExchange;
+import java.util.List;
+import org.restheart.hal.metadata.InvalidMetadataException;
+import org.restheart.hal.metadata.RepresentationTransformer;
+import org.restheart.hal.metadata.singletons.NamedSingletonsFactory;
+import org.restheart.hal.metadata.singletons.Transformer;
+import org.restheart.handlers.PipedHttpHandler;
+import org.restheart.handlers.RequestContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class RequestTransformerMetadataHandler extends AbstractTransformerHandler {
+<span class="nc" id="L36">    static final Logger LOGGER = LoggerFactory.getLogger(RequestTransformerMetadataHandler.class);</span>
+
+    /**
+     * Creates a new instance of RequestTransformerMetadataHandler
+     *
+     * @param next
+     */
+    public RequestTransformerMetadataHandler(PipedHttpHandler next) {
+<span class="nc" id="L44">        super(next);</span>
+<span class="nc" id="L45">    }</span>
+
+    @Override
+    boolean canCollRepresentationTransformersAppy(RequestContext context) {
+<span class="nc bnc" id="L49" title="All 6 branches missed.">        return ((context.getMethod() == RequestContext.METHOD.PUT || context.getMethod() == RequestContext.METHOD.PATCH || context.getMethod() == RequestContext.METHOD.POST)</span>
+<span class="nc bnc" id="L50" title="All 4 branches missed.">                &amp;&amp; (context.getType() == RequestContext.TYPE.DOCUMENT || context.getType() == RequestContext.TYPE.COLLECTION || </span>
+<span class="nc bnc" id="L51" title="All 4 branches missed.">                context.getType() == RequestContext.TYPE.FILE || context.getType() == RequestContext.TYPE.FILES_BUCKET)</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                &amp;&amp; context.getCollectionProps() != null</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">                &amp;&amp; context.getCollectionProps().containsField(RepresentationTransformer.RTS_ELEMENT_NAME));</span>
+    }
+
+    @Override
+    boolean canDBRepresentationTransformersAppy(RequestContext context) {
+<span class="nc bnc" id="L58" title="All 4 branches missed.">        return ((context.getMethod() == RequestContext.METHOD.PUT || context.getMethod() == RequestContext.METHOD.PATCH)</span>
+<span class="nc bnc" id="L59" title="All 6 branches missed.">                &amp;&amp; (context.getType() == RequestContext.TYPE.DB || context.getType() == RequestContext.TYPE.COLLECTION || context.getType() == RequestContext.TYPE.FILES_BUCKET)</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">                &amp;&amp; context.getDbProps() != null</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">                &amp;&amp; context.getDbProps().containsField(RepresentationTransformer.RTS_ELEMENT_NAME));</span>
+    }
+
+    @Override
+    void enforceDbRepresentationTransformLogic(HttpServerExchange exchange, RequestContext context) throws InvalidMetadataException {
+<span class="nc" id="L66">        List&lt;RepresentationTransformer&gt; dbRts = RepresentationTransformer.getFromJson(context.getDbProps());</span>
+
+<span class="nc" id="L68">        RequestContext.TYPE requestType = context.getType(); // DB, COLLECTION or FILES_BUCKET</span>
+
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        for (RepresentationTransformer rt : dbRts) {</span>
+            Transformer t;
+
+            try {
+<span class="nc" id="L74">                t = (Transformer) NamedSingletonsFactory.getInstance().get(&quot;transformers&quot;, rt.getName());</span>
+<span class="nc" id="L75">            } catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L76">                context.addWarning(&quot;error applying transformer: &quot; + ex.getMessage());</span>
+<span class="nc" id="L77">                return;</span>
+<span class="nc" id="L78">            }</span>
+
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (t == null) {</span>
+<span class="nc" id="L81">                throw new IllegalArgumentException(&quot;cannot find singleton &quot; + rt.getName() + &quot; in singleton group transformers&quot;);</span>
+            }
+
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            if (rt.getPhase() == RepresentationTransformer.PHASE.REQUEST) {</span>
+<span class="nc bnc" id="L85" title="All 4 branches missed.">                if (rt.getScope() == RepresentationTransformer.SCOPE.THIS &amp;&amp; requestType == RequestContext.TYPE.DB) {</span>
+<span class="nc" id="L86">                    t.tranform(exchange, context, context.getContent(), rt.getArgs());</span>
+                } else {
+<span class="nc" id="L88">                    t.tranform(exchange, context, context.getContent(), rt.getArgs());</span>
+                }
+            }
+<span class="nc" id="L91">        }</span>
+<span class="nc" id="L92">    }</span>
+
+    @Override
+    void enforceCollRepresentationTransformLogic(HttpServerExchange exchange, RequestContext context) throws InvalidMetadataException {
+<span class="nc" id="L96">        List&lt;RepresentationTransformer&gt; collRts = RepresentationTransformer.getFromJson(context.getCollectionProps());</span>
+
+<span class="nc" id="L98">        RequestContext.TYPE requestType = context.getType(); // DOCUMENT, FILE, COLLECTION or FILES_BUCKET</span>
+<span class="nc" id="L99">        RequestContext.METHOD requestMethod = context.getMethod(); // PUT, PATCH or POST</span>
+
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        for (RepresentationTransformer rt : collRts) {</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            if (rt.getPhase() == RepresentationTransformer.PHASE.REQUEST) {</span>
+<span class="nc" id="L103">                Transformer t = (Transformer) NamedSingletonsFactory.getInstance().get(&quot;transformers&quot;, rt.getName());</span>
+
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                if (t == null) {</span>
+<span class="nc" id="L106">                    throw new IllegalArgumentException(&quot;cannot find singleton &quot; + rt.getName() + &quot; in singleton group transformers&quot;);</span>
+                }
+
+<span class="nc bnc" id="L109" title="All 8 branches missed.">                if ((requestMethod == RequestContext.METHOD.PUT || requestMethod == RequestContext.METHOD.PATCH) &amp;&amp; rt.getScope() == RepresentationTransformer.SCOPE.THIS &amp;&amp; requestType == RequestContext.TYPE.COLLECTION) {</span>
+<span class="nc" id="L110">                    t.tranform(exchange, context, context.getContent(), rt.getArgs());</span>
+<span class="nc bnc" id="L111" title="All 10 branches missed.">                } else if ((requestMethod == RequestContext.METHOD.PUT || requestMethod == RequestContext.METHOD.PATCH) &amp;&amp; rt.getScope() == RepresentationTransformer.SCOPE.CHILDREN &amp;&amp; (requestType == RequestContext.TYPE.DOCUMENT || requestType == RequestContext.TYPE.FILE)) {</span>
+<span class="nc" id="L112">                    t.tranform(exchange, context, context.getContent(), rt.getArgs());</span>
+<span class="nc bnc" id="L113" title="All 6 branches missed.">                } else if (requestMethod == RequestContext.METHOD.POST &amp;&amp; rt.getScope() == RepresentationTransformer.SCOPE.CHILDREN &amp;&amp; requestType == RequestContext.TYPE.COLLECTION) {</span>
+<span class="nc" id="L114">                    t.tranform(exchange, context, context.getContent(), rt.getArgs());</span>
+<span class="nc bnc" id="L115" title="All 6 branches missed.">                } else if (requestMethod == RequestContext.METHOD.POST &amp;&amp; rt.getScope() == RepresentationTransformer.SCOPE.CHILDREN &amp;&amp; requestType == RequestContext.TYPE.FILES_BUCKET) {</span>
+<span class="nc" id="L116">                    t.tranform(exchange, context, context.getContent(), rt.getArgs());</span>
+                }
+            }
+<span class="nc" id="L119">        }</span>
+<span class="nc" id="L120">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

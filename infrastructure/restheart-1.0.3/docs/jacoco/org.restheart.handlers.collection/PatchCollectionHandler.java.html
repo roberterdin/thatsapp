@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>PatchCollectionHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.handlers.collection</a> &gt; <span class="el_source">PatchCollectionHandler.java</span></div><h1>PatchCollectionHandler.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.handlers.collection;
+
+import com.mongodb.BasicDBList;
+import com.mongodb.DBObject;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
+import org.bson.types.ObjectId;
+import org.restheart.db.OperationResult;
+import org.restheart.hal.metadata.InvalidMetadataException;
+import org.restheart.hal.metadata.Relationship;
+import org.restheart.hal.metadata.RepresentationTransformer;
+import org.restheart.hal.metadata.RequestChecker;
+import org.restheart.handlers.PipedHttpHandler;
+import org.restheart.handlers.RequestContext;
+import org.restheart.handlers.injectors.LocalCachesSingleton;
+import org.restheart.utils.HttpStatus;
+import org.restheart.utils.RequestHelper;
+import org.restheart.utils.ResponseHelper;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+<span class="nc" id="L41">public class PatchCollectionHandler extends PipedHttpHandler {</span>
+
+    /**
+     *
+     * @param exchange
+     * @param context
+     * @throws Exception
+     */
+    @Override
+    public void handleRequest(HttpServerExchange exchange, RequestContext context) throws Exception {
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (context.getDBName().isEmpty()) {</span>
+<span class="nc" id="L52">            ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_NOT_ACCEPTABLE,</span>
+                    &quot;wrong request, db name cannot be empty&quot;);
+<span class="nc" id="L54">            return;</span>
+        }
+
+<span class="nc bnc" id="L57" title="All 4 branches missed.">        if (context.getCollectionName().isEmpty() || context.getCollectionName().startsWith(&quot;_&quot;)) {</span>
+<span class="nc" id="L58">            ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_NOT_ACCEPTABLE,</span>
+                    &quot;wrong request, collection name cannot be empty or start with _&quot;);
+<span class="nc" id="L60">            return;</span>
+        }
+
+<span class="nc" id="L63">        DBObject content = context.getContent();</span>
+
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if (content == null) {</span>
+<span class="nc" id="L66">            ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_NOT_ACCEPTABLE,</span>
+                    &quot;no data provided&quot;);
+<span class="nc" id="L68">            return;</span>
+        }
+
+        // cannot PATCH with an array
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (content instanceof BasicDBList) {</span>
+<span class="nc" id="L73">            ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_NOT_ACCEPTABLE,</span>
+                    &quot;data cannot be an array&quot;);
+<span class="nc" id="L75">            return;</span>
+        }
+
+        // check RELS metadata
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (content.containsField(Relationship.RELATIONSHIPS_ELEMENT_NAME)) {</span>
+            try {
+<span class="nc" id="L81">                Relationship.getFromJson(content);</span>
+<span class="nc" id="L82">            } catch (InvalidMetadataException ex) {</span>
+<span class="nc" id="L83">                ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_NOT_ACCEPTABLE,</span>
+<span class="nc" id="L84">                        &quot;wrong relationships definition. &quot; + ex.getMessage(), ex);</span>
+<span class="nc" id="L85">                return;</span>
+<span class="nc" id="L86">            }</span>
+        }
+        
+        // check RT metadata
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (content.containsField(RepresentationTransformer.RTS_ELEMENT_NAME)) {</span>
+            try {
+<span class="nc" id="L92">                RepresentationTransformer.getFromJson(content);</span>
+<span class="nc" id="L93">            } catch (InvalidMetadataException ex) {</span>
+<span class="nc" id="L94">                ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_NOT_ACCEPTABLE,</span>
+<span class="nc" id="L95">                        &quot;wrong representation transformer definition. &quot; + ex.getMessage(), ex);</span>
+<span class="nc" id="L96">                return;</span>
+<span class="nc" id="L97">            }</span>
+        }
+        
+        // check SC metadata
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        if (content.containsField(RequestChecker.SCS_ELEMENT_NAME)) {</span>
+            try {
+<span class="nc" id="L103">                RequestChecker.getFromJson(content);</span>
+<span class="nc" id="L104">            } catch (InvalidMetadataException ex) {</span>
+<span class="nc" id="L105">                ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_NOT_ACCEPTABLE,</span>
+<span class="nc" id="L106">                        &quot;wrong schema checker definition. &quot; + ex.getMessage(), ex);</span>
+<span class="nc" id="L107">                return;</span>
+<span class="nc" id="L108">            }</span>
+        }
+
+<span class="nc" id="L111">        ObjectId etag = RequestHelper.getWriteEtag(exchange);</span>
+
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        if (etag == null) {</span>
+<span class="nc" id="L114">            ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_CONFLICT,</span>
+                    &quot;The collection's ETag must be provided using the '&quot; + Headers.IF_MATCH + &quot;' header&quot;);
+<span class="nc" id="L116">            return;</span>
+        }
+
+<span class="nc" id="L119">        OperationResult result = getDatabase().upsertCollection(context.getDBName(), context.getCollectionName(), content, etag, true, true);</span>
+
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (result.getEtag() != null) {</span>
+<span class="nc" id="L122">            exchange.getResponseHeaders().put(Headers.ETAG, result.getEtag().toString());</span>
+        }
+        
+        // send the warnings if any (and in case no_content change the return code to ok
+<span class="nc bnc" id="L126" title="All 4 branches missed.">        if (context.getWarnings() != null &amp;&amp; !context.getWarnings().isEmpty()) {</span>
+<span class="nc" id="L127">            sendWarnings(result.getHttpCode(), exchange, context);</span>
+        } else {
+<span class="nc" id="L129">            exchange.setResponseCode(result.getHttpCode());</span>
+        }
+        
+<span class="nc" id="L132">        exchange.endExchange();</span>
+
+<span class="nc" id="L134">        LocalCachesSingleton.getInstance().invalidateCollection(context.getDBName(), context.getCollectionName());</span>
+<span class="nc" id="L135">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>FilterTransformer.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.hal.metadata.singletons</a> &gt; <span class="el_source">FilterTransformer.java</span></div><h1>FilterTransformer.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.hal.metadata.singletons;
+
+import com.mongodb.BasicDBList;
+import com.mongodb.DBObject;
+import io.undertow.server.HttpServerExchange;
+import org.restheart.handlers.RequestContext;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ *
+ * This transformer filters out the properties from the resource representation.
+ * the properties to filter out are passed in the args argumenet as an array of
+ * strings.
+ *
+ * If added to the REQUEST phase, it avoids properties to be stored, if added to
+ * the RESPONSE phase, it hides stored properties.
+ *
+ * &lt;br&gt;Example that removes the property 'password' from the response:
+ * &lt;br&gt;rtl:=[{name:&quot;filterProperties&quot;, &quot;phase&quot;:&quot;RESPONSE&quot;, &quot;scope&quot;:&quot;CHILDREN&quot;,
+ * args:[&quot;password&quot;]}]
+ *
+ */
+<span class="nc" id="L41">public class FilterTransformer implements Transformer {</span>
+    /**
+     *
+     * @param exchange
+     * @param context
+     * @param contentToTransform
+     * @param args properties to filter out as an array of strings ([&quot;prop1&quot;,
+     * &quot;prop2&quot;]
+     */
+    @Override
+    public void tranform(final HttpServerExchange exchange, final RequestContext context, DBObject contentToTransform, final DBObject args) {
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (args instanceof BasicDBList) {</span>
+<span class="nc" id="L53">            BasicDBList toremove = (BasicDBList) args;</span>
+
+<span class="nc" id="L55">            toremove.forEach(_prop -&gt; {</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                if (_prop instanceof String) {</span>
+<span class="nc" id="L57">                    String prop = (String) _prop;</span>
+
+<span class="nc" id="L59">                    contentToTransform.removeField(prop);</span>
+<span class="nc" id="L60">                } else {</span>
+<span class="nc" id="L61">                    context.addWarning(&quot;property in the args list is not a string: &quot; + _prop);</span>
+                }
+<span class="nc" id="L63">            });</span>
+
+<span class="nc" id="L65">        } else {</span>
+<span class="nc" id="L66">            context.addWarning(&quot;transformer wrong definition: args property must be an arrary of string property names.&quot;);</span>
+        }
+<span class="nc" id="L68">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

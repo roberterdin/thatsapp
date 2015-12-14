@@ -1,0 +1,528 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>SimpleContentChecker.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.hal.metadata.singletons</a> &gt; <span class="el_source">SimpleContentChecker.java</span></div><h1>SimpleContentChecker.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.hal.metadata.singletons;
+
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import io.undertow.server.HttpServerExchange;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
+import org.restheart.handlers.RequestContext;
+import org.restheart.utils.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ *
+ * SimpleContentChecker allows to check request content by using json path
+ * expression
+ *
+ * the args arguments is an array of condition. a condition is json object as
+ * follows: { &quot;path&quot;: &quot;PATHEXPR&quot;, [ &quot;type&quot;: &quot;TYPE]&quot;] [&quot;count&quot;: COUNT ] [&quot;regex&quot;:
+ * &quot;REGEX&quot;] [&quot;nullable&quot;: BOOLEAN]}
+ *
+ * where
+ *
+ * &lt;br&gt;PATHEXPR the path expression. use the . notation to identify the property
+ * &lt;br&gt;COUNT is the number of expected values
+ * &lt;br&gt;TYPE can be any BSON type: null, object, array, string, number, boolean *
+ * objectid, date,timestamp, maxkey, minkey, symbol, code, objectid
+ * &lt;br&gt;REGEX regular expression. note that string values to match come enclosed
+ * in quotation marks, i.e. the regex will need to match &quot;the value&quot;, included
+ * the quotation marks
+ *
+ * &lt;br&gt;examples for path expressions:
+ *
+ * &lt;br&gt;root = {a: {b:1, c: {d:2, e:3}}, f:4}
+ * &lt;br&gt; $.a -&gt; {b:1, c: {d:2, e:3}}, f:4}
+ * &lt;br&gt; $.* -&gt; {a: {b:1, c: {d:2, e:3}}}, {f:4}
+ * &lt;br&gt; $.a.b -&gt; 1
+ * &lt;br&gt; $.a.c -&gt; {d:2,e:3}
+ * &lt;br&gt; $.a.c.d -&gt; 2
+ *
+ * &lt;br&gt;root = {a: [{b:1}, {c:2,d:3}}, true]}
+ *
+ * &lt;br&gt; $.a -&gt; [{b:1}, {c:2,d:3}, true]
+ * &lt;br&gt; $.a.[*] -&gt; {b:1}, {c:2,d:3}, true
+ * &lt;br&gt; $.a.[*].c -&gt; null, 2, null
+ *
+ *
+ * &lt;br&gt;root = {a: [{b:1}, {b:2}, {b:3}]}&quot;
+ *
+ * &lt;br&gt; $.*.a.[*].b -&gt; [1,2,3]
+ *
+ * &lt;br&gt;example regex condition that matches email addresses:
+ *
+ * &lt;br&gt;{&quot;path&quot;:&quot;$._id&quot;, &quot;regex&quot;:
+ * &quot;^\&quot;[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}\&quot;$&quot;}
+ * &lt;br&gt;with unicode escapes (used by httpie): {&quot;path&quot;:&quot;$._id&quot;, &quot;regex&quot;:
+ * &quot;^\\u0022[A-Z0-9._%+-]+@[A-Z0-9.-]+\\u005C\\u005C.[A-Z]{2,6}\\u0022$&quot;}
+ *
+ */
+<span class="nc" id="L84">public class SimpleContentChecker implements Checker {</span>
+<span class="nc" id="L85">    static final Logger LOGGER = LoggerFactory.getLogger(SimpleContentChecker.class);</span>
+
+    @Override
+    public boolean check(HttpServerExchange exchange, RequestContext context, DBObject args) {
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (args instanceof BasicDBList) {</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            boolean patching = context.getMethod() == RequestContext.METHOD.PATCH;</span>
+
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            if (patching) {</span>
+                // if patching the keys can use the dot notation
+                // example {&quot;a.b&quot;: 1, &quot;a.c&quot;: 2}
+                // so we need to check conditions on {&quot;a&quot;: {&quot;b&quot; : 1}} and {&quot;a&quot;:{&quot;c&quot;:2}}
+
+<span class="nc" id="L97">                DBObject content = context.getContent();</span>
+
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                return !content.keySet().stream().anyMatch(key -&gt; {</span>
+<span class="nc" id="L100">                    DBObject remappedContent = remapJson(key, content.get(key));</span>
+
+<span class="nc" id="L102">                    BasicDBList conditions = filterMissingOptionalAndNullNullableConditions((BasicDBList) args, remappedContent, true);</span>
+
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                    return !applyConditions(conditions, remappedContent, context);</span>
+                });
+            } else {
+<span class="nc" id="L107">                BasicDBList conditions = filterMissingOptionalAndNullNullableConditions((BasicDBList) args, context.getContent(), false);</span>
+
+<span class="nc" id="L109">                return applyConditions(conditions, context.getContent(), context);</span>
+            }
+        } else {
+<span class="nc" id="L112">            context.addWarning(&quot;checker wrong definition: args property must be an arrary of string property names.&quot;);</span>
+<span class="nc" id="L113">            return true;</span>
+        }
+    }
+
+    private boolean applyConditions(BasicDBList conditions, DBObject json, final RequestContext context) {
+<span class="nc" id="L118">        return conditions.stream().allMatch(_condition -&gt; {</span>
+<span class="nc bnc" id="L119" title="All 2 branches missed.">            if (_condition instanceof BasicDBObject) {</span>
+<span class="nc" id="L120">                BasicDBObject condition = (BasicDBObject) _condition;</span>
+
+<span class="nc" id="L122">                String path = null;</span>
+<span class="nc" id="L123">                Object _path = condition.get(&quot;path&quot;);</span>
+
+<span class="nc bnc" id="L125" title="All 4 branches missed.">                if (_path != null &amp;&amp; _path instanceof String) {</span>
+<span class="nc" id="L126">                    path = (String) _path;</span>
+                }
+
+<span class="nc" id="L129">                String type = null;</span>
+<span class="nc" id="L130">                Object _type = condition.get(&quot;type&quot;);</span>
+
+<span class="nc bnc" id="L132" title="All 4 branches missed.">                if (_type != null &amp;&amp; _type instanceof String) {</span>
+<span class="nc" id="L133">                    type = (String) _type;</span>
+                }
+
+<span class="nc" id="L136">                Set&lt;Integer&gt; counts = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L137">                Object _count = condition.get(&quot;count&quot;);</span>
+
+<span class="nc bnc" id="L139" title="All 2 branches missed.">                if (_count != null) {</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                    if (_count instanceof Integer) {</span>
+<span class="nc" id="L141">                        counts.add((Integer) _count);</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                    } else if (_count instanceof BasicDBList) {</span>
+<span class="nc" id="L143">                        BasicDBList countsArray = (BasicDBList) _count;</span>
+
+<span class="nc" id="L145">                        countsArray.forEach(countElement -&gt; {</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">                            if (countElement instanceof Integer) {</span>
+<span class="nc" id="L147">                                counts.add((Integer) countElement);</span>
+                            }
+<span class="nc" id="L149">                        });</span>
+                    }
+                }
+
+                Set&lt;String&gt; mandatoryFields;
+<span class="nc" id="L154">                Object _mandatoryFields = condition.get(&quot;mandatoryFields&quot;);</span>
+
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                if (_mandatoryFields != null) {</span>
+<span class="nc" id="L157">                    mandatoryFields = new HashSet&lt;&gt;();</span>
+
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                    if (_mandatoryFields instanceof BasicDBList) {</span>
+<span class="nc" id="L160">                        BasicDBList mandatoryFieldsArray = (BasicDBList) _mandatoryFields;</span>
+
+<span class="nc" id="L162">                        mandatoryFieldsArray.forEach(element -&gt; {</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                            if (element instanceof String) {</span>
+<span class="nc" id="L164">                                mandatoryFields.add((String) element);</span>
+                            }
+<span class="nc" id="L166">                        });</span>
+<span class="nc" id="L167">                    }</span>
+                } else {
+<span class="nc" id="L169">                    mandatoryFields = null;</span>
+                }
+
+                Set&lt;String&gt; optionalFields;
+<span class="nc" id="L173">                Object _optionalFields = condition.get(&quot;optionalFields&quot;);</span>
+
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                if (_optionalFields != null) {</span>
+<span class="nc" id="L176">                    optionalFields = new HashSet&lt;&gt;();</span>
+
+<span class="nc bnc" id="L178" title="All 2 branches missed.">                    if (_optionalFields instanceof BasicDBList) {</span>
+<span class="nc" id="L179">                        BasicDBList optionalFieldsArray = (BasicDBList) _optionalFields;</span>
+
+<span class="nc" id="L181">                        optionalFieldsArray.forEach(element -&gt; {</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">                            if (element instanceof String) {</span>
+<span class="nc" id="L183">                                optionalFields.add((String) element);</span>
+                            }
+<span class="nc" id="L185">                        });</span>
+<span class="nc" id="L186">                    }</span>
+                } else {
+<span class="nc" id="L188">                    optionalFields = null;</span>
+                }
+
+<span class="nc" id="L191">                String regex = null;</span>
+<span class="nc" id="L192">                Object _regex = condition.get(&quot;regex&quot;);</span>
+
+<span class="nc bnc" id="L194" title="All 4 branches missed.">                if (_regex != null &amp;&amp; _regex instanceof String) {</span>
+<span class="nc" id="L195">                    regex = (String) _regex;</span>
+                }
+
+<span class="nc" id="L198">                Boolean optional = false;</span>
+<span class="nc" id="L199">                Object _optional = condition.get(&quot;optional&quot;);</span>
+
+<span class="nc bnc" id="L201" title="All 4 branches missed.">                if (_optional != null &amp;&amp; _optional instanceof Boolean) {</span>
+<span class="nc" id="L202">                    optional = (Boolean) _optional;</span>
+                }
+
+<span class="nc" id="L205">                Boolean nullable = false;</span>
+<span class="nc" id="L206">                Object _nullable = condition.get(&quot;nullable&quot;);</span>
+
+<span class="nc bnc" id="L208" title="All 4 branches missed.">                if (_nullable != null &amp;&amp; _nullable instanceof Boolean) {</span>
+<span class="nc" id="L209">                    nullable = (Boolean) _nullable;</span>
+                }
+
+<span class="nc bnc" id="L212" title="All 6 branches missed.">                if (counts.isEmpty() &amp;&amp; type == null &amp;&amp; regex == null) {</span>
+<span class="nc" id="L213">                    context.addWarning(&quot;condition does not have any of 'count', 'type' and 'regex' properties, specify at least one: &quot; + _condition);</span>
+<span class="nc" id="L214">                    return true;</span>
+                }
+
+<span class="nc bnc" id="L217" title="All 2 branches missed.">                if (path == null) {</span>
+<span class="nc" id="L218">                    context.addWarning(&quot;condition in the args list does not have the 'path' property: &quot; + _condition);</span>
+<span class="nc" id="L219">                    return true;</span>
+                }
+
+<span class="nc bnc" id="L222" title="All 6 branches missed.">                if (type != null &amp;&amp; !counts.isEmpty() &amp;&amp; regex != null) {</span>
+<span class="nc bnc" id="L223" title="All 6 branches missed.">                    return checkCount(json, path, counts, context) &amp;&amp; checkType(json, path, type, mandatoryFields, optionalFields, optional, nullable, context) &amp;&amp; checkRegex(json, path, regex, optional, nullable, context);</span>
+<span class="nc bnc" id="L224" title="All 4 branches missed.">                } else if (type != null &amp;&amp; !counts.isEmpty()) {</span>
+<span class="nc bnc" id="L225" title="All 4 branches missed.">                    return checkCount(json, path, counts, context) &amp;&amp; checkType(json, path, type, mandatoryFields, optionalFields, optional, nullable, context);</span>
+<span class="nc bnc" id="L226" title="All 4 branches missed.">                } else if (type != null &amp;&amp; regex != null) {</span>
+<span class="nc bnc" id="L227" title="All 4 branches missed.">                    return checkType(json, path, type, mandatoryFields, optionalFields, optional, nullable, context) &amp;&amp; checkRegex(json, path, regex, optional, nullable, context);</span>
+<span class="nc bnc" id="L228" title="All 4 branches missed.">                } else if (!counts.isEmpty() &amp;&amp; regex != null) {</span>
+<span class="nc bnc" id="L229" title="All 4 branches missed.">                    return checkCount(json, path, counts, context) &amp;&amp; checkRegex(json, path, regex, optional, nullable, context);</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">                } else if (type != null) {</span>
+<span class="nc" id="L231">                    return checkType(json, path, type, mandatoryFields, optionalFields, optional, nullable, context);</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">                } else if (!counts.isEmpty()) {</span>
+<span class="nc" id="L233">                    return checkCount(json, path, counts, context);</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">                } else if (regex != null) {</span>
+<span class="nc" id="L235">                    return checkRegex(json, path, regex, optional, nullable, context);</span>
+                }
+
+<span class="nc" id="L238">                return true;</span>
+            } else {
+<span class="nc" id="L240">                context.addWarning(&quot;property in the args list is not an object: &quot; + _condition);</span>
+<span class="nc" id="L241">                return true;</span>
+            }
+        });
+    }
+
+    private BasicDBList filterMissingOptionalAndNullNullableConditions(BasicDBList conditions, DBObject content, boolean patching) {
+        // nullPaths contains all paths that result to null and condition is nullable or optional
+<span class="nc" id="L248">        Set&lt;String&gt; nullPaths = new HashSet&lt;&gt;();</span>
+
+<span class="nc" id="L250">        BasicDBList ret = new BasicDBList();</span>
+
+<span class="nc" id="L252">        conditions.stream().forEach((Object condition) -&gt; {</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">            if (condition instanceof BasicDBObject) {</span>
+<span class="nc" id="L254">                Boolean nullable = false;</span>
+<span class="nc" id="L255">                Object _nullable = ((BasicDBObject) condition).get(&quot;nullable&quot;);</span>
+
+<span class="nc bnc" id="L257" title="All 4 branches missed.">                if (_nullable != null &amp;&amp; _nullable instanceof Boolean) {</span>
+<span class="nc" id="L258">                    nullable = (Boolean) _nullable;</span>
+                }
+
+<span class="nc" id="L261">                Boolean optional = false;</span>
+<span class="nc" id="L262">                Object _optional = ((BasicDBObject) condition).get(&quot;optional&quot;);</span>
+
+<span class="nc bnc" id="L264" title="All 4 branches missed.">                if (_optional != null &amp;&amp; _optional instanceof Boolean) {</span>
+<span class="nc" id="L265">                    optional = (Boolean) _optional;</span>
+                }
+
+<span class="nc bnc" id="L268" title="All 2 branches missed.">                if (nullable) {</span>
+<span class="nc" id="L269">                    Object _path = ((BasicDBObject) condition).get(&quot;path&quot;);</span>
+
+<span class="nc bnc" id="L271" title="All 4 branches missed.">                    if (_path != null &amp;&amp; _path instanceof String) {</span>
+<span class="nc" id="L272">                        String path = (String) _path;</span>
+
+                        List&lt;Optional&lt;Object&gt;&gt; props;
+
+                        try {
+<span class="nc" id="L277">                            props = JsonUtils.getPropsFromPath(content, path);</span>
+
+<span class="nc bnc" id="L279" title="All 4 branches missed.">                            if (props != null &amp;&amp; props.stream().allMatch((Optional&lt;Object&gt; prop) -&gt; {</span>
+<span class="nc bnc" id="L280" title="All 4 branches missed.">                                return prop != null &amp;&amp; !prop.isPresent();</span>
+                            })) {
+<span class="nc" id="L282">                                nullPaths.add(path);</span>
+                            }
+<span class="nc" id="L284">                        } catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L285">                            nullPaths.add(path);</span>
+<span class="nc" id="L286">                        }</span>
+                    }
+                }
+
+<span class="nc bnc" id="L290" title="All 4 branches missed.">                if (optional || patching) {</span>
+<span class="nc" id="L291">                    Object _path = ((BasicDBObject) condition).get(&quot;path&quot;);</span>
+
+<span class="nc bnc" id="L293" title="All 4 branches missed.">                    if (_path != null &amp;&amp; _path instanceof String) {</span>
+<span class="nc" id="L294">                        String path = (String) _path;</span>
+
+                        List&lt;Optional&lt;Object&gt;&gt; props;
+
+                        try {
+<span class="nc" id="L299">                            props = JsonUtils.getPropsFromPath(content, path);</span>
+
+<span class="nc bnc" id="L301" title="All 4 branches missed.">                            if (props == null || props.stream().allMatch((Optional&lt;Object&gt; prop) -&gt; {</span>
+<span class="nc bnc" id="L302" title="All 2 branches missed.">                                return prop == null;</span>
+                            })) {
+<span class="nc" id="L304">                                nullPaths.add(path);</span>
+                            }
+<span class="nc" id="L306">                        } catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L307">                            nullPaths.add(path);</span>
+<span class="nc" id="L308">                        }</span>
+                    }
+                }
+            }
+<span class="nc" id="L312">        });</span>
+
+<span class="nc" id="L314">        conditions.stream().forEach(condition -&gt; {</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">            if (condition instanceof BasicDBObject) {</span>
+<span class="nc" id="L316">                Object _path = ((BasicDBObject) condition).get(&quot;path&quot;);</span>
+
+<span class="nc bnc" id="L318" title="All 4 branches missed.">                if (_path != null &amp;&amp; _path instanceof String) {</span>
+<span class="nc" id="L319">                    String path = (String) _path;</span>
+
+<span class="nc" id="L321">                    boolean hasNullParent = nullPaths.stream().anyMatch(nullPath -&gt; {</span>
+<span class="nc" id="L322">                        return JsonUtils.isAncestorPath(nullPath, path);</span>
+                    });
+
+<span class="nc bnc" id="L325" title="All 2 branches missed.">                    if (!hasNullParent) {</span>
+<span class="nc" id="L326">                        ret.add(condition);</span>
+                    }
+                }
+            }
+<span class="nc" id="L330">        });</span>
+
+<span class="nc" id="L332">        return ret;</span>
+    }
+
+    private boolean checkCount(DBObject json, String path, Set&lt;Integer&gt; expectedCounts, RequestContext context) {
+        Integer count;
+        try {
+<span class="nc" id="L338">            count = JsonUtils.countPropsFromPath(json, path);</span>
+<span class="nc" id="L339">        } catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L340">            return false;</span>
+<span class="nc" id="L341">        }</span>
+
+        // props is null when path does not exist. count is false
+<span class="nc bnc" id="L344" title="All 2 branches missed.">        if (count == null) {</span>
+<span class="nc" id="L345">            return false;</span>
+        }
+
+<span class="nc" id="L348">        boolean ret = expectedCounts.contains(count);</span>
+
+<span class="nc" id="L350">        LOGGER.debug(&quot;checkCount({}, {}) -&gt; {}&quot;, path, expectedCounts, ret);</span>
+
+<span class="nc bnc" id="L352" title="All 2 branches missed.">        if (ret == false) {</span>
+<span class="nc" id="L353">            context.addWarning(&quot;checkCount condition failed: path: &quot; + path + &quot;, expected: &quot; + expectedCounts + &quot;, got: &quot; + count);</span>
+        }
+
+<span class="nc" id="L356">        return ret;</span>
+    }
+
+    private boolean checkType(DBObject json, String path, String type, Set&lt;String&gt; mandatoryFields, Set&lt;String&gt; optionalFields,
+            boolean optional, boolean nullable, RequestContext context) {
+<span class="nc bnc" id="L361" title="All 2 branches missed.">        boolean patching = context.getMethod() == RequestContext.METHOD.PATCH;</span>
+
+<span class="nc" id="L363">        BasicDBObject _json = (BasicDBObject) json;</span>
+
+        List&lt;Optional&lt;Object&gt;&gt; props;
+
+        boolean ret;
+<span class="nc" id="L368">        boolean failedFieldsCheck = false;</span>
+
+        try {
+<span class="nc" id="L371">            props = JsonUtils.getPropsFromPath(_json, path);</span>
+<span class="nc" id="L372">        } catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L373">            LOGGER.debug(&quot;checkType({}, {}, {}, {}) -&gt; {} -&gt; false&quot;, path, type, mandatoryFields, optionalFields, ex.getMessage());</span>
+<span class="nc" id="L374">            context.addWarning(&quot;checkType condition failed: path: &quot; + path + &quot;, expected type: &quot; + type + &quot;, error: &quot; + ex.getMessage());</span>
+<span class="nc" id="L375">            return false;</span>
+<span class="nc" id="L376">        }</span>
+
+        // props is null when path does not exist.
+<span class="nc bnc" id="L379" title="All 2 branches missed.">        if (props == null) {</span>
+<span class="nc bnc" id="L380" title="All 4 branches missed.">            ret = patching || optional;</span>
+        } else {
+<span class="nc" id="L382">            ret = props.stream().allMatch((Optional&lt;Object&gt; prop) -&gt; {</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">                if (prop == null) {</span>
+<span class="nc bnc" id="L384" title="All 4 branches missed.">                    return patching || optional;</span>
+                }
+
+<span class="nc bnc" id="L387" title="All 2 branches missed.">                if (prop.isPresent()) {</span>
+<span class="nc bnc" id="L388" title="All 6 branches missed.">                    if (patching &amp;&amp; &quot;array&quot;.equals(type) &amp;&amp; prop.get() instanceof DBObject) {</span>
+                        // this might be the case of PATCHING an element array using the dot notation
+                        // e.g. object.array.2
+                        // if so, the array comes as an BasicDBObject with all numberic keys
+                        // in any case, it might also be the object { &quot;object&quot;: { &quot;array&quot;: {&quot;2&quot;: xxx }}}
+                        
+<span class="nc bnc" id="L394" title="All 2 branches missed.">                        return ((DBObject) prop.get()).keySet().stream().allMatch(k -&gt; {</span>
+                            try {
+<span class="nc" id="L396">                                Integer.parseInt(k);</span>
+<span class="nc" id="L397">                                return true;</span>
+<span class="nc" id="L398">                            } catch (NumberFormatException nfe) {</span>
+<span class="nc" id="L399">                                return false;</span>
+                            }
+<span class="nc bnc" id="L401" title="All 2 branches missed.">                        }) || JsonUtils.checkType(prop, type);</span>
+                    } else {
+<span class="nc" id="L403">                        return JsonUtils.checkType(prop, type);</span>
+                    }
+                } else {
+<span class="nc" id="L406">                    return nullable;</span>
+                }
+            });
+
+            // check object fields
+<span class="nc bnc" id="L411" title="All 8 branches missed.">            if (ret &amp;&amp; &quot;object&quot;.equals(type) &amp;&amp; (mandatoryFields != null || optionalFields != null)) {</span>
+<span class="nc" id="L412">                Set&lt;String&gt; allFields = new HashSet&lt;&gt;();</span>
+
+<span class="nc bnc" id="L414" title="All 2 branches missed.">                if (mandatoryFields != null) {</span>
+<span class="nc" id="L415">                    allFields.addAll(mandatoryFields);</span>
+                }
+
+<span class="nc bnc" id="L418" title="All 2 branches missed.">                if (optionalFields != null) {</span>
+<span class="nc" id="L419">                    allFields.addAll(optionalFields);</span>
+                }
+
+<span class="nc" id="L422">                ret = props.stream().allMatch((Optional&lt;Object&gt; prop) -&gt; {</span>
+<span class="nc bnc" id="L423" title="All 2 branches missed.">                    if (prop == null) {</span>
+<span class="nc" id="L424">                        return optional;</span>
+                    }
+
+<span class="nc bnc" id="L427" title="All 2 branches missed.">                    if (prop.isPresent()) {</span>
+<span class="nc" id="L428">                        BasicDBObject obj = (BasicDBObject) prop.get();</span>
+
+<span class="nc bnc" id="L430" title="All 2 branches missed.">                        if (patching) {</span>
+                            // if patching just check if the passed properties are allowed
+<span class="nc" id="L432">                            return obj.keySet().stream().allMatch(p -&gt; {</span>
+<span class="nc" id="L433">                                LOGGER.debug(&quot;does &quot; + allFields.toString() + &quot; contains &quot; + p);</span>
+<span class="nc" id="L434">                                return allFields.contains(p);</span>
+                            });
+                        } else {
+<span class="nc bnc" id="L437" title="All 2 branches missed.">                            if (mandatoryFields != null) {</span>
+<span class="nc bnc" id="L438" title="All 4 branches missed.">                                return obj.keySet().containsAll(mandatoryFields) &amp;&amp; allFields.containsAll(obj.keySet());</span>
+                            } else {
+<span class="nc" id="L440">                                return allFields.containsAll(obj.keySet());</span>
+                            }
+                        }
+                    } else {
+<span class="nc" id="L444">                        return nullable;</span>
+                    }
+                });
+
+<span class="nc bnc" id="L448" title="All 2 branches missed.">                if (ret == false) {</span>
+<span class="nc" id="L449">                    failedFieldsCheck = true;</span>
+                }
+            }
+        }
+
+<span class="nc" id="L454">        LOGGER.debug(&quot;checkType({}, {}, {}, {}) -&gt; {} -&gt; {}&quot;, path, type, mandatoryFields, optionalFields, props, ret);</span>
+
+<span class="nc bnc" id="L456" title="All 2 branches missed.">        if (ret == false) {</span>
+<span class="nc bnc" id="L457" title="All 2 branches missed.">            if (!failedFieldsCheck) {</span>
+<span class="nc" id="L458">                context.addWarning(&quot;checkType condition failed: path: &quot; + path + &quot;, expected type: &quot; + type + &quot;, got: &quot; + props);</span>
+            } else {
+<span class="nc" id="L460">                context.addWarning(&quot;checkType condition failed: path: &quot; + path + &quot;, mandatory fields: &quot; + mandatoryFields + &quot;, optional fields: &quot; + optionalFields + &quot;, got: &quot; + props);</span>
+            }
+        }
+
+<span class="nc" id="L464">        return ret;</span>
+    }
+
+    private boolean checkRegex(DBObject json, String path, String regex, boolean optional, boolean nullable, RequestContext context) {
+<span class="nc" id="L468">        BasicDBObject _json = (BasicDBObject) json;</span>
+
+        List&lt;Optional&lt;Object&gt;&gt; props;
+        try {
+<span class="nc" id="L472">            props = JsonUtils.getPropsFromPath(_json, path);</span>
+<span class="nc" id="L473">        } catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L474">            LOGGER.debug(&quot;checkRegex({}, {}) -&gt; {}&quot;, path, regex, ex.getMessage());</span>
+<span class="nc" id="L475">            context.addWarning(&quot;checkRegex condition failed: path: &quot; + path + &quot;, regex: &quot; + regex + &quot;, got: &quot; + ex.getMessage());</span>
+<span class="nc" id="L476">            return false;</span>
+<span class="nc" id="L477">        }</span>
+
+        boolean ret;
+
+        // props is null when path does not exist.
+<span class="nc bnc" id="L482" title="All 2 branches missed.">        if (props == null) {</span>
+<span class="nc" id="L483">            ret = optional;</span>
+        } else {
+<span class="nc" id="L485">            Pattern p = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);</span>
+
+<span class="nc" id="L487">            ret = props.stream().allMatch((Optional&lt;Object&gt; prop) -&gt; {</span>
+<span class="nc bnc" id="L488" title="All 2 branches missed.">                if (prop == null) {</span>
+<span class="nc" id="L489">                    return optional;</span>
+                }
+
+<span class="nc bnc" id="L492" title="All 2 branches missed.">                if (prop.isPresent()) {</span>
+<span class="nc" id="L493">                    return p.matcher(JsonUtils.serialize(prop.get())).find();</span>
+                } else {
+<span class="nc" id="L495">                    return nullable;</span>
+                }
+            });
+        }
+
+<span class="nc" id="L500">        LOGGER.debug(&quot;checkRegex({}, {}) -&gt; {} -&gt; {}&quot;, path, regex, props, ret);</span>
+
+<span class="nc bnc" id="L502" title="All 2 branches missed.">        if (ret == false) {</span>
+<span class="nc" id="L503">            context.addWarning(&quot;checkRegex condition failed: path: &quot; + path + &quot;, regex: &quot; + regex + &quot;, got: &quot; + props);</span>
+        }
+
+<span class="nc" id="L506">        return ret;</span>
+    }
+
+    /**
+     *
+     * @param propertyName the name of the property, can use the dot notation
+     * (e.g. a.b)
+     * @param value
+     * @return
+     */
+    private DBObject remapJson(String propertyName, Object value) {
+<span class="nc" id="L517">        return _remapJson(propertyName.split(Pattern.quote(&quot;.&quot;)), value);</span>
+    }
+
+    private DBObject _remapJson(String tokens[], Object value) throws IllegalArgumentException {
+<span class="nc bnc" id="L521" title="All 2 branches missed.">        if (tokens.length == 1) {</span>
+<span class="nc" id="L522">            return new BasicDBObject(tokens[0], value);</span>
+        } else {
+<span class="nc" id="L524">            return new BasicDBObject(tokens[0], _remapJson(Arrays.copyOfRange(tokens, 1, tokens.length), value));</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

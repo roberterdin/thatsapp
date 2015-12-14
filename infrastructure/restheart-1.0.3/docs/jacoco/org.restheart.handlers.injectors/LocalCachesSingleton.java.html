@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>LocalCachesSingleton.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.handlers.injectors</a> &gt; <span class="el_source">LocalCachesSingleton.java</span></div><h1>LocalCachesSingleton.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.handlers.injectors;
+
+import com.mongodb.DBObject;
+import com.mongodb.MongoException;
+import java.util.Optional;
+import org.restheart.Configuration;
+import org.restheart.cache.Cache;
+import org.restheart.cache.CacheFactory;
+import org.restheart.cache.LoadingCache;
+import org.restheart.db.Database;
+import org.restheart.db.DbsDAO;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class LocalCachesSingleton {
+    private static final String SEPARATOR = &quot;_@_@_&quot;;
+<span class="nc" id="L36">    private static boolean initialized = false;</span>
+
+    private final Database dbsDAO;
+
+<span class="nc" id="L40">    private LoadingCache&lt;String, DBObject&gt; dbPropsCache = null;</span>
+<span class="nc" id="L41">    private LoadingCache&lt;String, DBObject&gt; collectionPropsCache = null;</span>
+
+<span class="nc" id="L43">    private static long ttl = 1_000;</span>
+<span class="nc" id="L44">    private static boolean enabled = false;</span>
+    private static final long MAX_CACHE_SIZE = 1_000;
+
+    /**
+     * Default ctor
+     */
+<span class="nc" id="L50">    private LocalCachesSingleton(DbsDAO dbsDAO) {</span>
+<span class="nc" id="L51">        this.dbsDAO = dbsDAO;</span>
+<span class="nc" id="L52">        setup();</span>
+<span class="nc" id="L53">    }</span>
+
+    /**
+     *
+     * @param conf
+     */
+    public static void init(Configuration conf) {
+<span class="nc" id="L60">        ttl = conf.getLocalCacheTtl();</span>
+<span class="nc" id="L61">        enabled = conf.isLocalCacheEnabled();</span>
+<span class="nc" id="L62">        initialized = true;</span>
+<span class="nc" id="L63">    }</span>
+
+    private void setup() {
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (!initialized) {</span>
+<span class="nc" id="L67">            throw new IllegalStateException(&quot;not initialized&quot;);</span>
+        }
+
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        if (enabled) {</span>
+<span class="nc" id="L71">            this.dbPropsCache = CacheFactory.createLocalLoadingCache(MAX_CACHE_SIZE, Cache.EXPIRE_POLICY.AFTER_WRITE, ttl,</span>
+                    (String key) -&gt; {
+<span class="nc" id="L73">                        return this.dbsDAO.getDatabaseProperties(key, true);</span>
+                    });
+
+<span class="nc" id="L76">            this.collectionPropsCache = CacheFactory.createLocalLoadingCache(MAX_CACHE_SIZE, Cache.EXPIRE_POLICY.AFTER_WRITE, ttl,</span>
+                    (String key) -&gt; {
+<span class="nc" id="L78">                        String[] dbNameAndCollectionName = key.split(SEPARATOR);</span>
+<span class="nc" id="L79">                        return this.dbsDAO.getCollectionProperties(dbNameAndCollectionName[0], dbNameAndCollectionName[1], true);</span>
+                    });
+        }
+<span class="nc" id="L82">    }</span>
+
+    /**
+     *
+     * @return
+     */
+    public static LocalCachesSingleton getInstance() {
+<span class="nc" id="L89">        return LocalCachesSingletonHolder.INSTANCE;</span>
+    }
+
+    private static class LocalCachesSingletonHolder {
+
+<span class="nc" id="L94">        private static final LocalCachesSingleton INSTANCE = new LocalCachesSingleton(new DbsDAO());</span>
+
+<span class="nc" id="L96">        private LocalCachesSingletonHolder() {</span>
+<span class="nc" id="L97">        }</span>
+    }
+
+    /**
+     *
+     * @param dbName
+     * @return
+     */
+    public DBObject getDBProps(String dbName) {
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (!enabled) {</span>
+<span class="nc" id="L107">            throw new IllegalStateException(&quot;tried to use disabled cache&quot;);</span>
+        }
+
+        DBObject dbProps;
+
+<span class="nc" id="L112">        Optional&lt;DBObject&gt; _dbProps = dbPropsCache.get(dbName);</span>
+
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (_dbProps != null) {</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">            if (_dbProps.isPresent()) {</span>
+<span class="nc" id="L116">                dbProps = _dbProps.get();</span>
+<span class="nc" id="L117">                dbProps.put(&quot;_db-props-cached&quot;, true);</span>
+            } else {
+<span class="nc" id="L119">                dbProps = null;</span>
+            }
+        } else {
+            try {
+<span class="nc" id="L123">                _dbProps = dbPropsCache.getLoading(dbName);</span>
+<span class="nc" id="L124">            } catch (Throwable uex) {</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">                if (uex.getCause() instanceof MongoException) {</span>
+<span class="nc" id="L126">                    throw (RuntimeException) uex.getCause();</span>
+                } else {
+<span class="nc" id="L128">                    throw uex;</span>
+                }
+<span class="nc" id="L130">            }</span>
+
+<span class="nc bnc" id="L132" title="All 4 branches missed.">            if (_dbProps != null &amp;&amp; _dbProps.isPresent()) {</span>
+<span class="nc" id="L133">                dbProps = _dbProps.get();</span>
+<span class="nc" id="L134">                dbProps.put(&quot;_db-props-cached&quot;, false);</span>
+            } else {
+<span class="nc" id="L136">                dbProps = null;</span>
+            }
+        }
+
+<span class="nc" id="L140">        return dbProps;</span>
+    }
+
+    /**
+     *
+     * @param dbName
+     * @param collName
+     * @return
+     */
+    public DBObject getCollectionProps(String dbName, String collName) {
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (!enabled) {</span>
+<span class="nc" id="L151">            throw new IllegalStateException(&quot;tried to use disabled cache&quot;);</span>
+        }
+
+        DBObject collProps;
+
+<span class="nc" id="L156">        Optional&lt;DBObject&gt; _collProps = collectionPropsCache.get(dbName + SEPARATOR + collName);</span>
+
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        if (_collProps != null) {</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            if (_collProps.isPresent()) {</span>
+<span class="nc" id="L160">                collProps = _collProps.get();</span>
+<span class="nc" id="L161">                collProps.put(&quot;_collection-props-cached&quot;, true);</span>
+            } else {
+<span class="nc" id="L163">                collProps = null;</span>
+            }
+        } else {
+            try {
+<span class="nc" id="L167">                _collProps = collectionPropsCache.getLoading(dbName + SEPARATOR + collName);</span>
+<span class="nc" id="L168">            } catch (Throwable uex) {</span>
+<span class="nc bnc" id="L169" title="All 2 branches missed.">                if (uex.getCause() instanceof MongoException) {</span>
+<span class="nc" id="L170">                    throw (RuntimeException) uex.getCause();</span>
+                } else {
+<span class="nc" id="L172">                    throw uex;</span>
+                }
+<span class="nc" id="L174">            }</span>
+
+<span class="nc bnc" id="L176" title="All 2 branches missed.">            if (_collProps.isPresent()) {</span>
+<span class="nc" id="L177">                collProps = _collProps.get();</span>
+<span class="nc" id="L178">                collProps.put(&quot;_collection-props-cached&quot;, false);</span>
+            } else {
+<span class="nc" id="L180">                collProps = null;</span>
+            }
+        }
+
+<span class="nc" id="L184">        return collProps;</span>
+    }
+
+    /**
+     *
+     * @param dbName
+     */
+    public void invalidateDb(String dbName) {
+<span class="nc bnc" id="L192" title="All 4 branches missed.">        if (enabled &amp;&amp; dbPropsCache != null) {</span>
+<span class="nc" id="L193">            dbPropsCache.invalidate(dbName);</span>
+<span class="nc" id="L194">            collectionPropsCache.asMap().keySet().stream().filter(k -&gt; k.startsWith(dbName + SEPARATOR)).forEach(k -&gt; collectionPropsCache.invalidate(k));</span>
+        }
+<span class="nc" id="L196">    }</span>
+
+    /**
+     *
+     * @param dbName
+     * @param collName
+     */
+    public void invalidateCollection(String dbName, String collName) {
+<span class="nc bnc" id="L204" title="All 4 branches missed.">        if (enabled &amp;&amp; collectionPropsCache != null) {</span>
+<span class="nc" id="L205">            collectionPropsCache.invalidate(dbName + SEPARATOR + collName);</span>
+        }
+<span class="nc" id="L207">    }</span>
+
+    /**
+     * @return the enabled
+     */
+    public static boolean isEnabled() {
+<span class="nc" id="L213">        return enabled;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

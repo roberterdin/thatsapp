@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>ContentSizeChecker.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.hal.metadata.singletons</a> &gt; <span class="el_source">ContentSizeChecker.java</span></div><h1>ContentSizeChecker.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.hal.metadata.singletons;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import io.undertow.server.HttpServerExchange;
+import org.restheart.handlers.RequestContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ *
+ * ContentSizeChecker allows to check the request content length
+ *
+ * the args arguments is the size condition: a is json object as follows: {
+ * &quot;max&quot;: MAX_SIZE, &quot;min&quot;: MIN_SIZE }
+ * 
+ * sizes are in bytes
+ *
+ */
+<span class="nc" id="L39">public class ContentSizeChecker implements Checker {</span>
+<span class="nc" id="L40">    static final Logger LOGGER = LoggerFactory.getLogger(ContentSizeChecker.class);</span>
+
+    @Override
+    public boolean check(HttpServerExchange exchange, RequestContext context, DBObject args) {
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if (args instanceof BasicDBObject) {</span>
+<span class="nc" id="L45">            BasicDBObject condition = (BasicDBObject) args;</span>
+
+<span class="nc" id="L47">            Integer maxSize = null;</span>
+<span class="nc" id="L48">            Object _maxSize = condition.get(&quot;max&quot;);</span>
+
+<span class="nc bnc" id="L50" title="All 4 branches missed.">            if (_maxSize != null &amp;&amp; _maxSize instanceof Integer) {</span>
+<span class="nc" id="L51">                maxSize = (Integer) _maxSize;</span>
+            } else {
+<span class="nc" id="L53">                context.addWarning(&quot;checker wrong definition: 'max' property missing.&quot;);</span>
+<span class="nc" id="L54">                return true;</span>
+            }
+
+<span class="nc" id="L57">            Integer minSize = null;</span>
+<span class="nc" id="L58">            Object _minSize = condition.get(&quot;min&quot;);</span>
+
+<span class="nc bnc" id="L60" title="All 4 branches missed.">            if (_minSize != null &amp;&amp; _minSize instanceof Integer) {</span>
+<span class="nc" id="L61">                minSize = (Integer) _minSize;</span>
+            }
+            
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            return (minSize == null ? checkSize(exchange, -1, maxSize) : checkSize(exchange, minSize, maxSize));</span>
+
+        } else {
+<span class="nc" id="L67">            context.addWarning(&quot;checker wrong definition: args property must be a json object with 'min' and 'max' properties.&quot;);</span>
+<span class="nc" id="L68">            return true;</span>
+        }
+    }
+
+    private boolean checkSize(HttpServerExchange exchange, int minSize, int maxSize) {
+<span class="nc" id="L73">        long requestLenght = exchange.getRequestContentLength();</span>
+
+<span class="nc bnc" id="L75" title="All 8 branches missed.">        boolean ret = (minSize &lt; 0 ? requestLenght &lt;= maxSize : requestLenght &gt;= minSize &amp;&amp; requestLenght &lt;= maxSize);</span>
+        
+<span class="nc" id="L77">        LOGGER.debug(&quot;checkSize({}, {}, {}) -&gt; {}&quot;, requestLenght, minSize, maxSize, ret);</span>
+
+<span class="nc" id="L79">        return ret;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

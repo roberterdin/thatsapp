@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>ResourcesExtractor.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.utils</a> &gt; <span class="el_source">ResourcesExtractor.java</span></div><h1>ResourcesExtractor.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.utils;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashMap;
+import java.util.Map;
+import org.restheart.Bootstrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class ResourcesExtractor {
+
+<span class="nc" id="L45">    private static final Logger logger = LoggerFactory.getLogger(ResourcesExtractor.class);</span>
+
+    /**
+     *
+     * @param resourcePath
+     * @return
+     * @throws URISyntaxException
+     */
+    public static boolean isResourceInJar(String resourcePath) throws URISyntaxException {
+<span class="nc" id="L54">        URI uri = Bootstrapper.class.getClassLoader().getResource(resourcePath).toURI();</span>
+
+<span class="nc" id="L56">        return uri.toString().startsWith(&quot;jar:&quot;);</span>
+    }
+
+    /**
+     *
+     * @param resourcePath
+     * @param tempDir
+     * @throws URISyntaxException
+     * @throws IOException
+     */
+    public static void deleteTempDir(String resourcePath, File tempDir) throws URISyntaxException, IOException {
+<span class="nc bnc" id="L67" title="All 4 branches missed.">        if (isResourceInJar(resourcePath) &amp;&amp; tempDir.exists()) {</span>
+<span class="nc" id="L68">            delete(tempDir);</span>
+        }
+<span class="nc" id="L70">    }</span>
+
+    /**
+     *
+     * @param resourcePath
+     * @return
+     * @throws IOException
+     * @throws URISyntaxException
+     * @throws IllegalStateException
+     */
+    public static File extract(String resourcePath) throws IOException, URISyntaxException, IllegalStateException {
+        //File jarFile = new File(ResourcesExtractor.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (Bootstrapper.class.getClassLoader().getResource(resourcePath) == null) {</span>
+<span class="nc" id="L84">            logger.warn(&quot;no resource to extract from path  {}&quot;, resourcePath);</span>
+<span class="nc" id="L85">            throw new IllegalStateException(&quot;no resource to extract from path &quot; + resourcePath);</span>
+        }
+
+<span class="nc" id="L88">        URI uri = Bootstrapper.class.getClassLoader().getResource(resourcePath).toURI();</span>
+
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (isResourceInJar(resourcePath)) {</span>
+<span class="nc" id="L91">            FileSystem fs = null;</span>
+<span class="nc" id="L92">            File ret = null;</span>
+
+            try {
+                // used when run as a JAR file
+<span class="nc" id="L96">                Path destinationDir = Files.createTempDirectory(&quot;restheart-&quot;);</span>
+
+<span class="nc" id="L98">                ret = destinationDir.toFile();</span>
+
+<span class="nc" id="L100">                Map&lt;String, String&gt; env = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L101">                env.put(&quot;create&quot;, &quot;false&quot;);</span>
+
+<span class="nc" id="L103">                fs = FileSystems.newFileSystem(uri, env);</span>
+
+<span class="nc" id="L105">                Path sourceDir = fs.getPath(resourcePath);</span>
+
+<span class="nc" id="L107">                Files.walkFileTree(sourceDir, new SimpleFileVisitor&lt;Path&gt;() {</span>
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+<span class="nc" id="L110">                        return copy(file);</span>
+                    }
+
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+<span class="nc" id="L115">                        return copy(dir);</span>
+                    }
+
+                    private FileVisitResult copy(Path fileOrDir) throws IOException {
+<span class="nc bnc" id="L119" title="All 2 branches missed.">                        if (fileOrDir.equals(sourceDir)) {</span>
+<span class="nc" id="L120">                            return FileVisitResult.CONTINUE;</span>
+                        }
+
+<span class="nc" id="L123">                        Path destination = Paths.get(destinationDir.toString(), fileOrDir.toString().replaceAll(resourcePath + &quot;/&quot;, &quot;&quot;));</span>
+
+<span class="nc" id="L125">                        Files.copy(fileOrDir, destination, StandardCopyOption.REPLACE_EXISTING);</span>
+<span class="nc" id="L126">                        return FileVisitResult.CONTINUE;</span>
+                    }
+                });
+            } finally {
+<span class="nc bnc" id="L130" title="All 4 branches missed.">                if (fs != null) {</span>
+<span class="nc" id="L131">                    fs.close();</span>
+                }
+            }
+
+<span class="nc" id="L135">            return ret;</span>
+        } else {
+            // used when run from an expanded folder            
+<span class="nc" id="L138">            return new File(uri);</span>
+        }
+    }
+
+    private static void delete(File file) throws IOException {
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if (file.isDirectory()) {</span>
+            //directory is empty, then delete it
+<span class="nc bnc" id="L145" title="All 2 branches missed.">            if (file.list().length == 0) {</span>
+<span class="nc" id="L146">                boolean deleted = file.delete();</span>
+
+<span class="nc bnc" id="L148" title="All 2 branches missed.">                if (!deleted) {</span>
+<span class="nc" id="L149">                    logger.warn(&quot;failted to delete directory &quot; + file.getPath());</span>
+                }
+<span class="nc" id="L151">            } else {</span>
+                //list all the directory contents
+<span class="nc" id="L153">                String files[] = file.list();</span>
+
+<span class="nc bnc" id="L155" title="All 2 branches missed.">                for (String temp : files) {</span>
+                    //construct the file structure
+<span class="nc" id="L157">                    File fileDelete = new File(file, temp);</span>
+
+                    //recursive delete
+<span class="nc" id="L160">                    delete(fileDelete);</span>
+                }
+
+                //check the directory again, if empty then delete it
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                if (file.list().length == 0) {</span>
+<span class="nc" id="L165">                    boolean deleted = file.delete();</span>
+
+<span class="nc bnc" id="L167" title="All 2 branches missed.">                    if (!deleted) {</span>
+<span class="nc" id="L168">                        logger.warn(&quot;failted to delete file &quot; + file.getPath());</span>
+                    }
+                }
+<span class="nc" id="L171">            }</span>
+
+        } else {
+            //if file, then delete it
+<span class="nc" id="L175">            boolean deleted = file.delete();</span>
+
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (!deleted) {</span>
+<span class="nc" id="L178">                logger.warn(&quot;failted to delete file &quot; + file.getPath());</span>
+            }
+        }
+<span class="nc" id="L181">    }</span>
+
+<span class="nc" id="L183">    private ResourcesExtractor() {</span>
+<span class="nc" id="L184">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

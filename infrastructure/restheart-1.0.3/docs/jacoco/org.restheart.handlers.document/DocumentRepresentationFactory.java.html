@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DocumentRepresentationFactory.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.handlers.document</a> &gt; <span class="el_source">DocumentRepresentationFactory.java</span></div><h1>DocumentRepresentationFactory.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.handlers.document;
+
+import com.mongodb.DBObject;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
+import java.util.List;
+import java.util.TreeMap;
+import org.restheart.Configuration;
+import org.restheart.hal.Link;
+import org.restheart.hal.Representation;
+import static org.restheart.hal.Representation.HAL_JSON_MEDIA_TYPE;
+import org.restheart.hal.UnsupportedDocumentIdException;
+import org.restheart.hal.metadata.InvalidMetadataException;
+import org.restheart.hal.metadata.Relationship;
+import org.restheart.handlers.IllegalQueryParamenterException;
+import org.restheart.handlers.RequestContext;
+import org.restheart.handlers.RequestContext.TYPE;
+import org.restheart.utils.URLUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class DocumentRepresentationFactory {
+    
+<span class="nc" id="L45">    public DocumentRepresentationFactory() {</span>
+        
+<span class="nc" id="L47">    }</span>
+
+<span class="nc" id="L49">    private static final Logger LOGGER = LoggerFactory.getLogger(DocumentRepresentationFactory.class);</span>
+
+    /**
+     *
+     * @param href
+     * @param exchange
+     * @param context
+     * @param data
+     * @return
+     * @throws IllegalQueryParamenterException
+     */
+    public Representation getRepresentation(String href, HttpServerExchange exchange, RequestContext context, DBObject data)
+            throws IllegalQueryParamenterException {
+        Representation rep;
+
+<span class="nc" id="L64">        Object id = data.get(&quot;_id&quot;);</span>
+
+<span class="nc" id="L66">        String _docIdType = null;</span>
+
+<span class="nc" id="L68">        rep = new Representation(URLUtils.getReferenceLink(context, URLUtils.getParentPath(href), id));</span>
+
+<span class="nc" id="L70">        rep.addProperty(</span>
+<span class="nc" id="L71">                &quot;_type&quot;, context.getType().name());</span>
+
+        // document properties
+<span class="nc" id="L74">        data.keySet()</span>
+<span class="nc" id="L75">                .stream().forEach((key) -&gt; rep.addProperty(key, data.get(key)));</span>
+
+        // document links
+        TreeMap&lt;String, String&gt; links;
+
+<span class="nc" id="L80">        links = getRelationshipsLinks(rep, context, data);</span>
+
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (links</span>
+                != null) {
+<span class="nc" id="L84">            links.keySet().stream().forEach((k) -&gt; {</span>
+<span class="nc" id="L85">                rep.addLink(new Link(k, links.get(k)));</span>
+<span class="nc" id="L86">            });</span>
+        }
+
+        // link templates and curies
+<span class="nc" id="L90">        String requestPath = URLUtils.removeTrailingSlashes(exchange.getRequestPath());</span>
+        
+        String parentPath;
+        
+        // the document (file) representation can be asked for requests to collection (bucket)
+<span class="nc bnc" id="L95" title="All 4 branches missed.">        if (TYPE.COLLECTION.equals(context.getType()) || TYPE.FILES_BUCKET.equals(context.getType())) {</span>
+<span class="nc" id="L96">            parentPath = requestPath;</span>
+        } else {
+<span class="nc" id="L98">            parentPath = URLUtils.getParentPath(requestPath);</span>
+        }
+
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        if (isBinaryFile(data)) {</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            if (_docIdType == null) {</span>
+<span class="nc" id="L103">                rep.addLink(new Link(&quot;rh:data&quot;,</span>
+<span class="nc" id="L104">                        String.format(&quot;%s/%s&quot;, href, RequestContext.BINARY_CONTENT)));</span>
+            } else {
+<span class="nc" id="L106">                rep.addLink(new Link(&quot;rh:data&quot;,</span>
+<span class="nc" id="L107">                        String.format(&quot;%s/%s?%s&quot;, href, RequestContext.BINARY_CONTENT, _docIdType)));</span>
+            }
+            
+<span class="nc bnc" id="L110" title="All 2 branches missed.">            if (context.isParentAccessible()) {</span>
+<span class="nc" id="L111">                rep.addLink(new Link(&quot;rh:bucket&quot;, parentPath));</span>
+            }
+            
+<span class="nc" id="L114">            rep.addLink(new Link(&quot;rh:file&quot;, parentPath + &quot;/{fileid}{?id_type}&quot;, true));</span>
+        } else {
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            if (context.isParentAccessible()) {</span>
+<span class="nc" id="L117">                rep.addLink(new Link(&quot;rh:coll&quot;, parentPath));</span>
+            }
+            
+<span class="nc" id="L120">            rep.addLink(new Link(&quot;rh:document&quot;, parentPath + &quot;/{docid}{?id_type}&quot;, true));</span>
+        }
+        
+        // curies
+<span class="nc" id="L124">        rep.addLink(new Link(&quot;rh&quot;, &quot;curies&quot;, Configuration.RESTHEART_ONLINE_DOC_URL</span>
+                + &quot;/{rel}.html&quot;, true), true);
+
+<span class="nc" id="L127">        return rep;</span>
+    }
+
+    private static boolean isBinaryFile(DBObject data) {
+<span class="nc bnc" id="L131" title="All 4 branches missed.">        return data.containsField(&quot;filename&quot;) &amp;&amp; data.containsField(&quot;chunkSize&quot;);</span>
+    }
+
+    /**
+     *
+     * @param exchange
+     * @param context
+     * @param rep
+     */
+    public void sendRepresentation(HttpServerExchange exchange, RequestContext context, Representation rep) {
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (context.getWarnings() != null) {</span>
+<span class="nc" id="L142">            context.getWarnings().forEach(w -&gt; rep.addWarning(w));</span>
+        }
+        
+<span class="nc" id="L145">        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, HAL_JSON_MEDIA_TYPE);</span>
+<span class="nc" id="L146">        exchange.getResponseSender().send(rep.toString());</span>
+<span class="nc" id="L147">    }</span>
+    
+    private static TreeMap&lt;String, String&gt; getRelationshipsLinks(Representation rep, RequestContext context, DBObject data) {
+<span class="nc" id="L150">        TreeMap&lt;String, String&gt; links = new TreeMap&lt;&gt;();</span>
+
+<span class="nc" id="L152">        List&lt;Relationship&gt; rels = null;</span>
+
+        try {
+<span class="nc" id="L155">            rels = Relationship.getFromJson((DBObject) context.getCollectionProps());</span>
+<span class="nc" id="L156">        } catch (InvalidMetadataException ex) {</span>
+<span class="nc" id="L157">            rep.addWarning(&quot;collection &quot; + context.getDBName()</span>
+<span class="nc" id="L158">                    + &quot;/&quot; + context.getCollectionName()</span>
+                    + &quot; has invalid relationships definition&quot;);
+<span class="nc" id="L160">        }</span>
+
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        if (rels == null) {</span>
+<span class="nc" id="L163">            return links;</span>
+        }
+
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        for (Relationship rel : rels) {</span>
+            try {
+<span class="nc" id="L168">                String link = rel.getRelationshipLink(context, context.getDBName(), context.getCollectionName(), data);</span>
+
+<span class="nc bnc" id="L170" title="All 2 branches missed.">                if (link != null) {</span>
+<span class="nc" id="L171">                    links.put(rel.getRel(), link);</span>
+                }
+<span class="nc" id="L173">            } catch (IllegalArgumentException | UnsupportedDocumentIdException ex) {</span>
+<span class="nc" id="L174">                rep.addWarning(ex.getMessage());</span>
+<span class="nc" id="L175">                LOGGER.debug(ex.getMessage());</span>
+<span class="nc" id="L176">            }</span>
+<span class="nc" id="L177">        }</span>
+
+<span class="nc" id="L179">        return links;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

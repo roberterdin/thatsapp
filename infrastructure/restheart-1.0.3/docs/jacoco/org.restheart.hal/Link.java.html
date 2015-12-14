@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Link.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.hal</a> &gt; <span class="el_source">Link.java</span></div><h1>Link.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.hal;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class Link {
+
+<span class="nc" id="L29">    private final BasicDBObject dbObject = new BasicDBObject();</span>
+
+    /**
+     *
+     * @param ref
+     * @param href
+     */
+<span class="nc" id="L36">    public Link(String ref, String href) {</span>
+<span class="nc bnc" id="L37" title="All 8 branches missed.">        if (ref == null || href == null || ref.isEmpty() || href.isEmpty()) {</span>
+<span class="nc" id="L38">            throw new IllegalArgumentException(&quot;constructor args cannot be null or empty&quot;);</span>
+        }
+
+<span class="nc" id="L41">        dbObject.put(ref, new BasicDBObject(&quot;href&quot;, href));</span>
+<span class="nc" id="L42">    }</span>
+
+    /**
+     *
+     * @param ref
+     * @param href
+     * @param templated
+     */
+    public Link(String ref, String href, boolean templated) {
+<span class="nc" id="L51">        this(ref, href);</span>
+
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (templated) {</span>
+<span class="nc" id="L54">            ((BasicDBObject) dbObject.get(ref)).put(&quot;templated&quot;, true);</span>
+        }
+<span class="nc" id="L56">    }</span>
+
+    /**
+     *
+     * @param name
+     * @param ref
+     * @param href
+     * @param templated
+     */
+    public Link(String name, String ref, String href, boolean templated) {
+<span class="nc" id="L66">        this(ref, href, templated);</span>
+
+<span class="nc" id="L68">        ((BasicDBObject) dbObject.get(ref)).put(&quot;name&quot;, name);</span>
+<span class="nc" id="L69">    }</span>
+
+    /**
+     *
+     * @return
+     */
+    public String getRef() {
+<span class="nc" id="L76">        return (String) dbObject.keySet().toArray()[0];</span>
+    }
+
+    /**
+     *
+     * @return
+     */
+    public String getHref() {
+<span class="nc" id="L84">        return (String) ((DBObject) dbObject.get(getRef())).get(&quot;href&quot;);</span>
+    }
+
+    BasicDBObject getDBObject() {
+<span class="nc" id="L88">        return dbObject;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

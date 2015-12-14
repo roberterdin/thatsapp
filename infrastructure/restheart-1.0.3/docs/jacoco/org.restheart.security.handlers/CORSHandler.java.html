@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>CORSHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.security.handlers</a> &gt; <span class="el_source">CORSHandler.java</span></div><h1>CORSHandler.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.security.handlers;
+
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
+import static io.undertow.util.Headers.LOCATION_STRING;
+import static io.undertow.util.Headers.ORIGIN;
+import io.undertow.util.HttpString;
+import static java.lang.Boolean.TRUE;
+import org.restheart.handlers.PipedHttpHandler;
+import org.restheart.handlers.RequestContext;
+import static org.restheart.security.handlers.CORSHandler.CORSHeaders.ACCESS_CONTROL_ALLOW_CREDENTIAL;
+import static org.restheart.security.handlers.CORSHandler.CORSHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static org.restheart.security.handlers.CORSHandler.CORSHeaders.ACCESS_CONTROL_EXPOSE_HEADERS;
+import static org.restheart.security.handlers.IAuthToken.AUTH_TOKEN_HEADER;
+import static org.restheart.security.handlers.IAuthToken.AUTH_TOKEN_LOCATION_HEADER;
+import static org.restheart.security.handlers.IAuthToken.AUTH_TOKEN_VALID_HEADER;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ *
+ * The Access-Control-Expose-Headers header indicates which headers are safe to
+ * expose to the API of a CORS API specification.
+ */
+public class CORSHandler extends PipedHttpHandler {
+
+    public static final String ALL_ORIGINS = &quot;*&quot;;
+    private final HttpHandler noPipedNext;
+
+    /**
+     * Creates a new instance of GetRootHandler
+     *
+     * @param next
+     */
+    public CORSHandler(PipedHttpHandler next) {
+<span class="nc" id="L54">        super(next);</span>
+<span class="nc" id="L55">        this.noPipedNext = null;</span>
+<span class="nc" id="L56">    }</span>
+
+    /**
+     * Creates a new instance of GetRootHandler
+     *
+     * @param next
+     */
+    public CORSHandler(HttpHandler next) {
+<span class="nc" id="L64">        super(null);</span>
+<span class="nc" id="L65">        this.noPipedNext = next;</span>
+<span class="nc" id="L66">    }</span>
+
+    /**
+     *
+     * @param exchange
+     * @param context
+     * @throws Exception
+     */
+    @Override
+    public void handleRequest(HttpServerExchange exchange, RequestContext context) throws Exception {
+<span class="nc" id="L76">        injectAccessControlAllowHeaders(new HeadersManager(exchange));</span>
+
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        if (noPipedNext != null) {</span>
+<span class="nc" id="L79">            noPipedNext.handleRequest(exchange);</span>
+        } else {
+<span class="nc" id="L81">            getNext().handleRequest(exchange, context);</span>
+        }
+<span class="nc" id="L83">    }</span>
+
+    private void injectAccessControlAllowHeaders(HeadersManager headers) {
+
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (headers.isRequestHeaderSet(ORIGIN)) {</span>
+<span class="nc" id="L88">            headers.addResponseHeader(ACCESS_CONTROL_ALLOW_ORIGIN, headers.getRequestHeader(ORIGIN).getFirst());</span>
+        } else {
+<span class="nc" id="L90">            headers.addResponseHeader(ACCESS_CONTROL_ALLOW_ORIGIN, ALL_ORIGINS);</span>
+        }
+
+<span class="nc" id="L93">        headers.addResponseHeader(ACCESS_CONTROL_ALLOW_CREDENTIAL, TRUE);</span>
+
+<span class="nc" id="L95">        headers.addResponseHeader(ACCESS_CONTROL_EXPOSE_HEADERS, LOCATION_STRING);</span>
+<span class="nc" id="L96">        headers.addResponseHeader(ACCESS_CONTROL_EXPOSE_HEADERS,</span>
+                LOCATION_STRING + &quot;, &quot;
+                + Headers.ETAG + &quot;, &quot;
+<span class="nc" id="L99">                + AUTH_TOKEN_HEADER.toString() + &quot;, &quot;</span>
+<span class="nc" id="L100">                + AUTH_TOKEN_VALID_HEADER.toString() + &quot;, &quot;</span>
+<span class="nc" id="L101">                + AUTH_TOKEN_LOCATION_HEADER.toString());</span>
+<span class="nc" id="L102">    }</span>
+
+    interface CORSHeaders {
+<span class="nc" id="L105">        HttpString ACCESS_CONTROL_EXPOSE_HEADERS = HttpString.tryFromString(&quot;Access-Control-Expose-Headers&quot;);</span>
+<span class="nc" id="L106">        HttpString ACCESS_CONTROL_ALLOW_CREDENTIAL = HttpString.tryFromString(&quot;Access-Control-Allow-Credentials&quot;);</span>
+<span class="nc" id="L107">        HttpString ACCESS_CONTROL_ALLOW_ORIGIN = HttpString.tryFromString(&quot;Access-Control-Allow-Origin&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

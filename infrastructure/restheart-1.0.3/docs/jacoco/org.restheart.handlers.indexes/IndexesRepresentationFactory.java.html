@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>IndexesRepresentationFactory.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.handlers.indexes</a> &gt; <span class="el_source">IndexesRepresentationFactory.java</span></div><h1>IndexesRepresentationFactory.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.handlers.indexes;
+
+import com.mongodb.DBObject;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
+import java.util.List;
+import org.bson.types.ObjectId;
+import org.restheart.Configuration;
+import org.restheart.hal.Link;
+import org.restheart.hal.Representation;
+import static org.restheart.hal.Representation.HAL_JSON_MEDIA_TYPE;
+import org.restheart.handlers.IllegalQueryParamenterException;
+import org.restheart.handlers.RequestContext;
+import org.restheart.utils.URLUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class IndexesRepresentationFactory {
+
+<span class="nc" id="L41">    private static final Logger LOGGER = LoggerFactory.getLogger(IndexesRepresentationFactory.class);</span>
+
+    /**
+     *
+     * @param exchange
+     * @param context
+     * @param embeddedData
+     * @param size
+     * @throws IllegalQueryParamenterException
+     */
+    static public void sendHal(HttpServerExchange exchange, RequestContext context, List&lt;DBObject&gt; embeddedData, long size)
+            throws IllegalQueryParamenterException {
+<span class="nc" id="L53">        String requestPath = URLUtils.removeTrailingSlashes(context.getMappedRequestUri());</span>
+<span class="nc bnc" id="L54" title="All 4 branches missed.">        String queryString = exchange.getQueryString() == null || exchange.getQueryString().isEmpty()</span>
+                ? &quot;&quot;
+<span class="nc" id="L56">                : &quot;?&quot; + URLUtils.decodeQueryString(exchange.getQueryString());</span>
+
+<span class="nc" id="L58">        Representation rep = new Representation(requestPath + queryString);</span>
+
+<span class="nc" id="L60">        rep.addProperty(&quot;_type&quot;, context.getType().name());</span>
+
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (size &gt;= 0) {</span>
+<span class="nc" id="L63">            rep.addProperty(&quot;_size&quot;, size);</span>
+        }
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (embeddedData != null) {</span>
+<span class="nc" id="L67">            long count = embeddedData.stream()</span>
+<span class="nc" id="L68">                    .filter((props) -&gt; props.keySet().stream()</span>
+<span class="nc bnc" id="L69" title="All 4 branches missed.">                            .anyMatch((k) -&gt; k.equals(&quot;id&quot;) || k.equals(&quot;_id&quot;)))</span>
+<span class="nc" id="L70">                    .count();</span>
+
+<span class="nc" id="L72">            rep.addProperty(&quot;_returned&quot;, count);</span>
+
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            if (!embeddedData.isEmpty()) {</span>
+<span class="nc" id="L75">                embeddedDocuments(embeddedData, requestPath, rep);</span>
+            }
+        }
+        
+        // curies
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if (context.isParentAccessible()) {</span>
+            // this can happen due to mongo-mounts mapped URL
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            if (context.getCollectionName().endsWith(RequestContext.FS_FILES_SUFFIX)) {</span>
+<span class="nc" id="L83">                rep.addLink(new Link(&quot;rh:bucket&quot;, URLUtils.getParentPath(requestPath)));</span>
+            } else {
+<span class="nc" id="L85">                rep.addLink(new Link(&quot;rh:coll&quot;, URLUtils.getParentPath(requestPath)));</span>
+            }
+        }
+        
+<span class="nc" id="L89">        rep.addLink(new Link(&quot;rh:indexes&quot;, requestPath));</span>
+        
+<span class="nc" id="L91">        rep.addLink(new Link(&quot;rh&quot;, &quot;curies&quot;, Configuration.RESTHEART_ONLINE_DOC_URL </span>
+                + &quot;/{rel}.html&quot;, true), true);
+
+<span class="nc" id="L94">        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, HAL_JSON_MEDIA_TYPE);</span>
+<span class="nc" id="L95">        exchange.getResponseSender().send(rep.toString());</span>
+<span class="nc" id="L96">    }</span>
+
+    private static void embeddedDocuments(List&lt;DBObject&gt; embeddedData, String requestPath, Representation rep) {
+<span class="nc" id="L99">        embeddedData.stream().forEach((d) -&gt; {</span>
+<span class="nc" id="L100">            Object _id = d.get(&quot;_id&quot;);</span>
+
+<span class="nc bnc" id="L102" title="All 6 branches missed.">            if (_id != null &amp;&amp; (_id instanceof String || _id instanceof ObjectId)) {</span>
+<span class="nc" id="L103">                Representation nrep = new Representation(requestPath + &quot;/&quot; + _id.toString());</span>
+
+<span class="nc" id="L105">                nrep.addProperty(&quot;_type&quot;, RequestContext.TYPE.INDEX.name());</span>
+
+<span class="nc" id="L107">                nrep.addProperties(d);</span>
+
+<span class="nc" id="L109">                rep.addRepresentation(&quot;rh:index&quot;, nrep);</span>
+<span class="nc" id="L110">            } else {</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">                rep.addWarning(&quot;index with _id &quot; + _id + (_id == null ? &quot; &quot; : &quot; of type &quot; + _id.getClass().getSimpleName()) + &quot;filtered out. Indexes can only have ids of type String&quot;);</span>
+<span class="nc" id="L112">                LOGGER.debug(&quot;index missing string _id field&quot;, d);</span>
+            }
+<span class="nc" id="L114">        });</span>
+<span class="nc" id="L115">    }</span>
+
+<span class="nc" id="L117">    private IndexesRepresentationFactory() {</span>
+<span class="nc" id="L118">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

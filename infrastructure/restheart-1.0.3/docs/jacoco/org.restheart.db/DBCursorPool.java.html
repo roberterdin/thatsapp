@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DBCursorPool.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.db</a> &gt; <span class="el_source">DBCursorPool.java</span></div><h1>DBCursorPool.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.db;
+
+import com.mongodb.DBCursor;
+import org.restheart.Bootstrapper;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import org.restheart.cache.Cache;
+import org.restheart.cache.CacheFactory;
+import org.restheart.cache.LoadingCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class DBCursorPool {
+
+<span class="nc" id="L44">    private static final Logger LOGGER = LoggerFactory.getLogger(DBCursorPool.class);</span>
+
+    private final DbsDAO dbsDAO;
+
+    /**
+     * Cursor in the pool won't be used if&lt;br&gt;REQUESTED_SKIPS - POOL_SKIPS
+     * &amp;gt; MIN_SKIP_DISTANCE_PERCENTAGE * REQUESTED_SKIPS.&lt;br&gt;The cursor from
+     * the pool need to be iterated via the next() method (REQUESTED_SKIPS -
+     * POOL_SKIPS) times to reach the requested page; since skip() is more
+     * efficient than next(), using the cursor in the pool is worthwhile only if
+     * next() has to be used less than MIN_SKIP_DISTANCE_PERCENTAGE *
+     * REQUESTED_SKIPS times.
+     */
+    public static final double MIN_SKIP_DISTANCE_PERCENTAGE = 10/100f; // 10%
+
+    //TODO make those configurable
+<span class="nc" id="L60">    private final int SKIP_SLICE_LINEAR_DELTA = Bootstrapper.getConfiguration().getEagerLinearSliceDelta();</span>
+<span class="nc" id="L61">    private final int SKIP_SLICE_LINEAR_WIDTH = Bootstrapper.getConfiguration().getEagerLinearSliceWidht();</span>
+<span class="nc" id="L62">    private final int[] SKIP_SLICES_HEIGHTS = Bootstrapper.getConfiguration().getEagerLinearSliceHeights();</span>
+
+<span class="nc" id="L64">    private final int SKIP_SLICE_RND_MIN_WIDTH = Bootstrapper.getConfiguration().getEagerRndSliceMinWidht();</span>
+<span class="nc" id="L65">    private final int SKIP_SLICE_RND_MAX_CURSORS = Bootstrapper.getConfiguration().getEagerRndMaxCursors();</span>
+
+<span class="nc" id="L67">    public enum EAGER_CURSOR_ALLOCATION_POLICY {</span>
+
+<span class="nc" id="L69">        LINEAR,</span>
+<span class="nc" id="L70">        RANDOM,</span>
+<span class="nc" id="L71">        NONE</span>
+    };
+
+    private final Cache&lt;DBCursorPoolEntryKey, DBCursor&gt; cache;
+    private final LoadingCache&lt;DBCursorPoolEntryKey, Long&gt; collSizes;
+
+    private static final long TTL = 8 * 60 * 1000; // MUST BE &lt; 10 since this 10 the TTL of the default cursor in mongodb
+<span class="nc" id="L78">    private static final long POOL_SIZE = Bootstrapper.getConfiguration().getEagerPoolSize();</span>
+
+<span class="nc" id="L80">    ExecutorService executor = Executors.newSingleThreadExecutor();</span>
+
+    public static DBCursorPool getInstance() {
+<span class="nc" id="L83">        return DBCursorPoolSingletonHolder.INSTANCE;</span>
+    }
+
+<span class="nc" id="L86">    private DBCursorPool(DbsDAO dbsDAO) {</span>
+<span class="nc" id="L87">        this.dbsDAO = dbsDAO;</span>
+
+<span class="nc" id="L89">        cache = CacheFactory.createLocalCache(POOL_SIZE, Cache.EXPIRE_POLICY.AFTER_READ, TTL);</span>
+
+<span class="nc" id="L91">        collSizes = CacheFactory.createLocalLoadingCache(100, org.restheart.cache.Cache.EXPIRE_POLICY.AFTER_WRITE, 60 * 1000, (DBCursorPoolEntryKey key) -&gt; {</span>
+<span class="nc" id="L92">            return dbsDAO.getCollectionSize(key.getCollection(), key.getFilter());</span>
+        }
+        );
+
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if (LOGGER.isDebugEnabled()) {</span>
+            // print stats every 1 minute
+<span class="nc" id="L98">            Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -&gt; {</span>
+<span class="nc" id="L99">                getCacheSizes().forEach((s, c) -&gt; {</span>
+<span class="nc" id="L100">                    LOGGER.debug(&quot;db cursor pool size: {}\t{}&quot;, s, c);</span>
+<span class="nc" id="L101">                });</span>
+
+<span class="nc" id="L103">                LOGGER.trace(&quot;db cursor pool entries: {}&quot;, cache.asMap().keySet());</span>
+<span class="nc" id="L104">            }, 1, 1, TimeUnit.MINUTES);</span>
+        }
+<span class="nc" id="L106">    }</span>
+
+    public synchronized SkippedDBCursor get(DBCursorPoolEntryKey key, EAGER_CURSOR_ALLOCATION_POLICY allocationPolicy) {
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (key.getSkipped() &lt; SKIP_SLICE_LINEAR_WIDTH) {</span>
+<span class="nc" id="L110">            LOGGER.trace(&quot;no cursor to reuse found with skipped {} that is less than SKIP_SLICE_LINEAR_WIDTH {}&quot;, key.getSkipped(), SKIP_SLICE_LINEAR_WIDTH);</span>
+<span class="nc" id="L111">            return null;</span>
+        }
+
+        // return the dbcursor with the closest skips to the request
+<span class="nc" id="L115">        Optional&lt;DBCursorPoolEntryKey&gt; _bestKey = cache.asMap().keySet().stream()</span>
+<span class="nc" id="L116">                .filter(cursorsPoolFilterGte(key))</span>
+<span class="nc" id="L117">                .sorted(Comparator.comparingInt(DBCursorPoolEntryKey::getSkipped).reversed())</span>
+<span class="nc" id="L118">                .findFirst();</span>
+
+        SkippedDBCursor ret;
+
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (_bestKey.isPresent()) {</span>
+<span class="nc" id="L123">            Optional&lt;DBCursor&gt; _dbcur = cache.get(_bestKey.get());</span>
+
+<span class="nc bnc" id="L125" title="All 4 branches missed.">            if (_dbcur != null &amp;&amp; _dbcur.isPresent()) {</span>
+<span class="nc" id="L126">                ret = new SkippedDBCursor(_dbcur.get(), _bestKey.get().getSkipped());</span>
+<span class="nc" id="L127">                cache.invalidate(_bestKey.get());</span>
+
+<span class="nc" id="L129">                LOGGER.debug(&quot;found cursor to reuse in pool, asked with skipped {} and saving {} seeks&quot;, key.getSkipped(), _bestKey.get().getSkipped());</span>
+            } else {
+<span class="nc" id="L131">                ret = null;</span>
+
+<span class="nc" id="L133">                LOGGER.debug(&quot;no cursor to reuse found with skipped {}.&quot;, key.getSkipped());</span>
+            }
+<span class="nc" id="L135">        } else {</span>
+<span class="nc" id="L136">            ret = null;</span>
+
+<span class="nc" id="L138">            LOGGER.debug(&quot;no cursor to reuse found with skipped {}.&quot;, key.getSkipped());</span>
+        }
+
+<span class="nc" id="L141">        populateCache(key, allocationPolicy);</span>
+
+<span class="nc" id="L143">        return ret;</span>
+    }
+
+    void populateCache(DBCursorPoolEntryKey key, EAGER_CURSOR_ALLOCATION_POLICY allocationPolicy) {
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (allocationPolicy == EAGER_CURSOR_ALLOCATION_POLICY.LINEAR) {</span>
+<span class="nc" id="L148">            populateCacheLinear(key);</span>
+<span class="nc bnc" id="L149" title="All 2 branches missed.">        } else if (allocationPolicy == EAGER_CURSOR_ALLOCATION_POLICY.RANDOM) {</span>
+<span class="nc" id="L150">            populateCacheRandom(key);</span>
+        }
+<span class="nc" id="L152">    }</span>
+
+    private void populateCacheLinear(DBCursorPoolEntryKey key) {
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        if (key.getSkipped() &lt; SKIP_SLICE_LINEAR_WIDTH) {</span>
+<span class="nc" id="L156">            return;</span>
+        }
+
+<span class="nc" id="L159">        int firstSlice = key.getSkipped() / SKIP_SLICE_LINEAR_WIDTH;</span>
+
+<span class="nc" id="L161">        executor.submit(() -&gt; {</span>
+<span class="nc" id="L162">            int slice = firstSlice;</span>
+
+<span class="nc bnc" id="L164" title="All 2 branches missed.">            for (int tohave : SKIP_SLICES_HEIGHTS) {</span>
+<span class="nc" id="L165">                int sliceSkips = slice * SKIP_SLICE_LINEAR_WIDTH - SKIP_SLICE_LINEAR_DELTA;</span>
+<span class="nc" id="L166">                DBCursorPoolEntryKey sliceKey = new DBCursorPoolEntryKey(key.getCollection(), key.getSort(), key.getFilter(), key.getFilter(), sliceSkips, -1);</span>
+
+<span class="nc" id="L168">                long existing = getSliceHeight(sliceKey);</span>
+
+<span class="nc" id="L170">                long tocreate = tohave - existing;</span>
+
+<span class="nc bnc" id="L172" title="All 2 branches missed.">                if (tocreate &gt; 0) {</span>
+                    // create the first cursor
+<span class="nc" id="L174">                    DBCursor cursor = dbsDAO.getCollectionDBCursor(key.getCollection(), key.getSort(), key.getFilter(), key.getKeys());</span>
+<span class="nc" id="L175">                    cursor</span>
+<span class="nc" id="L176">                            .limit(1000 + SKIP_SLICE_LINEAR_DELTA)</span>
+<span class="nc" id="L177">                            .skip(sliceSkips);</span>
+
+<span class="nc" id="L179">                    cursor.hasNext(); // this forces the actual skipping</span>
+
+<span class="nc" id="L181">                    DBCursorPoolEntryKey newkey = new DBCursorPoolEntryKey(key.getCollection(), key.getSort(), key.getFilter(), key.getKeys(), sliceSkips, System.nanoTime());</span>
+<span class="nc" id="L182">                    cache.put(newkey, cursor);</span>
+
+<span class="nc" id="L184">                    LOGGER.debug(&quot;created new cursor in pool: {}&quot;, newkey);</span>
+
+<span class="nc" id="L186">                    tocreate--;</span>
+
+                    // copy the first cursor for better performance
+<span class="nc bnc" id="L189" title="All 2 branches missed.">                    for (long cont = tocreate; cont &gt; 0; cont--) {</span>
+<span class="nc" id="L190">                        newkey = new DBCursorPoolEntryKey(key.getCollection(), key.getSort(), key.getFilter(), key.getKeys(), sliceSkips, System.nanoTime());</span>
+<span class="nc" id="L191">                        cache.put(newkey, cursor.copy());</span>
+<span class="nc" id="L192">                        LOGGER.debug(&quot;created new cursor in pool: {}&quot;, newkey);</span>
+                    }
+                }
+
+<span class="nc" id="L196">                slice++;</span>
+            }
+<span class="nc" id="L198">        });</span>
+<span class="nc" id="L199">    }</span>
+
+    private void populateCacheRandom(DBCursorPoolEntryKey key) {
+<span class="nc" id="L202">        executor.submit(() -&gt; {</span>
+<span class="nc" id="L203">            Long size = collSizes.getLoading(key).get();</span>
+
+            int sliceWidht;
+            int slices;
+<span class="nc" id="L207">            int totalSlices = size.intValue() / SKIP_SLICE_RND_MIN_WIDTH + 1;</span>
+
+<span class="nc bnc" id="L209" title="All 2 branches missed.">            if (totalSlices &lt;= SKIP_SLICE_RND_MAX_CURSORS) {</span>
+<span class="nc" id="L210">                slices = totalSlices;</span>
+<span class="nc" id="L211">                sliceWidht = SKIP_SLICE_RND_MIN_WIDTH;</span>
+            } else {
+<span class="nc" id="L213">                slices = SKIP_SLICE_RND_MAX_CURSORS;</span>
+<span class="nc" id="L214">                sliceWidht = size.intValue() / slices;</span>
+            }
+
+<span class="nc bnc" id="L217" title="All 2 branches missed.">            for (int slice = 1; slice &lt; slices; slice++) {</span>
+<span class="nc" id="L218">                int sliceSkips = slice * sliceWidht;</span>
+
+<span class="nc" id="L220">                DBCursorPoolEntryKey sliceKey = new DBCursorPoolEntryKey(key.getCollection(), key.getSort(), key.getFilter(), key.getKeys(), sliceSkips, -1);</span>
+
+<span class="nc" id="L222">                long existing = getSliceHeight(sliceKey);</span>
+
+<span class="nc bnc" id="L224" title="All 2 branches missed.">                if (existing == 0) {</span>
+<span class="nc" id="L225">                    DBCursor cursor = dbsDAO.getCollectionDBCursor(key.getCollection(), key.getSort(), key.getFilter(), key.getKeys());</span>
+<span class="nc" id="L226">                    cursor</span>
+<span class="nc" id="L227">                            .skip(sliceSkips)</span>
+<span class="nc" id="L228">                            .limit(1000 + sliceWidht);</span>
+
+<span class="nc" id="L230">                    cursor.hasNext(); // this forces the actual skipping</span>
+
+<span class="nc" id="L232">                    DBCursorPoolEntryKey newkey = new DBCursorPoolEntryKey(key.getCollection(), key.getSort(), key.getFilter(), key.getKeys(), sliceSkips, System.nanoTime());</span>
+<span class="nc" id="L233">                    cache.put(newkey, cursor);</span>
+<span class="nc" id="L234">                    LOGGER.debug(&quot;created new cursor in pool: {}&quot;, newkey);</span>
+                }
+            }
+<span class="nc" id="L237">        });</span>
+<span class="nc" id="L238">    }</span>
+
+    private long getSliceHeight(DBCursorPoolEntryKey key) {
+<span class="nc" id="L241">        long ret = cache.asMap().keySet().stream()</span>
+<span class="nc" id="L242">                .filter(cursorsPoolFilterEq(key))</span>
+<span class="nc" id="L243">                .count();</span>
+
+<span class="nc" id="L245">        LOGGER.trace(&quot;cursor in pool with skips {} are {}&quot;, key.getSkipped(), ret);</span>
+
+<span class="nc" id="L247">        return ret;</span>
+    }
+
+    private Predicate&lt;? super DBCursorPoolEntryKey&gt; cursorsPoolFilterEq(DBCursorPoolEntryKey requestCursor) {
+<span class="nc" id="L251">        return poolCursor</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">                -&gt; Objects.equals(poolCursor.getCollection().getDB().getName(), requestCursor.getCollection().getDB().getName())</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">                &amp;&amp; Objects.equals(poolCursor.getCollection().getName(), requestCursor.getCollection().getName())</span>
+<span class="nc bnc" id="L254" title="All 6 branches missed.">                &amp;&amp; Arrays.equals(poolCursor.getFilter() != null ? poolCursor.getFilter().toArray() : null, requestCursor.getFilter() != null ? requestCursor.getFilter().toArray() : null)</span>
+<span class="nc bnc" id="L255" title="All 6 branches missed.">                &amp;&amp; Arrays.equals(poolCursor.getSort() != null ? poolCursor.getSort().toArray() : null, requestCursor.getSort() != null ? requestCursor.getSort().toArray() : null)</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">                &amp;&amp; poolCursor.getSkipped() == requestCursor.getSkipped();</span>
+    }
+
+    private Predicate&lt;? super DBCursorPoolEntryKey&gt; cursorsPoolFilterGte(DBCursorPoolEntryKey requestCursor) {
+<span class="nc" id="L260">        return poolCursor</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">                -&gt; Objects.equals(poolCursor.getCollection().getDB().getName(), requestCursor.getCollection().getDB().getName())</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">                &amp;&amp; Objects.equals(poolCursor.getCollection().getName(), requestCursor.getCollection().getName())</span>
+<span class="nc bnc" id="L263" title="All 6 branches missed.">                &amp;&amp; Arrays.equals(poolCursor.getFilter() != null ? poolCursor.getFilter().toArray() : null, requestCursor.getFilter() != null ? requestCursor.getFilter().toArray() : null)</span>
+<span class="nc bnc" id="L264" title="All 6 branches missed.">                &amp;&amp; Arrays.equals(poolCursor.getSort() != null ? poolCursor.getSort().toArray() : null, requestCursor.getSort() != null ? requestCursor.getSort().toArray() : null)</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">                &amp;&amp; poolCursor.getSkipped() &lt;= requestCursor.getSkipped()</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">                &amp;&amp; requestCursor.getSkipped() - poolCursor.getSkipped() &lt;= MIN_SKIP_DISTANCE_PERCENTAGE * requestCursor.getSkipped();</span>
+    }
+
+    private TreeMap&lt;String, Long&gt; getCacheSizes() {
+<span class="nc" id="L270">        return new TreeMap&lt;&gt;(cache.asMap().keySet().stream().collect(Collectors.groupingBy(DBCursorPoolEntryKey::getCacheStatsGroup, Collectors.counting())));</span>
+    }
+
+<span class="nc" id="L273">    private static class DBCursorPoolSingletonHolder {</span>
+
+<span class="nc" id="L275">        private static final DBCursorPool INSTANCE = new DBCursorPool(new DbsDAO());</span>
+
+    };
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

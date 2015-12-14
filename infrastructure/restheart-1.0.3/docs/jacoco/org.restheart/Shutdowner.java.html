@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Shutdowner.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart</a> &gt; <span class="el_source">Shutdowner.java</span></div><h1>Shutdowner.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart;
+
+import org.restheart.utils.FileUtils;
+import org.restheart.utils.OSChecker;
+import com.sun.akuma.CLibrary;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+<span class="nc" id="L30">public class Shutdowner {</span>
+<span class="nc" id="L31">    private static final Logger LOGGER = LoggerFactory.getLogger(Shutdowner.class);</span>
+
+    public static void main(final String[] args) {
+<span class="nc" id="L34">        LOGGER.info(&quot;Shutdowner called...&quot;);</span>
+        
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        if (askingForHelp(args)) {</span>
+<span class="nc" id="L37">            LOGGER.info(&quot;usage: java -cp restheart.jar org.restheart.Shutdowner [configuration file].&quot;);</span>
+<span class="nc" id="L38">            LOGGER.info(&quot;shutdown --help\t\tprints this help message and exits.&quot;);</span>
+<span class="nc" id="L39">            LOGGER.info(&quot;shutdown\t\t\tshutdown the RESTHeart instance run without specifying the configuration file.&quot;);</span>
+<span class="nc" id="L40">            LOGGER.info(&quot;shutdown restheart.yml\t\tshutdown the RESTHeart instance run with the restheart.yml configuration file.&quot;);</span>
+<span class="nc" id="L41">            LOGGER.info(&quot;NOTE: shutdown is not supported on windows.&quot;);</span>
+<span class="nc" id="L42">            System.exit(0);</span>
+        }
+
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        if (OSChecker.isWindows()) {</span>
+<span class="nc" id="L46">            LOGGER.error(&quot;shutdown is not supported on windows.&quot;);</span>
+<span class="nc" id="L47">            System.exit(-5);</span>
+        }
+
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (FileUtils.getConfigurationFilePath(args) == null) {</span>
+<span class="nc" id="L51">            LOGGER.info(&quot;shutting down the RESTHeart instance run without configuration file&quot;);</span>
+        } else {
+<span class="nc" id="L53">            LOGGER.info(&quot;shutting down the RESTHeart instance run with configuration file {}&quot;, FileUtils.getConfigurationFilePath(args).toString());</span>
+        }
+            
+<span class="nc" id="L56">        int pid = FileUtils.getPidFromFile(FileUtils.getPidFilePath(FileUtils.getFileAbsoultePathHash(FileUtils.getConfigurationFilePath(args))));</span>
+
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        if (pid &lt; 0) {</span>
+<span class="nc" id="L59">            LOGGER.warn(&quot;RESTHeart instance pid file not found. Is it actually running?&quot;);</span>
+<span class="nc" id="L60">            LOGGER.info(&quot;eventually you need to stop it using your OS tools.&quot;);</span>
+<span class="nc" id="L61">            System.exit(-1);</span>
+        }
+        
+<span class="nc" id="L64">        CLibrary.LIBC.kill(pid, 15); // 15 is SIGTERM</span>
+        
+<span class="nc" id="L66">        LOGGER.info(&quot;SIGTERM signal sent to RESTHeart instance with pid {} &quot;, pid);</span>
+        
+        Configuration conf;
+        
+        try {
+<span class="nc" id="L71">            conf = FileUtils.getConfiguration(args, true);</span>
+<span class="nc" id="L72">            LOGGER.info(&quot;you can check the log file {}&quot;, conf.getLogFilePath());</span>
+<span class="nc" id="L73">        } catch (ConfigurationException ex) {</span>
+<span class="nc" id="L74">            LOGGER.warn(ex.getMessage());</span>
+<span class="nc" id="L75">        }</span>
+<span class="nc" id="L76">    }</span>
+
+    private static boolean askingForHelp(final String[] args) {
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        for (String arg : args) {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (arg.equals(&quot;--help&quot;)) {</span>
+<span class="nc" id="L81">                return true;</span>
+            }
+        }
+
+<span class="nc" id="L85">        return false;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>RequestContextInjectorHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.handlers.injectors</a> &gt; <span class="el_source">RequestContextInjectorHandler.java</span></div><h1>RequestContextInjectorHandler.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.handlers.injectors;
+
+import com.mongodb.util.JSON;
+import io.undertow.server.HttpServerExchange;
+import java.util.Arrays;
+import java.util.Deque;
+import org.bson.BSONObject;
+import org.restheart.db.DBCursorPool.EAGER_CURSOR_ALLOCATION_POLICY;
+import org.restheart.hal.UnsupportedDocumentIdException;
+import org.restheart.handlers.PipedHttpHandler;
+import org.restheart.handlers.RequestContext;
+import org.restheart.handlers.RequestContext.DOC_ID_TYPE;
+import static org.restheart.handlers.RequestContext.DOC_ID_TYPE_KEY;
+import static org.restheart.handlers.RequestContext.EAGER_CURSOR_ALLOCATION_POLICY_QPARAM_KEY;
+import static org.restheart.handlers.RequestContext.FILTER_QPARAM_KEY;
+import static org.restheart.handlers.RequestContext.KEYS_QPARAM_KEY;
+import static org.restheart.handlers.RequestContext.PAGESIZE_QPARAM_KEY;
+import static org.restheart.handlers.RequestContext.PAGE_QPARAM_KEY;
+import static org.restheart.handlers.RequestContext.SORT_BY_QPARAM_KEY;
+import org.restheart.utils.HttpStatus;
+import org.restheart.utils.ResponseHelper;
+import org.restheart.utils.URLUtils;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class RequestContextInjectorHandler extends PipedHttpHandler {
+
+    private final String whereUri;
+    private final String whatUri;
+
+    /**
+     *
+     * @param whereUri
+     * @param whatUri
+     * @param next
+     */
+    public RequestContextInjectorHandler(String whereUri, String whatUri, PipedHttpHandler next) {
+<span class="nc" id="L57">        super(next);</span>
+
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (whereUri == null) {</span>
+<span class="nc" id="L60">            throw new IllegalArgumentException(&quot;whereUri cannot be null. check your mongo-mounts.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (!whereUri.startsWith(&quot;/&quot;)) {</span>
+<span class="nc" id="L64">            throw new IllegalArgumentException(&quot;whereUri must start with \&quot;/\&quot;. check your mongo-mounts&quot;);</span>
+        }
+
+<span class="nc bnc" id="L67" title="All 4 branches missed.">        if (!whatUri.startsWith(&quot;/&quot;) &amp;&amp; !whatUri.equals(&quot;*&quot;)) {</span>
+<span class="nc" id="L68">            throw new IllegalArgumentException(&quot;whatUri must start with \&quot;/\&quot;. check your mongo-mounts&quot;);</span>
+        }
+
+<span class="nc" id="L71">        this.whereUri = URLUtils.removeTrailingSlashes(whereUri);</span>
+<span class="nc" id="L72">        this.whatUri = whatUri;</span>
+<span class="nc" id="L73">    }</span>
+
+    /**
+     *
+     * @param exchange
+     * @param context
+     * @throws Exception
+     */
+    @Override
+    public void handleRequest(HttpServerExchange exchange, RequestContext context) throws Exception {
+<span class="nc" id="L83">        RequestContext rcontext = new RequestContext(exchange, whereUri, whatUri);</span>
+
+<span class="nc" id="L85">        Deque&lt;String&gt; __pagesize = exchange.getQueryParameters().get(PAGESIZE_QPARAM_KEY);</span>
+
+<span class="nc" id="L87">        int page = 1; // default page</span>
+<span class="nc" id="L88">        int pagesize = 100; // default pagesize</span>
+
+<span class="nc bnc" id="L90" title="All 4 branches missed.">        if (__pagesize != null &amp;&amp; !(__pagesize.isEmpty())) {</span>
+            try {
+<span class="nc" id="L92">                pagesize = Integer.parseInt(__pagesize.getFirst());</span>
+<span class="nc" id="L93">            } catch (NumberFormatException ex) {</span>
+<span class="nc" id="L94">                ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+                        &quot;illegal pagesize paramenter, it is not a number&quot;, ex);
+<span class="nc" id="L96">                return;</span>
+<span class="nc" id="L97">            }</span>
+        }
+
+<span class="nc bnc" id="L100" title="All 4 branches missed.">        if (pagesize &lt; 0 || pagesize &gt; 1_000) {</span>
+<span class="nc" id="L101">            ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+                    &quot;illegal page parameter, pagesize must be &gt;= 0 and &lt;= 1000&quot;);
+<span class="nc" id="L103">            return;</span>
+        } else {
+<span class="nc" id="L105">            rcontext.setPagesize(pagesize);</span>
+        }
+
+<span class="nc" id="L108">        Deque&lt;String&gt; __page = exchange.getQueryParameters().get(PAGE_QPARAM_KEY);</span>
+
+<span class="nc bnc" id="L110" title="All 4 branches missed.">        if (__page != null &amp;&amp; !(__page.isEmpty())) {</span>
+            try {
+<span class="nc" id="L112">                page = Integer.parseInt(__page.getFirst());</span>
+<span class="nc" id="L113">            } catch (NumberFormatException ex) {</span>
+<span class="nc" id="L114">                ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+                        &quot;illegal page paramenter, it is not a number&quot;, ex);
+<span class="nc" id="L116">                return;</span>
+<span class="nc" id="L117">            }</span>
+        }
+
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (page &lt; 1) {</span>
+<span class="nc" id="L121">            ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+                    &quot;illegal page paramenter, it is &lt; 1&quot;);
+<span class="nc" id="L123">            return;</span>
+        } else {
+<span class="nc" id="L125">            rcontext.setPage(page);</span>
+        }
+
+<span class="nc" id="L128">        Deque&lt;String&gt; __count = exchange.getQueryParameters().get(&quot;count&quot;);</span>
+
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (__count != null) {</span>
+<span class="nc" id="L131">            rcontext.setCount(true);</span>
+        }
+        // get and check sort_by parameter
+<span class="nc" id="L134">        Deque&lt;String&gt; sort_by = exchange.getQueryParameters().get(&quot;sort_by&quot;);</span>
+
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (sort_by != null) {</span>
+<span class="nc bnc" id="L137" title="All 6 branches missed.">            if (sort_by.stream().anyMatch(s -&gt; s == null || s.isEmpty())) {</span>
+<span class="nc" id="L138">                ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+                        &quot;illegal sort_by paramenter&quot;);
+<span class="nc" id="L140">                return;</span>
+            }
+            
+<span class="nc bnc" id="L143" title="All 8 branches missed.">            if (sort_by.stream().anyMatch(s -&gt; s.trim().equals(&quot;_last_updated_on&quot;) || s.trim().equals(&quot;+_last_updated_on&quot;) || s.trim().equals(&quot;-_last_updated_on&quot;) )) {</span>
+<span class="nc" id="L144">                rcontext.addWarning(&quot;unexepecting sorting; the _last_updated_on timestamp is generated from the _etag property if present&quot;);</span>
+            }
+            
+<span class="nc bnc" id="L147" title="All 8 branches missed.">            if (sort_by.stream().anyMatch(s -&gt; s.trim().equals(&quot;_created_on&quot;) ||s.trim().equals(&quot;_created_on&quot;) || s.trim().equals(&quot;_created_on&quot;))) {</span>
+<span class="nc" id="L148">                rcontext.addWarning(&quot;unexepecting sorting; the _created_on timestamp is generated from the _id property if it is an ObjectId&quot;);</span>
+            }
+
+<span class="nc" id="L151">            rcontext.setSortBy(exchange.getQueryParameters().get(SORT_BY_QPARAM_KEY));</span>
+        }
+
+<span class="nc" id="L154">        Deque&lt;String&gt; keys = exchange.getQueryParameters().get(KEYS_QPARAM_KEY);</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        if (keys != null){</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">            if (keys.stream().anyMatch(f -&gt; {</span>
+<span class="nc bnc" id="L157" title="All 4 branches missed.">                if (f == null || f.isEmpty()) {</span>
+<span class="nc" id="L158">                    ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+                            &quot;illegal keys paramenter (empty)&quot;);
+<span class="nc" id="L160">                    return true;</span>
+                }
+
+                try {
+<span class="nc" id="L164">                    Object _keys = JSON.parse(f);</span>
+                    
+<span class="nc bnc" id="L166" title="All 2 branches missed.">                    if (!(_keys instanceof BSONObject)) {</span>
+<span class="nc" id="L167">                        ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+<span class="nc" id="L168">                            &quot;illegal keys paramenter, it is not a json object: &quot; + f + &quot; =&gt; &quot; + f.getClass().getSimpleName());</span>
+<span class="nc" id="L169">                    return true;</span>
+                    }
+<span class="nc" id="L171">                } catch (Throwable t) {</span>
+<span class="nc" id="L172">                    ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+                            &quot;illegal filter paramenter: &quot; + f, t);
+<span class="nc" id="L174">                    return true;</span>
+<span class="nc" id="L175">                }</span>
+
+<span class="nc" id="L177">                return false;</span>
+            })) {
+<span class="nc" id="L179">                return; // an error occurred</span>
+            }
+<span class="nc" id="L181">            rcontext.setKeys(exchange.getQueryParameters().get(KEYS_QPARAM_KEY));</span>
+        }
+        // get and check filter parameter
+<span class="nc" id="L184">        Deque&lt;String&gt; filters = exchange.getQueryParameters().get(FILTER_QPARAM_KEY);</span>
+
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (filters != null) {</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            if (filters.stream().anyMatch(f -&gt; {</span>
+<span class="nc bnc" id="L188" title="All 4 branches missed.">                if (f == null || f.isEmpty()) {</span>
+<span class="nc" id="L189">                    ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+                            &quot;illegal filter paramenter (empty)&quot;);
+<span class="nc" id="L191">                    return true;</span>
+                }
+
+                try {
+<span class="nc" id="L195">                    Object _filter = JSON.parse(f);</span>
+                    
+<span class="nc bnc" id="L197" title="All 2 branches missed.">                    if (!(_filter instanceof BSONObject)) {</span>
+<span class="nc" id="L198">                        ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+<span class="nc" id="L199">                            &quot;illegal filter paramenter, it is not a json object: &quot; + f + &quot; =&gt; &quot; + f.getClass().getSimpleName());</span>
+<span class="nc" id="L200">                    return true;</span>
+                    }
+<span class="nc" id="L202">                } catch (Throwable t) {</span>
+<span class="nc" id="L203">                    ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+                            &quot;illegal filter paramenter: &quot; + f, t);
+<span class="nc" id="L205">                    return true;</span>
+<span class="nc" id="L206">                }</span>
+
+<span class="nc" id="L208">                return false;</span>
+            })) {
+<span class="nc" id="L210">                return; // an error occurred</span>
+            }
+
+<span class="nc" id="L213">            rcontext.setFilter(exchange.getQueryParameters().get(FILTER_QPARAM_KEY));</span>
+        }
+
+        // get and check eager parameter
+<span class="nc" id="L217">        Deque&lt;String&gt; __eager = exchange.getQueryParameters().get(EAGER_CURSOR_ALLOCATION_POLICY_QPARAM_KEY);</span>
+
+        // default value
+<span class="nc" id="L220">        EAGER_CURSOR_ALLOCATION_POLICY eager = EAGER_CURSOR_ALLOCATION_POLICY.LINEAR;</span>
+
+<span class="nc bnc" id="L222" title="All 4 branches missed.">        if (__eager != null &amp;&amp; !__eager.isEmpty()) {</span>
+<span class="nc" id="L223">            String _eager = __eager.getFirst();</span>
+
+<span class="nc bnc" id="L225" title="All 4 branches missed.">            if (_eager != null &amp;&amp; !_eager.isEmpty()) {</span>
+                try {
+<span class="nc" id="L227">                    eager = EAGER_CURSOR_ALLOCATION_POLICY.valueOf(_eager.trim().toUpperCase());</span>
+<span class="nc" id="L228">                } catch (IllegalArgumentException iae) {</span>
+<span class="nc" id="L229">                    ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST,</span>
+                            &quot;illegal eager paramenter (must be LINEAR, RANDOM or NONE)&quot;);
+<span class="nc" id="L231">                    return;</span>
+<span class="nc" id="L232">                }</span>
+            }
+        }
+
+<span class="nc" id="L236">        rcontext.setCursorAllocationPolicy(eager);</span>
+
+        // get and check the doc id type parameter
+<span class="nc" id="L239">        Deque&lt;String&gt; __docIdType = exchange.getQueryParameters().get(DOC_ID_TYPE_KEY);</span>
+
+        // default value
+<span class="nc" id="L242">        DOC_ID_TYPE docIdType = DOC_ID_TYPE.STRING_OID;</span>
+
+<span class="nc bnc" id="L244" title="All 4 branches missed.">        if (__docIdType != null &amp;&amp; !__docIdType.isEmpty()) {</span>
+<span class="nc" id="L245">            String _docIdType = __docIdType.getFirst();</span>
+
+<span class="nc bnc" id="L247" title="All 4 branches missed.">            if (_docIdType != null &amp;&amp; !_docIdType.isEmpty()) {</span>
+                try {
+<span class="nc" id="L249">                    docIdType = DOC_ID_TYPE.valueOf(_docIdType.trim().toUpperCase());</span>
+<span class="nc" id="L250">                } catch (IllegalArgumentException iae) {</span>
+<span class="nc" id="L251">                    ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST, &quot;illegal &quot; + DOC_ID_TYPE_KEY + &quot; paramenter; must be &quot; + Arrays.toString(DOC_ID_TYPE.values()));</span>
+<span class="nc" id="L252">                    return;</span>
+<span class="nc" id="L253">                }</span>
+            }
+        }
+
+<span class="nc" id="L257">        rcontext.setDocIdType(docIdType);</span>
+        
+        // get and check the document id
+        
+<span class="nc" id="L261">        String _docId = rcontext.getDocumentIdRaw();</span>
+        
+        try {
+<span class="nc" id="L264">            rcontext.setDocumentId(URLUtils.getId(_docId, docIdType));</span>
+<span class="nc" id="L265">        } catch(UnsupportedDocumentIdException idide) {</span>
+<span class="nc" id="L266">            ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST, &quot;wrong document id format: not a valid &quot; + docIdType.name(), idide);</span>
+<span class="nc" id="L267">            return;</span>
+<span class="nc" id="L268">        }</span>
+
+<span class="nc" id="L270">        getNext().handleRequest(exchange, rcontext);</span>
+<span class="nc" id="L271">    }</span>
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+<span class="nc" id="L275">        handleRequest(exchange, new RequestContext(exchange, whereUri, whatUri));</span>
+<span class="nc" id="L276">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

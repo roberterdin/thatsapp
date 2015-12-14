@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GetCollectionHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.handlers.collection</a> &gt; <span class="el_source">GetCollectionHandler.java</span></div><h1>GetCollectionHandler.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.handlers.collection;
+
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
+import com.mongodb.MongoException;
+import com.mongodb.util.JSONParseException;
+import io.undertow.server.HttpServerExchange;
+import java.util.ArrayList;
+import org.restheart.db.Database;
+import org.restheart.db.DbsDAO;
+import org.restheart.hal.Representation;
+import org.restheart.handlers.IllegalQueryParamenterException;
+import org.restheart.handlers.PipedHttpHandler;
+import org.restheart.handlers.RequestContext;
+import org.restheart.utils.HttpStatus;
+import org.restheart.utils.ResponseHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class GetCollectionHandler extends PipedHttpHandler {
+
+<span class="fc" id="L43">    private static final Logger LOGGER = LoggerFactory.getLogger(GetCollectionHandler.class);</span>
+
+    public GetCollectionHandler() {
+<span class="nc" id="L46">        super();</span>
+<span class="nc" id="L47">    }</span>
+
+    public GetCollectionHandler(PipedHttpHandler next) {
+<span class="nc" id="L50">        super(next, new DbsDAO());</span>
+<span class="nc" id="L51">    }</span>
+
+    public GetCollectionHandler(PipedHttpHandler next, Database dbsDAO) {
+<span class="fc" id="L54">        super(next, dbsDAO);</span>
+<span class="fc" id="L55">    }</span>
+
+    /**
+     *
+     * @param exchange
+     * @param context
+     * @throws Exception
+     */
+    @Override
+    public void handleRequest(HttpServerExchange exchange, RequestContext context) throws Exception {
+<span class="nc" id="L65">        DBCollection coll = getDatabase().getCollection(context.getDBName(), context.getCollectionName());</span>
+<span class="nc" id="L66">        long size = -1;</span>
+
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (context.isCount()) {</span>
+<span class="nc" id="L69">            size = getDatabase().getCollectionSize(coll, exchange.getQueryParameters().get(&quot;filter&quot;));</span>
+        }
+
+        // ***** get data
+<span class="nc" id="L73">        ArrayList&lt;DBObject&gt; data = null;</span>
+
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (context.getPagesize() &gt; 0) {</span>
+
+            try {
+<span class="nc" id="L78">                data = getDatabase().getCollectionData(coll, context.getPage(), context.getPagesize(),</span>
+<span class="nc" id="L79">                        context.getSortBy(), context.getFilter(), context.getKeys(), context.getCursorAllocationPolicy());</span>
+<span class="nc" id="L80">            } catch (JSONParseException jpe) {</span>
+                // the filter expression is not a valid json string
+<span class="nc" id="L82">                LOGGER.debug(&quot;invalid filter expression {}&quot;, context.getFilter(), jpe);</span>
+<span class="nc" id="L83">                ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST, &quot;wrong request, filter expression is invalid&quot;, jpe);</span>
+<span class="nc" id="L84">                return;</span>
+<span class="nc" id="L85">            } catch (MongoException me) {</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                if (me.getMessage().matches(&quot;.*Can't canonicalize query.*&quot;)) {</span>
+                    // error with the filter expression during query execution
+<span class="nc" id="L88">                    LOGGER.debug(&quot;invalid filter expression {}&quot;, context.getFilter(), me);</span>
+<span class="nc" id="L89">                    ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST, &quot;wrong request, filter expression is invalid&quot;, me);</span>
+<span class="nc" id="L90">                    return;</span>
+                } else {
+<span class="nc" id="L92">                    throw me;</span>
+                }
+<span class="nc" id="L94">            }</span>
+        }
+
+<span class="nc bnc" id="L97" title="All 2 branches missed.">        if (exchange.isComplete()) {</span>
+            // if an error occured getting data, the exchange is already closed
+<span class="nc" id="L99">            return;</span>
+        }
+
+        // ***** return NOT_FOUND from here if collection is not existing 
+        // (this is to avoid to check existance via the slow CollectionDAO.checkCollectionExists)
+<span class="nc bnc" id="L104" title="All 10 branches missed.">        if ((context.getPagesize() &gt; 0 &amp;&amp; (data == null || data.isEmpty())) &amp;&amp; (context.getCollectionProps() == null || context.getCollectionProps().keySet().isEmpty())) {</span>
+<span class="nc" id="L105">            ResponseHelper.endExchange(exchange, HttpStatus.SC_NOT_FOUND);</span>
+<span class="nc" id="L106">            return;</span>
+        }
+
+        try {
+<span class="nc" id="L110">            CollectionRepresentationFactory crp = new CollectionRepresentationFactory();</span>
+<span class="nc" id="L111">            Representation rep = crp.getRepresentation(exchange, context, data, size);</span>
+
+<span class="nc" id="L113">            exchange.setResponseCode(HttpStatus.SC_OK);</span>
+
+            // call the ResponseScriptMetadataHanlder if piped in
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            if (getNext() != null) {</span>
+<span class="nc" id="L117">                DBObject responseContent = rep.asDBObject();</span>
+<span class="nc" id="L118">                context.setResponseContent(responseContent);</span>
+
+<span class="nc" id="L120">                getNext().handleRequest(exchange, context);</span>
+            }
+
+<span class="nc" id="L123">            crp.sendRepresentation(exchange, context, rep);</span>
+<span class="nc" id="L124">            exchange.endExchange();</span>
+<span class="nc" id="L125">        } catch (IllegalQueryParamenterException ex) {</span>
+<span class="nc" id="L126">            ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST, ex.getMessage(), ex);</span>
+<span class="nc" id="L127">        }</span>
+<span class="nc" id="L128">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

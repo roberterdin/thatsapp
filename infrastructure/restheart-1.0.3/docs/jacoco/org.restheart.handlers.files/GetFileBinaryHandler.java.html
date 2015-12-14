@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GetFileBinaryHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.handlers.files</a> &gt; <span class="el_source">GetFileBinaryHandler.java</span></div><h1>GetFileBinaryHandler.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.handlers.files;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.gridfs.GridFS;
+import com.mongodb.gridfs.GridFSDBFile;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
+import java.io.IOException;
+import java.time.Instant;
+import org.bson.types.ObjectId;
+import org.restheart.handlers.PipedHttpHandler;
+import org.restheart.handlers.RequestContext;
+import org.restheart.utils.HttpStatus;
+import org.restheart.utils.RequestHelper;
+import org.restheart.utils.ResponseHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Maurizio Turatti &lt;maurizio@softinstigate.com&gt;
+ */
+public class GetFileBinaryHandler extends PipedHttpHandler {
+
+    public static final String APPLICATION_OCTET_STREAM = &quot;application/octet-stream&quot;;
+    public static final String CONTENT_TRANSFER_ENCODING_BINARY = &quot;binary&quot;;
+    
+<span class="fc" id="L45">    private static final Logger LOGGER = LoggerFactory.getLogger(GetFileBinaryHandler.class);</span>
+
+    public GetFileBinaryHandler() {
+<span class="nc" id="L48">        super();</span>
+<span class="nc" id="L49">    }</span>
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange, RequestContext context) throws Exception {
+<span class="nc" id="L53">        LOGGER.trace(&quot;GET &quot; + exchange.getRequestURL());</span>
+<span class="nc" id="L54">        final String bucket = extractBucketName(context.getCollectionName());</span>
+
+<span class="nc" id="L56">        GridFS gridfs = new GridFS(getDatabase().getDB(context.getDBName()), bucket);</span>
+<span class="nc" id="L57">        GridFSDBFile dbsfile = gridfs.findOne(new BasicDBObject(&quot;_id&quot;, context.getDocumentId()));</span>
+
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (dbsfile == null) {</span>
+<span class="nc" id="L60">            fileNotFound(context, exchange);</span>
+        } else {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            if (!checkEtag(exchange, dbsfile)) {</span>
+<span class="nc" id="L63">                sendBinaryContent(dbsfile, exchange);</span>
+            }
+        }
+<span class="nc" id="L66">    }</span>
+
+    private boolean checkEtag(HttpServerExchange exchange, GridFSDBFile dbsfile) {
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (dbsfile != null) {</span>
+<span class="nc" id="L70">            Object etag = dbsfile.get(&quot;_etag&quot;);</span>
+
+<span class="nc bnc" id="L72" title="All 4 branches missed.">            if (etag != null &amp;&amp; etag instanceof ObjectId) {</span>
+                // add the _lastupdated_on in case the _etag field is present and its value is an ObjectId
+<span class="nc" id="L74">                dbsfile.put(&quot;_lastupdated_on&quot;, Instant.ofEpochSecond(((ObjectId)etag).getTimestamp()).toString());</span>
+
+                // in case the request contains the IF_NONE_MATCH header with the current etag value,
+                // just return 304 NOT_MODIFIED code
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                if (RequestHelper.checkReadEtag(exchange, (ObjectId)etag)) {</span>
+<span class="nc" id="L79">                    ResponseHelper.endExchange(exchange, HttpStatus.SC_NOT_MODIFIED);</span>
+<span class="nc" id="L80">                    return true;</span>
+                }
+            }
+        }
+
+<span class="nc" id="L85">        return false;</span>
+    }
+
+    private void fileNotFound(RequestContext context, HttpServerExchange exchange) {
+<span class="nc" id="L89">        final String errMsg = String.format(&quot;File with ID &lt;%s&gt; not found&quot;, context.getDocumentId());</span>
+<span class="nc" id="L90">        LOGGER.trace(errMsg);</span>
+<span class="nc" id="L91">        ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_NOT_FOUND, errMsg);</span>
+<span class="nc" id="L92">    }</span>
+
+    private void sendBinaryContent(final GridFSDBFile dbsfile, final HttpServerExchange exchange) throws IOException {
+<span class="nc" id="L95">        LOGGER.trace(&quot;Filename = {}&quot;, dbsfile.getFilename());</span>
+<span class="nc" id="L96">        LOGGER.trace(&quot;Content length = {}&quot;, dbsfile.getLength());</span>
+
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (dbsfile.get(&quot;contentType&quot;) != null) {</span>
+<span class="nc" id="L99">            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, dbsfile.get(&quot;contentType&quot;).toString());</span>
+        } else {
+<span class="nc" id="L101">            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, APPLICATION_OCTET_STREAM);</span>
+        }
+        
+<span class="nc" id="L104">        exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, dbsfile.getLength());</span>
+<span class="nc" id="L105">        exchange.getResponseHeaders().put(Headers.CONTENT_DISPOSITION,</span>
+<span class="nc" id="L106">                String.format(&quot;inline; filename=\&quot;%s\&quot;&quot;, extractFilename(dbsfile)));</span>
+<span class="nc" id="L107">        exchange.getResponseHeaders().put(Headers.CONTENT_TRANSFER_ENCODING, CONTENT_TRANSFER_ENCODING_BINARY);</span>
+<span class="nc" id="L108">        ResponseHelper.injectEtagHeader(exchange, dbsfile);</span>
+        
+<span class="nc" id="L110">        exchange.setResponseCode(HttpStatus.SC_OK);</span>
+
+<span class="nc" id="L112">        dbsfile.writeTo(exchange.getOutputStream());</span>
+<span class="nc" id="L113">        exchange.endExchange();</span>
+<span class="nc" id="L114">    }</span>
+
+    private String extractFilename(final GridFSDBFile dbsfile) {
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        return dbsfile.getFilename() != null ? dbsfile.getFilename() : dbsfile.getId().toString();</span>
+    }
+
+    static String extractBucketName(final String collectionName) {
+<span class="fc" id="L121">        return collectionName.split(&quot;\\.&quot;)[0];</span>
+    }
+
+    GetFileBinaryHandler(Object object, Object object0) {
+<span class="nc" id="L125">        super(null, null);</span>
+<span class="nc" id="L126">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

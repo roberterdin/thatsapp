@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>AuthTokenAuthenticationMechanism.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.security</a> &gt; <span class="el_source">AuthTokenAuthenticationMechanism.java</span></div><h1>AuthTokenAuthenticationMechanism.java</h1><pre class="source lang-java linenums">/*
+ * Copyright 2014 - 2015 SoftInstigate.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.restheart.security;
+
+import io.undertow.security.api.SecurityContext;
+import io.undertow.security.idm.Account;
+import io.undertow.security.idm.IdentityManager;
+import io.undertow.security.idm.PasswordCredential;
+import io.undertow.security.impl.BasicAuthenticationMechanism;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.FlexBase64;
+import static io.undertow.util.Headers.AUTHORIZATION;
+import static io.undertow.util.Headers.BASIC;
+import static io.undertow.util.StatusCodes.UNAUTHORIZED;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.util.List;
+import org.restheart.security.impl.AuthTokenIdentityManager;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+
+ this extends the undertow BasicAuthenticationMechanism and authenticate the
+ request using the AuthTokenIdentityManager.
+ 
+ if user already authenticated via a different mechanism, that a token is
+ generated so that later calls can be use the token instead of the actual 
+ password
+ *
+ */
+public class AuthTokenAuthenticationMechanism extends BasicAuthenticationMechanism {
+<span class="nc" id="L47">    private static final Charset UTF_8 = Charset.forName(&quot;UTF-8&quot;);</span>
+
+<span class="nc" id="L49">    private final String mechanismName = &quot;TOKEN&quot;;</span>
+
+<span class="nc" id="L51">    private static final String BASIC_PREFIX = BASIC + &quot; &quot;;</span>
+<span class="nc" id="L52">    private static final int PREFIX_LENGTH = BASIC_PREFIX.length();</span>
+    private static final String COLON = &quot;:&quot;;
+    
+    /**
+     *
+     * @param realmName
+     */
+    public AuthTokenAuthenticationMechanism(String realmName) {
+<span class="nc" id="L60">        super(realmName, &quot;TOKEN&quot;, true);</span>
+<span class="nc" id="L61">    }</span>
+
+    @Override
+    public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
+
+<span class="nc" id="L66">        List&lt;String&gt; authHeaders = exchange.getRequestHeaders().get(AUTHORIZATION);</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (authHeaders != null) {</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            for (String current : authHeaders) {</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">                if (current.startsWith(BASIC_PREFIX)) {</span>
+<span class="nc" id="L70">                    String base64Challenge = current.substring(PREFIX_LENGTH);</span>
+<span class="nc" id="L71">                    String plainChallenge = null;</span>
+                    try {
+<span class="nc" id="L73">                        ByteBuffer decode = FlexBase64.decode(base64Challenge);</span>
+<span class="nc" id="L74">                        plainChallenge = new String(decode.array(), decode.arrayOffset(), decode.limit(), UTF_8);</span>
+<span class="nc" id="L75">                    } catch (IOException e) {</span>
+<span class="nc" id="L76">                    }</span>
+                    int colonPos;
+<span class="nc bnc" id="L78" title="All 4 branches missed.">                    if (plainChallenge != null &amp;&amp; (colonPos = plainChallenge.indexOf(COLON)) &gt; -1) {</span>
+<span class="nc" id="L79">                        String userName = plainChallenge.substring(0, colonPos);</span>
+<span class="nc" id="L80">                        char[] password = plainChallenge.substring(colonPos + 1).toCharArray();</span>
+
+                        // this is where the token cache comes into play
+<span class="nc" id="L83">                        IdentityManager idm = AuthTokenIdentityManager.getInstance();</span>
+                        
+<span class="nc" id="L85">                        PasswordCredential credential = new PasswordCredential(password);</span>
+                        try {
+                            final AuthenticationMechanismOutcome result;
+<span class="nc" id="L88">                            Account account = idm.verify(userName, credential);</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                            if (account != null) {</span>
+<span class="nc" id="L90">                                securityContext.authenticationComplete(account, mechanismName, false);</span>
+<span class="nc" id="L91">                                result = AuthenticationMechanismOutcome.AUTHENTICATED;</span>
+                            } else {
+<span class="nc" id="L93">                                result = AuthenticationMechanismOutcome.NOT_ATTEMPTED;</span>
+                            }
+<span class="nc" id="L95">                            return result;</span>
+                        } finally {
+<span class="nc" id="L97">                            clear(password);</span>
+                        }
+                    }
+
+<span class="nc" id="L101">                    return AuthenticationMechanismOutcome.NOT_ATTEMPTED;</span>
+                }
+<span class="nc" id="L103">            }</span>
+        }
+
+<span class="nc" id="L106">        return AuthenticationMechanismOutcome.NOT_ATTEMPTED;</span>
+    }
+    
+    @Override
+    public ChallengeResult sendChallenge(HttpServerExchange exchange, SecurityContext securityContext) {
+<span class="nc" id="L111">        String authHeader = exchange.getRequestHeaders().getFirst(AUTHORIZATION);</span>
+
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        if (authHeader == null) {</span>
+<span class="nc" id="L114">            return new ChallengeResult(false); // --&gt; FORBIDDEN</span>
+        } else {
+<span class="nc" id="L116">            return new ChallengeResult(true, UNAUTHORIZED);</span>
+        }
+    }
+    
+    private static void clear(final char[] array) {
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="nc" id="L122">            array[i] = 0x00;</span>
+        }
+<span class="nc" id="L124">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

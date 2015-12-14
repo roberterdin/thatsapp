@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GetRoleHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.handlers.applicationlogic</a> &gt; <span class="el_source">GetRoleHandler.java</span></div><h1>GetRoleHandler.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.handlers.applicationlogic;
+
+import com.mongodb.BasicDBObject;
+import org.restheart.hal.Representation;
+import org.restheart.handlers.PipedHttpHandler;
+import org.restheart.handlers.RequestContext;
+import org.restheart.handlers.RequestContext.METHOD;
+import org.restheart.utils.HttpStatus;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
+import io.undertow.util.HttpString;
+import java.util.Map;
+import java.util.Set;
+import static org.restheart.hal.Representation.HAL_JSON_MEDIA_TYPE;
+import static org.restheart.security.handlers.IAuthToken.AUTH_TOKEN_HEADER;
+import static org.restheart.security.handlers.IAuthToken.AUTH_TOKEN_LOCATION_HEADER;
+import static org.restheart.security.handlers.IAuthToken.AUTH_TOKEN_VALID_HEADER;
+import org.restheart.utils.URLUtils;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class GetRoleHandler extends ApplicationLogicHandler {
+    /**
+     * the key for the url property.
+     */
+    public static final String urlKey = &quot;url&quot;;
+
+    private String url;
+
+    /**
+     * Creates a new instance of GetRoleHandler
+     *
+     * @param next
+     * @param args
+     * @throws Exception
+     */
+    public GetRoleHandler(PipedHttpHandler next, Map&lt;String, Object&gt; args) throws Exception {
+<span class="nc" id="L57">        super(next, args);</span>
+
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if (args == null) {</span>
+<span class="nc" id="L60">            throw new IllegalArgumentException(&quot;args cannot be null&quot;);</span>
+        }
+
+<span class="nc" id="L63">        this.url = (String) ((Map&lt;String, Object&gt;) args).get(urlKey);</span>
+<span class="nc" id="L64">    }</span>
+
+    /**
+     * Handles the request.
+     *
+     * @param exchange
+     * @param context
+     * @throws Exception
+     */
+    @Override
+    public void handleRequest(HttpServerExchange exchange, RequestContext context) throws Exception {
+        Representation rep;
+        
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (context.getMethod() == METHOD.OPTIONS) {</span>
+<span class="nc" id="L78">            exchange.getResponseHeaders().put(HttpString.tryFromString(&quot;Access-Control-Allow-Methods&quot;), &quot;GET&quot;);</span>
+<span class="nc" id="L79">            exchange.getResponseHeaders().put(HttpString.tryFromString(&quot;Access-Control-Allow-Headers&quot;), &quot;Accept, Accept-Encoding, Authorization, Content-Length, Content-Type, Host, Origin, X-Requested-With, User-Agent, No-Auth-Challenge, &quot; + AUTH_TOKEN_HEADER + &quot;, &quot; + AUTH_TOKEN_VALID_HEADER + &quot;, &quot; + AUTH_TOKEN_LOCATION_HEADER);</span>
+<span class="nc" id="L80">            exchange.setResponseCode(HttpStatus.SC_OK);</span>
+<span class="nc" id="L81">            exchange.endExchange();</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        } else if (context.getMethod() == METHOD.GET) {</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            if ((exchange.getSecurityContext() == null</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">                    || exchange.getSecurityContext().getAuthenticatedAccount() == null</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                    || exchange.getSecurityContext().getAuthenticatedAccount().getPrincipal() == null)</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                    || !(context.getUnmappedRequestUri().equals(URLUtils.removeTrailingSlashes(url) + &quot;/&quot; + exchange.getSecurityContext().getAuthenticatedAccount().getPrincipal().getName()))) {</span>
+
+                {
+<span class="nc" id="L89">                    exchange.setResponseCode(HttpStatus.SC_FORBIDDEN);</span>
+
+                    // REMOVE THE AUTH TOKEN HEADERS!!!!!!!!!!!
+<span class="nc" id="L92">                    exchange.getResponseHeaders().remove(AUTH_TOKEN_HEADER);</span>
+<span class="nc" id="L93">                    exchange.getResponseHeaders().remove(AUTH_TOKEN_VALID_HEADER);</span>
+<span class="nc" id="L94">                    exchange.getResponseHeaders().remove(AUTH_TOKEN_LOCATION_HEADER);</span>
+
+<span class="nc" id="L96">                    exchange.endExchange();</span>
+<span class="nc" id="L97">                    return;</span>
+                }
+
+            } else {
+<span class="nc" id="L101">                rep = new Representation(URLUtils.removeTrailingSlashes(url) + &quot;/&quot; + exchange.getSecurityContext().getAuthenticatedAccount().getPrincipal().getName());</span>
+<span class="nc" id="L102">                BasicDBObject root = new BasicDBObject();</span>
+
+<span class="nc" id="L104">                Set&lt;String&gt; _roles = exchange.getSecurityContext().getAuthenticatedAccount().getRoles();</span>
+
+<span class="nc" id="L106">                root.append(&quot;authenticated&quot;, true);</span>
+<span class="nc" id="L107">                root.append(&quot;roles&quot;, _roles);</span>
+
+<span class="nc" id="L109">                rep.addProperties(root);</span>
+            }
+
+<span class="nc" id="L112">            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, HAL_JSON_MEDIA_TYPE);</span>
+<span class="nc" id="L113">            exchange.getResponseSender().send(rep.toString());</span>
+<span class="nc" id="L114">            exchange.endExchange();</span>
+        } else {
+<span class="nc" id="L116">            exchange.setResponseCode(HttpStatus.SC_METHOD_NOT_ALLOWED);</span>
+<span class="nc" id="L117">            exchange.endExchange();</span>
+        }
+<span class="nc" id="L119">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

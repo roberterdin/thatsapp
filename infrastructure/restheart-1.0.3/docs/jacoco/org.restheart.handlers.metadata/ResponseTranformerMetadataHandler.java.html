@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>ResponseTranformerMetadataHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.handlers.metadata</a> &gt; <span class="el_source">ResponseTranformerMetadataHandler.java</span></div><h1>ResponseTranformerMetadataHandler.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.handlers.metadata;
+
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import io.undertow.server.HttpServerExchange;
+import java.util.List;
+import org.restheart.hal.metadata.InvalidMetadataException;
+import org.restheart.hal.metadata.RepresentationTransformer;
+import org.restheart.hal.metadata.singletons.NamedSingletonsFactory;
+import org.restheart.hal.metadata.singletons.Transformer;
+import org.restheart.handlers.PipedHttpHandler;
+import org.restheart.handlers.RequestContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class ResponseTranformerMetadataHandler extends AbstractTransformerHandler {
+<span class="nc" id="L39">    static final Logger LOGGER = LoggerFactory.getLogger(ResponseTranformerMetadataHandler.class);</span>
+
+    /**
+     * Creates a new instance of ResponseTranformerMetadataHandler
+     *
+     * @param next
+     */
+    public ResponseTranformerMetadataHandler(PipedHttpHandler next) {
+<span class="nc" id="L47">        super(next);</span>
+<span class="nc" id="L48">    }</span>
+
+    @Override
+    boolean canCollRepresentationTransformersAppy(RequestContext context) {
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        return (context.getMethod() == RequestContext.METHOD.GET</span>
+<span class="nc bnc" id="L53" title="All 4 branches missed.">                &amp;&amp; (context.getType() == RequestContext.TYPE.DOCUMENT || context.getType() == RequestContext.TYPE.COLLECTION)</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">                &amp;&amp; context.getCollectionProps().containsField(RepresentationTransformer.RTS_ELEMENT_NAME));</span>
+    }
+
+    @Override
+    boolean canDBRepresentationTransformersAppy(RequestContext context) {
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        return (context.getMethod() == RequestContext.METHOD.GET</span>
+<span class="nc bnc" id="L60" title="All 4 branches missed.">                &amp;&amp; (context.getType() == RequestContext.TYPE.DB || context.getType() == RequestContext.TYPE.COLLECTION)</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">                &amp;&amp; context.getDbProps().containsField(RepresentationTransformer.RTS_ELEMENT_NAME));</span>
+    }
+
+    @Override
+    void enforceDbRepresentationTransformLogic(HttpServerExchange exchange, RequestContext context) throws InvalidMetadataException {
+<span class="nc" id="L66">        List&lt;RepresentationTransformer&gt; dbRts = RepresentationTransformer.getFromJson(context.getDbProps());</span>
+
+<span class="nc" id="L68">        RequestContext.TYPE requestType = context.getType(); // DB or COLLECTION</span>
+
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        for (RepresentationTransformer rt : dbRts) {</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            if (rt.getPhase() == RepresentationTransformer.PHASE.RESPONSE) {</span>
+<span class="nc" id="L72">                Transformer t = (Transformer) NamedSingletonsFactory.getInstance().get(&quot;transformers&quot;, rt.getName());</span>
+
+<span class="nc bnc" id="L74" title="All 2 branches missed.">                if (t == null) {</span>
+<span class="nc" id="L75">                    throw new IllegalArgumentException(&quot;cannot find singleton &quot; + rt.getName() + &quot; in singleton group transformers&quot;);</span>
+                }
+
+<span class="nc bnc" id="L78" title="All 4 branches missed.">                if (rt.getScope() == RepresentationTransformer.SCOPE.THIS &amp;&amp; requestType == RequestContext.TYPE.DB) {</span>
+<span class="nc" id="L79">                    t.tranform(exchange, context, context.getResponseContent(), rt.getArgs());</span>
+<span class="nc bnc" id="L80" title="All 4 branches missed.">                } else if (rt.getScope() == RepresentationTransformer.SCOPE.CHILDREN &amp;&amp; requestType == RequestContext.TYPE.COLLECTION) {</span>
+<span class="nc" id="L81">                    BasicDBObject _embedded = (BasicDBObject) context.getResponseContent().get(&quot;_embedded&quot;);</span>
+
+                    // evaluate the script on children collection
+<span class="nc" id="L84">                    BasicDBList colls = (BasicDBList) _embedded.get(&quot;rh:coll&quot;);</span>
+
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                    if (colls != null) {</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                        for (String k : colls.keySet()) {</span>
+<span class="nc" id="L88">                            DBObject coll = (DBObject) colls.get(k);</span>
+
+<span class="nc" id="L90">                            t.tranform(exchange, context, coll, rt.getArgs());</span>
+<span class="nc" id="L91">                        }</span>
+                    }
+                }
+            }
+<span class="nc" id="L95">        }</span>
+<span class="nc" id="L96">    }</span>
+
+    @Override
+    void enforceCollRepresentationTransformLogic(HttpServerExchange exchange, RequestContext context) throws InvalidMetadataException {
+<span class="nc" id="L100">        List&lt;RepresentationTransformer&gt; dbRts = RepresentationTransformer.getFromJson(context.getCollectionProps());</span>
+
+<span class="nc" id="L102">        RequestContext.TYPE requestType = context.getType(); // DOCUMENT or COLLECTION</span>
+
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        for (RepresentationTransformer rt : dbRts) {</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">            if (rt.getPhase() == RepresentationTransformer.PHASE.RESPONSE) {</span>
+                Transformer t;
+
+                try {
+<span class="nc" id="L109">                    t = (Transformer) NamedSingletonsFactory.getInstance().get(&quot;transformers&quot;, rt.getName());</span>
+<span class="nc" id="L110">                } catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L111">                    context.addWarning(&quot;error applying transformer: &quot; + ex.getMessage());</span>
+<span class="nc" id="L112">                    return;</span>
+<span class="nc" id="L113">                }</span>
+
+<span class="nc bnc" id="L115" title="All 2 branches missed.">                if (t == null) {</span>
+<span class="nc" id="L116">                    throw new IllegalArgumentException(&quot;cannot find singleton &quot; + rt.getName() + &quot; in singleton group transformers&quot;);</span>
+                }
+
+<span class="nc bnc" id="L119" title="All 4 branches missed.">                if (rt.getScope() == RepresentationTransformer.SCOPE.THIS &amp;&amp; requestType == RequestContext.TYPE.COLLECTION) {</span>
+                    // evaluate the script on collection
+<span class="nc" id="L121">                    t.tranform(exchange, context, context.getResponseContent(), rt.getArgs());</span>
+<span class="nc bnc" id="L122" title="All 4 branches missed.">                } else if (rt.getScope() == RepresentationTransformer.SCOPE.CHILDREN &amp;&amp; requestType == RequestContext.TYPE.COLLECTION) {</span>
+<span class="nc" id="L123">                    BasicDBObject _embedded = (BasicDBObject) context.getResponseContent().get(&quot;_embedded&quot;);</span>
+
+                    // execute the logic on children documents
+<span class="nc" id="L126">                    BasicDBList docs = (BasicDBList) _embedded.get(&quot;rh:doc&quot;);</span>
+
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                    if (docs != null) {</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">                        for (String k : docs.keySet()) {</span>
+<span class="nc" id="L130">                            DBObject doc = (DBObject) docs.get(k);</span>
+
+<span class="nc" id="L132">                            t.tranform(exchange, context, doc, rt.getArgs());</span>
+<span class="nc" id="L133">                        }</span>
+                    }
+
+                    // execute the logic on children files
+<span class="nc" id="L137">                    BasicDBList files = (BasicDBList) _embedded.get(&quot;rh:file&quot;);</span>
+
+<span class="nc bnc" id="L139" title="All 2 branches missed.">                    if (files != null) {</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                        for (String k : files.keySet()) {</span>
+<span class="nc" id="L141">                            DBObject file = (DBObject) files.get(k);</span>
+
+<span class="nc" id="L143">                            t.tranform(exchange, context, file, rt.getArgs());</span>
+<span class="nc" id="L144">                        }</span>
+                    }
+<span class="nc bnc" id="L146" title="All 4 branches missed.">                } else if (rt.getScope() == RepresentationTransformer.SCOPE.CHILDREN &amp;&amp; requestType == RequestContext.TYPE.DOCUMENT) {</span>
+<span class="nc" id="L147">                    t.tranform(exchange, context, context.getResponseContent(), rt.getArgs());</span>
+                }
+            }
+<span class="nc" id="L150">        }</span>
+<span class="nc" id="L151">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

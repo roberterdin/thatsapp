@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>AuthTokenHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.security.handlers</a> &gt; <span class="el_source">AuthTokenHandler.java</span></div><h1>AuthTokenHandler.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.security.handlers;
+
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.Headers;
+import io.undertow.util.Methods;
+import org.restheart.Bootstrapper;
+import org.restheart.hal.Representation;
+import static org.restheart.hal.Representation.HAL_JSON_MEDIA_TYPE;
+import org.restheart.handlers.PipedHttpHandler;
+import org.restheart.handlers.RequestContext;
+import static org.restheart.security.handlers.IAuthToken.AUTH_TOKEN_HEADER;
+import static org.restheart.security.handlers.IAuthToken.AUTH_TOKEN_VALID_HEADER;
+import org.restheart.security.impl.AuthTokenIdentityManager;
+import org.restheart.utils.HttpStatus;
+import org.restheart.utils.ResponseHelper;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+<span class="nc" id="L38">public class AuthTokenHandler extends PipedHttpHandler {</span>
+
+<span class="nc" id="L40">    private static final boolean ENABLED = Bootstrapper.getConfiguration().isAuthTokenEnabled();</span>
+
+    /**
+     *
+     * @param exchange
+     * @param context
+     * @throws Exception
+     */
+    @Override
+    public void handleRequest(HttpServerExchange exchange, RequestContext context) throws Exception {
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (!ENABLED) {</span>
+<span class="nc" id="L51">            return;</span>
+        }
+
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (exchange.getSecurityContext() == null</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">                || exchange.getSecurityContext().getAuthenticatedAccount() == null</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                || exchange.getSecurityContext().getAuthenticatedAccount().getPrincipal() == null</span>
+<span class="nc" id="L57">                || !(&quot;/_authtokens/&quot; + exchange.getSecurityContext().getAuthenticatedAccount().getPrincipal().getName())</span>
+<span class="nc bnc" id="L58" title="All 2 branches missed.">                        .equals(exchange.getRequestURI())) {</span>
+<span class="nc" id="L59">            ResponseHelper.endExchange(exchange, HttpStatus.SC_FORBIDDEN);</span>
+<span class="nc" id="L60">            return;</span>
+        }
+
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (Methods.GET.equals(exchange.getRequestMethod())) {</span>
+<span class="nc" id="L64">            Representation rep = new Representation(&quot;/_authtokens/&quot; </span>
+<span class="nc" id="L65">                    + exchange.getSecurityContext().getAuthenticatedAccount().getPrincipal().getName());</span>
+
+<span class="nc" id="L67">            rep.addProperty(&quot;auth_token&quot;, exchange.getResponseHeaders().get(AUTH_TOKEN_HEADER).getFirst());</span>
+<span class="nc" id="L68">            rep.addProperty(&quot;auth_token_valid_until&quot;, exchange.getResponseHeaders().get(AUTH_TOKEN_VALID_HEADER).getFirst());</span>
+
+<span class="nc" id="L70">            exchange.setResponseCode(HttpStatus.SC_OK);</span>
+<span class="nc" id="L71">            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, HAL_JSON_MEDIA_TYPE);</span>
+<span class="nc" id="L72">            exchange.getResponseSender().send(rep.toString());</span>
+<span class="nc" id="L73">            exchange.endExchange();</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        } else if (Methods.DELETE.equals(exchange.getRequestMethod())) {</span>
+<span class="nc" id="L75">            AuthTokenIdentityManager.getInstance().getCachedAccounts()</span>
+<span class="nc" id="L76">                    .invalidate(exchange.getSecurityContext().getAuthenticatedAccount().getPrincipal().getName());</span>
+<span class="nc" id="L77">            removeAuthTokens(exchange);</span>
+<span class="nc" id="L78">            ResponseHelper.endExchange(exchange, HttpStatus.SC_NO_CONTENT);</span>
+        } else {
+<span class="nc" id="L80">            ResponseHelper.endExchange(exchange, HttpStatus.SC_METHOD_NOT_ALLOWED);</span>
+        }
+<span class="nc" id="L82">    }</span>
+
+    private void removeAuthTokens(HttpServerExchange exchange) {
+<span class="nc" id="L85">        exchange.getResponseHeaders().remove(AUTH_TOKEN_HEADER);</span>
+<span class="nc" id="L86">        exchange.getResponseHeaders().remove(AUTH_TOKEN_VALID_HEADER);</span>
+<span class="nc" id="L87">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

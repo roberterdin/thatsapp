@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>DAOUtils.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.db</a> &gt; <span class="el_source">DAOUtils.java</span></div><h1>DAOUtils.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.db;
+
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+<span class="nc" id="L33">public class DAOUtils {</span>
+
+    /**
+     * @param rows list of DBObject rows as returned by getDataFromCursor()
+     * @return
+     */
+    public static List&lt;Map&lt;String, Object&gt;&gt; getDataFromRows(final List&lt;DBObject&gt; rows) {
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (rows == null) {</span>
+<span class="nc" id="L41">            return null;</span>
+        }
+
+<span class="nc" id="L44">        List&lt;Map&lt;String, Object&gt;&gt; data = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L46">        rows.stream().map((row) -&gt; {</span>
+<span class="nc" id="L47">            TreeMap&lt;String, Object&gt; properties = getDataFromRow(row);</span>
+
+<span class="nc" id="L49">            return properties;</span>
+<span class="nc" id="L50">        }).forEach((item) -&gt; {</span>
+<span class="nc" id="L51">            data.add(item);</span>
+<span class="nc" id="L52">        });</span>
+
+<span class="nc" id="L54">        return data;</span>
+    }
+
+    /**
+     * @param row a DBObject row
+     * @param fieldsToFilter list of field names to filter
+     * @return
+     */
+    public static TreeMap&lt;String, Object&gt; getDataFromRow(final DBObject row, String... fieldsToFilter) {
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (row == null) {</span>
+<span class="nc" id="L64">            return null;</span>
+        }
+
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (row instanceof BasicDBList) {</span>
+<span class="nc" id="L68">            throw new IllegalArgumentException(&quot;cannot convert an array to a map&quot;);</span>
+        }
+
+<span class="nc" id="L71">        List&lt;String&gt; _fieldsToFilter = Arrays.asList(fieldsToFilter);</span>
+
+<span class="nc" id="L73">        TreeMap&lt;String, Object&gt; properties = new TreeMap&lt;&gt;();</span>
+
+<span class="nc" id="L75">        row.keySet().stream().forEach((key) -&gt; {</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            if (!_fieldsToFilter.contains(key)) {</span>
+<span class="nc" id="L77">                properties.put(key, getElement(row.get(key)));</span>
+            }
+<span class="nc" id="L79">        });</span>
+
+<span class="nc" id="L81">        return properties;</span>
+    }
+
+    /**
+     * @param row a DBObject row
+     * @param fieldsToFilter list of field names to filter
+     * @return
+     */
+    private static Object getElement(final Object element) {
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (element == null) {</span>
+<span class="nc" id="L91">            return null;</span>
+        }
+
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (element instanceof BasicDBList) {</span>
+<span class="nc" id="L95">            ArrayList&lt;Object&gt; ret = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L97">            BasicDBList dblist = (BasicDBList) element;</span>
+
+<span class="nc" id="L99">            dblist.stream().forEach((subel) -&gt; {</span>
+<span class="nc" id="L100">                ret.add(getElement(subel));</span>
+<span class="nc" id="L101">            });</span>
+
+<span class="nc" id="L103">            return ret;</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        } else if (element instanceof BasicDBObject) {</span>
+<span class="nc" id="L105">            TreeMap&lt;String, Object&gt; ret = new TreeMap&lt;&gt;();</span>
+
+<span class="nc" id="L107">            BasicDBObject el = (BasicDBObject) element;</span>
+
+<span class="nc" id="L109">            el.keySet().stream().forEach((key) -&gt; {</span>
+<span class="nc" id="L110">                ret.put(key, el.get(key));</span>
+<span class="nc" id="L111">            });</span>
+
+<span class="nc" id="L113">            return ret;</span>
+        } else {
+<span class="nc" id="L115">            return element;</span>
+        }
+    }
+
+    /**
+     *
+     * @param newContent the value of newContent
+     * @return a not null DBObject
+     */
+    protected static DBObject validContent(final DBObject newContent) {
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        return (newContent == null) ? new BasicDBObject() : newContent;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GridFsDAO.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.db</a> &gt; <span class="el_source">GridFsDAO.java</span></div><h1>GridFsDAO.java</h1><pre class="source lang-java linenums">package org.restheart.db;
+
+/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
+import com.mongodb.DuplicateKeyException;
+import com.mongodb.MongoClient;
+import com.mongodb.gridfs.GridFS;
+import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.gridfs.GridFSInputFile;
+import java.io.File;
+import java.io.IOException;
+import org.bson.types.ObjectId;
+import org.restheart.utils.HttpStatus;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class GridFsDAO implements GridFsRepository {
+
+    private static final String FILENAME = &quot;filename&quot;;
+    private static final String _ID = &quot;_id&quot;;
+
+    private final MongoClient client;
+
+<span class="nc" id="L43">    public GridFsDAO() {</span>
+<span class="nc" id="L44">        client = MongoDBClientSingleton.getInstance().getClient();</span>
+<span class="nc" id="L45">    }</span>
+
+    @Override
+    public int createFile(
+            final Database db,
+            final String dbName,
+            final String bucketName,
+            final Object fileId,
+            final DBObject properties,
+            final File data) throws IOException, DuplicateKeyException {
+
+<span class="nc" id="L56">        final String bucket = extractBucketName(bucketName);</span>
+<span class="nc" id="L57">        GridFS gridfs = new GridFS(db.getDB(dbName), bucket);</span>
+<span class="nc" id="L58">        GridFSInputFile gfsFile = gridfs.createFile(data);</span>
+
+<span class="nc" id="L60">        String filename = extractFilenameFromProperties(properties);</span>
+<span class="nc" id="L61">        gfsFile.setFilename(filename);</span>
+
+        // add etag
+<span class="nc" id="L64">        properties.put(&quot;_etag&quot;, new ObjectId());</span>
+
+<span class="nc" id="L66">        gfsFile.setId(fileId);</span>
+
+<span class="nc" id="L68">        properties.toMap().keySet().stream().forEach(k -&gt; gfsFile.put((String) k, properties.get((String) k)));</span>
+
+<span class="nc" id="L70">        gfsFile.save();</span>
+
+<span class="nc" id="L72">        return HttpStatus.SC_CREATED;</span>
+    }
+
+    private String extractFilenameFromProperties(final DBObject properties) {
+<span class="nc" id="L76">        String filename = null;</span>
+<span class="nc bnc" id="L77" title="All 4 branches missed.">        if (properties != null &amp;&amp; properties.containsField(FILENAME)) {</span>
+<span class="nc" id="L78">            filename = (String) properties.get(FILENAME);</span>
+        }
+
+<span class="nc" id="L81">        return filename;</span>
+    }
+
+    @Override
+    public int deleteFile(
+            final Database db,
+            final String dbName,
+            final String bucketName,
+            final Object fileId,
+            final ObjectId requestEtag) {
+
+<span class="nc" id="L92">        GridFS gridfs = new GridFS(db.getDB(dbName), extractBucketName(bucketName));</span>
+<span class="nc" id="L93">        GridFSDBFile dbsfile = gridfs.findOne(new BasicDBObject(_ID, fileId));</span>
+
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        if (dbsfile == null) {</span>
+<span class="nc" id="L96">            return HttpStatus.SC_NOT_FOUND;</span>
+        } else {
+<span class="nc" id="L98">            int code = checkEtag(requestEtag, dbsfile);</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            if (code == HttpStatus.SC_NO_CONTENT) {</span>
+                // delete file
+<span class="nc" id="L101">                gridfs.remove(new BasicDBObject(_ID, fileId));</span>
+            }
+
+<span class="nc" id="L104">            return code;</span>
+        }
+    }
+
+    @Override
+    public void deleteChunksCollection(final Database db, final String dbName, final String bucketName) {
+<span class="nc" id="L110">        String chunksCollName = extractBucketName(bucketName).concat(&quot;.chunks&quot;);</span>
+<span class="nc" id="L111">        client.getDB(dbName).getCollection(chunksCollName).drop();</span>
+<span class="nc" id="L112">    }</span>
+
+    /**
+     *
+     * @param requestEtag
+     * @param dbsfile
+     * @return HttpStatus.SC_NO_CONTENT if check is ok
+     */
+    private int checkEtag(final ObjectId requestEtag, final GridFSDBFile dbsfile) {
+<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (dbsfile != null) {</span>
+<span class="nc" id="L122">            Object etag = dbsfile.get(&quot;_etag&quot;);</span>
+
+<span class="nc bnc" id="L124" title="All 2 branches missed.">            if (etag == null) {</span>
+<span class="nc" id="L125">                return HttpStatus.SC_NO_CONTENT;</span>
+            }
+
+<span class="nc bnc" id="L128" title="All 2 branches missed.">            if (requestEtag == null) {</span>
+<span class="nc" id="L129">                return HttpStatus.SC_CONFLICT;</span>
+            }
+
+<span class="nc bnc" id="L132" title="All 2 branches missed.">            if (etag.equals(requestEtag)) {</span>
+<span class="nc" id="L133">                return HttpStatus.SC_NO_CONTENT;</span>
+            } else {
+<span class="nc" id="L135">                return HttpStatus.SC_PRECONDITION_FAILED;</span>
+            }
+        }
+
+<span class="nc" id="L139">        return HttpStatus.SC_NO_CONTENT;</span>
+    }
+
+    private static String extractBucketName(final String collectionName) {
+<span class="nc" id="L143">        return collectionName.split(&quot;\\.&quot;)[0];</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

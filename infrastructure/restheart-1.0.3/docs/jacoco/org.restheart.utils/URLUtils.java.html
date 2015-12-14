@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>URLUtils.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.utils</a> &gt; <span class="el_source">URLUtils.java</span></div><h1>URLUtils.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.utils;
+
+import com.mongodb.util.JSONSerializers;
+import com.mongodb.util.ObjectSerializer;
+import io.undertow.server.HttpServerExchange;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Deque;
+import org.bson.types.MaxKey;
+import org.bson.types.MinKey;
+import org.bson.types.ObjectId;
+import org.restheart.hal.UnsupportedDocumentIdException;
+import org.restheart.handlers.RequestContext;
+import org.restheart.handlers.RequestContext.DOC_ID_TYPE;
+import static org.restheart.handlers.RequestContext.DOC_ID_TYPE.STRING;
+import static org.restheart.handlers.RequestContext.DOC_ID_TYPE_KEY;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class URLUtils {
+<span class="fc" id="L44">    private static final Logger LOGGER = LoggerFactory.getLogger(URLUtils.class);</span>
+    
+<span class="fc" id="L46">    private static final ObjectSerializer serializer = JSONSerializers.getStrict();</span>
+
+    public static String getReferenceLink(RequestContext context, String parentUrl, Object docId) {
+<span class="nc bnc" id="L49" title="All 6 branches missed.">        if (context == null || parentUrl == null || docId == null) {</span>
+<span class="nc" id="L50">            LOGGER.error(&quot;error creating URI, null arguments: context = {}, parentUrl = {}, docId = {}&quot;, context, parentUrl, docId);</span>
+<span class="nc" id="L51">            return &quot;&quot;;</span>
+        }
+
+<span class="nc" id="L54">        String uri = &quot;#&quot;;</span>
+
+<span class="nc bnc" id="L56" title="All 4 branches missed.">        if (docId instanceof String &amp;&amp; ObjectId.isValid((String) docId)) {</span>
+<span class="nc" id="L57">            uri = URLUtils.removeTrailingSlashes(parentUrl).concat(&quot;/&quot;).concat(docId.toString()).concat(&quot;?&quot;).concat(DOC_ID_TYPE_KEY).concat(&quot;=&quot;).concat(DOC_ID_TYPE.STRING.name());</span>
+<span class="nc bnc" id="L58" title="All 4 branches missed.">        } else if (docId instanceof String || docId instanceof ObjectId) {</span>
+<span class="nc" id="L59">            uri = URLUtils.removeTrailingSlashes(parentUrl).concat(&quot;/&quot;).concat(docId.toString());</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        } else if (docId instanceof Integer) {</span>
+<span class="nc" id="L61">            uri = URLUtils.removeTrailingSlashes(parentUrl).concat(&quot;/&quot;).concat(docId.toString()).concat(&quot;?&quot;).concat(DOC_ID_TYPE_KEY).concat(&quot;=&quot;).concat(DOC_ID_TYPE.NUMBER.name());</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        } else if (docId instanceof Long) {</span>
+<span class="nc" id="L63">            uri = URLUtils.removeTrailingSlashes(parentUrl).concat(&quot;/&quot;).concat(docId.toString()).concat(&quot;?&quot;).concat(DOC_ID_TYPE_KEY).concat(&quot;=&quot;).concat(DOC_ID_TYPE.NUMBER.name());</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        } else if (docId instanceof Float) {</span>
+<span class="nc" id="L65">            uri = URLUtils.removeTrailingSlashes(parentUrl).concat(&quot;/&quot;).concat(docId.toString()).concat(&quot;?&quot;).concat(DOC_ID_TYPE_KEY).concat(&quot;=&quot;).concat(DOC_ID_TYPE.NUMBER.name());</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        } else if (docId instanceof Double) {</span>
+<span class="nc" id="L67">            uri = URLUtils.removeTrailingSlashes(parentUrl).concat(&quot;/&quot;).concat(docId.toString()).concat(&quot;?&quot;).concat(DOC_ID_TYPE_KEY).concat(&quot;=&quot;).concat(DOC_ID_TYPE.NUMBER.name());</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        } else if (docId instanceof MinKey) {</span>
+<span class="nc" id="L69">            uri = URLUtils.removeTrailingSlashes(parentUrl).concat(&quot;/&quot;).concat(&quot;_MinKey&quot;);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        } else if (docId instanceof MaxKey) {</span>
+<span class="nc" id="L71">            uri = URLUtils.removeTrailingSlashes(parentUrl).concat(&quot;/&quot;).concat(&quot;_MaxKey&quot;);</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        } else if (docId instanceof Date) {</span>
+<span class="nc" id="L73">            uri = URLUtils.removeTrailingSlashes(parentUrl).concat(&quot;/&quot;).concat(((Date) docId).getTime() + &quot;&quot;).concat(&quot;?&quot;).concat(DOC_ID_TYPE_KEY).concat(&quot;=&quot;).concat(DOC_ID_TYPE.DATE.name());</span>
+        } else {
+<span class="nc" id="L75">            context.addWarning(&quot;this resource does not have an URI since the _id is of type &quot; + docId.getClass().getSimpleName());</span>
+        }
+
+<span class="nc" id="L78">        return uri;</span>
+    }
+
+    public static DOC_ID_TYPE checkId(Object id) throws UnsupportedDocumentIdException {
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L83">            return null;</span>
+        }
+
+<span class="fc" id="L86">        String clazz = id.getClass().getName();</span>
+
+<span class="pc bpc" id="L88" title="32 of 38 branches missed.">        switch (clazz) {</span>
+            case &quot;java.lang.String&quot;:
+<span class="fc" id="L90">                return DOC_ID_TYPE.STRING_OID;</span>
+            case &quot;org.bson.types.ObjectId&quot;:
+<span class="nc" id="L92">                return DOC_ID_TYPE.OID;</span>
+            case &quot;java.lang.Integer&quot;:
+<span class="fc" id="L94">                return DOC_ID_TYPE.NUMBER;</span>
+            case &quot;java.lang.Long&quot;:
+<span class="nc" id="L96">                return DOC_ID_TYPE.NUMBER;</span>
+            case &quot;java.lang.Float&quot;:
+<span class="nc" id="L98">                return DOC_ID_TYPE.NUMBER;</span>
+            case &quot;java.lang.Double&quot;:
+<span class="nc" id="L100">                return DOC_ID_TYPE.NUMBER;</span>
+            case &quot;java.util.Date&quot;:
+<span class="nc" id="L102">                return DOC_ID_TYPE.DATE;</span>
+            case &quot;org.bson.types.MaxKey&quot;:
+<span class="nc" id="L104">                return DOC_ID_TYPE.MAXKEY;</span>
+            case &quot;org.bson.types.MinKey&quot;:
+<span class="nc" id="L106">                return DOC_ID_TYPE.MINKEY;</span>
+            default:
+<span class="nc" id="L108">                throw new UnsupportedDocumentIdException(&quot;unknown _id type: &quot; + id.getClass().getSimpleName());</span>
+        }
+    }
+
+    public static Object getId(String id, DOC_ID_TYPE type) throws UnsupportedDocumentIdException {
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L114">            return null;</span>
+        }
+
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (type == null) {</span>
+<span class="nc" id="L118">            type = DOC_ID_TYPE.STRING_OID;</span>
+        }
+
+        // MaxKey can be also determined from the _id
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (RequestContext.MAX_KEY_ID.equalsIgnoreCase(id)) {</span>
+<span class="nc" id="L123">            return new MaxKey();</span>
+        }
+
+        // MaxKey can be also determined from the _id
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (RequestContext.MIN_KEY_ID.equalsIgnoreCase(id)) {</span>
+<span class="nc" id="L128">            return new MinKey();</span>
+        }
+
+        try {
+<span class="nc bnc" id="L132" title="All 8 branches missed.">            switch (type) {</span>
+                case STRING_OID:
+<span class="nc" id="L134">                    return getIdAsStringOrObjectId(id);</span>
+                case OID:
+<span class="nc" id="L136">                    return getIdAsObjectId(id);</span>
+                case STRING:
+<span class="nc" id="L138">                    return id;</span>
+                case NUMBER:
+<span class="nc" id="L140">                    return getIdAsNumber(id);</span>
+                case MINKEY:
+<span class="nc" id="L142">                    return new MinKey();</span>
+                case MAXKEY:
+<span class="nc" id="L144">                    return new MaxKey();</span>
+                case DATE:
+<span class="nc" id="L146">                    return getIdAsDate(id);</span>
+            }
+<span class="nc" id="L148">        } catch (IllegalArgumentException iar) {</span>
+<span class="nc" id="L149">            throw new UnsupportedDocumentIdException(iar);</span>
+<span class="nc" id="L150">        }</span>
+
+<span class="nc" id="L152">        return id;</span>
+    }
+
+    /**
+     * given string /ciao/this/has/trailings///// returns
+     * /ciao/this/has/trailings
+     *
+     * @param s
+     * @return the string s without the trailing slashes
+     */
+    static public String removeTrailingSlashes(String s) {
+<span class="pc bpc" id="L163" title="1 of 4 branches missed.">        if (s == null || s.length() &lt; 2) {</span>
+<span class="fc" id="L164">            return s;</span>
+        }
+
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (s.trim().charAt(s.length() - 1) == '/') {</span>
+<span class="fc" id="L168">            return removeTrailingSlashes(s.substring(0, s.length() - 1));</span>
+        } else {
+<span class="fc" id="L170">            return s.trim();</span>
+        }
+    }
+
+    /**
+     * decode the percent encoded query string
+     *
+     * @param qs
+     * @return the undecoded string
+     */
+    static public String decodeQueryString(String qs) {
+        try {
+<span class="fc" id="L182">            return URLDecoder.decode(qs.replace(&quot;+&quot;, &quot;%2B&quot;), &quot;UTF-8&quot;).replace(&quot;%2B&quot;, &quot;+&quot;);</span>
+<span class="nc" id="L183">        } catch (UnsupportedEncodingException ex) {</span>
+<span class="nc" id="L184">            return null;</span>
+        }
+    }
+
+    /**
+     *
+     * @param path
+     * @return
+     */
+    static public String getParentPath(String path) {
+<span class="pc bpc" id="L194" title="3 of 6 branches missed.">        if (path == null || path.isEmpty() || path.equals(&quot;/&quot;)) {</span>
+<span class="nc" id="L195">            return path;</span>
+        }
+
+<span class="fc" id="L198">        int lastSlashPos = path.lastIndexOf('/');</span>
+
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">        if (lastSlashPos &gt; 0) {</span>
+<span class="fc" id="L201">            return path.substring(0, lastSlashPos); //strip off the slash</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">        } else if (lastSlashPos == 0) {</span>
+<span class="nc" id="L203">            return &quot;/&quot;;</span>
+        } else {
+<span class="nc" id="L205">            return &quot;&quot;; //we expect people to add  + &quot;/somedir on their own</span>
+        }
+    }
+
+    /**
+     *
+     * @param exchange
+     * @return
+     */
+    static public String getPrefixUrl(HttpServerExchange exchange) {
+<span class="nc" id="L215">        return exchange.getRequestURL().replaceAll(exchange.getRelativePath(), &quot;&quot;);</span>
+    }
+
+    /**
+     *
+     * @param context
+     * @param dbName
+     * @param collName
+     * @param id
+     * @return
+     * @throws org.restheart.hal.UnsupportedDocumentIdException
+     */
+    static public String getUriWithDocId(RequestContext context, String dbName, String collName, Object id) throws UnsupportedDocumentIdException {
+<span class="fc" id="L228">        DOC_ID_TYPE docIdType = URLUtils.checkId(id);</span>
+
+<span class="fc" id="L230">        StringBuilder sb = new StringBuilder();</span>
+        
+<span class="fc" id="L232">        sb.append(&quot;/&quot;).append(dbName).append(&quot;/&quot;).append(collName).append(&quot;/&quot;).append(id);</span>
+
+<span class="fc bfc" id="L234" title="All 4 branches covered.">        if (docIdType == DOC_ID_TYPE.STRING_OID &amp;&amp; ObjectId.isValid((String)id)) {</span>
+<span class="fc" id="L235">            sb.append(&quot;?id_type=STRING&quot;);</span>
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        } else if (docIdType != DOC_ID_TYPE.STRING_OID) {</span>
+<span class="fc" id="L237">            sb.append(&quot;?id_type=&quot;).append(docIdType.name());</span>
+        }
+        
+<span class="fc" id="L240">        return context.mapUri(sb.toString());</span>
+    }
+
+    /**
+     *
+     * @param context
+     * @param dbName
+     * @param collName
+     * @param ids
+     * @return
+     * @throws org.restheart.hal.UnsupportedDocumentIdException
+     */
+    static public String getUriWithFilterMany(RequestContext context, String dbName, String collName, Object[] ids) throws UnsupportedDocumentIdException {
+<span class="fc" id="L253">        StringBuilder sb = new StringBuilder();</span>
+
+        ///db/coll/?filter={&quot;ref&quot;:{&quot;$in&quot;:{&quot;a&quot;,&quot;b&quot;,&quot;c&quot;}}
+<span class="fc" id="L256">        sb.append(&quot;/&quot;).append(dbName).append(&quot;/&quot;).append(collName).append(&quot;?&quot;)</span>
+<span class="fc" id="L257">                .append(&quot;filter={&quot;).append(&quot;'&quot;).append(&quot;_id&quot;).append(&quot;'&quot;).append(&quot;:&quot;)</span>
+<span class="fc" id="L258">                .append(&quot;{'$in'&quot;).append(&quot;:&quot;).append(getIdsString(ids)).append(&quot;}}&quot;);</span>
+
+<span class="fc" id="L260">        return context.mapUri(sb.toString());</span>
+    }
+
+    /**
+     *
+     * @param context
+     * @param dbName
+     * @param collName
+     * @param referenceField
+     * @param id
+     * @return
+     * @throws org.restheart.hal.UnsupportedDocumentIdException
+     */
+    static public String getUriWithFilterOne(RequestContext context, String dbName, String collName, String referenceField, Object id) throws UnsupportedDocumentIdException {
+<span class="fc" id="L274">        StringBuilder sb = new StringBuilder();</span>
+
+        ///db/coll/?filter={&quot;ref&quot;:{&quot;$in&quot;:{&quot;a&quot;,&quot;b&quot;,&quot;c&quot;}}
+<span class="fc" id="L277">        sb.append(&quot;/&quot;).append(dbName).append(&quot;/&quot;).append(collName).append(&quot;?&quot;)</span>
+<span class="fc" id="L278">                .append(&quot;filter={&quot;).append(&quot;'&quot;).append(referenceField).append(&quot;'&quot;)</span>
+<span class="fc" id="L279">                .append(&quot;:&quot;).append(getIdString(id)).append(&quot;}&quot;);</span>
+
+<span class="fc" id="L281">        return context.mapUri(sb.toString());</span>
+    }
+
+    /**
+     *
+     * @param context
+     * @param dbName
+     * @param collName
+     * @param referenceField
+     * @param id
+     * @return
+     * @throws org.restheart.hal.UnsupportedDocumentIdException
+     */
+    static public String getUriWithFilterManyInverse(RequestContext context, String dbName, String collName, String referenceField, Object id) throws UnsupportedDocumentIdException {
+<span class="fc" id="L295">        StringBuilder sb = new StringBuilder();</span>
+
+        ///db/coll/?filter={'referenceField':{&quot;$elemMatch&quot;:{'ids'}}}
+<span class="fc" id="L298">        sb.append(&quot;/&quot;).append(dbName).append(&quot;/&quot;).append(collName).append(&quot;?&quot;)</span>
+<span class="fc" id="L299">                .append(&quot;filter={'&quot;).append(referenceField)</span>
+<span class="fc" id="L300">                .append(&quot;':{&quot;).append(&quot;'$elemMatch':{'$eq':&quot;).append(getIdString(id)).append(&quot;}}}&quot;);</span>
+
+<span class="fc" id="L302">        return JsonUtils.minify(context.mapUri(sb.toString()));</span>
+    }
+
+    /**
+     *
+     * @param exchange
+     * @param paramsToRemove
+     * @return
+     */
+    public static String getQueryStringRemovingParams(HttpServerExchange exchange, String... paramsToRemove) {
+<span class="fc" id="L312">        String ret = exchange.getQueryString();</span>
+
+<span class="pc bpc" id="L314" title="3 of 6 branches missed.">        if (ret == null || ret.isEmpty() || paramsToRemove == null) {</span>
+<span class="nc" id="L315">            return ret;</span>
+        }
+
+<span class="fc bfc" id="L318" title="All 2 branches covered.">        for (String key : paramsToRemove) {</span>
+<span class="fc" id="L319">            Deque&lt;String&gt; values = exchange.getQueryParameters().get(key);</span>
+
+<span class="pc bpc" id="L321" title="1 of 2 branches missed.">            if (values != null) {</span>
+<span class="fc bfc" id="L322" title="All 2 branches covered.">                for (String value : values) {</span>
+<span class="fc" id="L323">                    ret = ret.replaceAll(key + &quot;=&quot; + value + &quot;&amp;&quot;, &quot;&quot;);</span>
+<span class="fc" id="L324">                    ret = ret.replaceAll(key + &quot;=&quot; + value + &quot;$&quot;, &quot;&quot;);</span>
+<span class="fc" id="L325">                }</span>
+            }
+        }
+
+<span class="fc" id="L329">        return ret;</span>
+    }
+
+    private static Number getIdAsNumber(String id) throws IllegalArgumentException {
+        try {
+<span class="nc" id="L334">            return Integer.parseInt(id, 10);</span>
+<span class="nc" id="L335">        } catch (NumberFormatException nfe) {</span>
+            try {
+<span class="nc" id="L337">                return Long.parseLong(id, 10);</span>
+<span class="nc" id="L338">            } catch (NumberFormatException nfe2) {</span>
+                try {
+<span class="nc" id="L340">                    return Float.parseFloat(id);</span>
+<span class="nc" id="L341">                } catch (NumberFormatException nfe3) {</span>
+                    try {
+<span class="nc" id="L343">                        return Double.parseDouble(id);</span>
+<span class="nc" id="L344">                    } catch (NumberFormatException nfe4) {</span>
+                        try {
+<span class="nc" id="L346">                            return Float.parseFloat(id);</span>
+<span class="nc" id="L347">                        } catch (NumberFormatException nfe5) {</span>
+<span class="nc" id="L348">                            throw new IllegalArgumentException(&quot;The id is not a valid number &quot; + id, nfe);</span>
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static Date getIdAsDate(String id) throws IllegalArgumentException {
+        Date ret;
+
+        try {
+<span class="nc" id="L360">            Long n = Long.parseLong(id, 10);</span>
+
+<span class="nc" id="L362">            ret = new Date(n);</span>
+<span class="nc" id="L363">        } catch (NumberFormatException nfe) {</span>
+<span class="nc" id="L364">            throw new IllegalArgumentException(&quot;The id is not a valid date (number of milliseconds since the epoch) &quot; + id, nfe);</span>
+<span class="nc" id="L365">        }</span>
+        
+<span class="nc" id="L367">        return ret;</span>
+    }
+
+    private static ObjectId getIdAsObjectId(String id) throws IllegalArgumentException {
+<span class="nc bnc" id="L371" title="All 2 branches missed.">        if (!ObjectId.isValid(id)) {</span>
+<span class="nc" id="L372">            throw new IllegalArgumentException(&quot;The id is not a valid ObjectId &quot; + id);</span>
+        }
+
+<span class="nc" id="L375">        return new ObjectId(id);</span>
+    }
+
+    private static Object getIdAsStringOrObjectId(String id) {
+<span class="nc bnc" id="L379" title="All 2 branches missed.">        if (ObjectId.isValid(id)) {</span>
+<span class="nc" id="L380">            return getIdAsObjectId(id);</span>
+        }
+
+<span class="nc" id="L383">        return id;</span>
+    }
+
+    private static String getIdString(Object id) throws UnsupportedDocumentIdException {
+<span class="pc bpc" id="L387" title="1 of 2 branches missed.">        if (id == null) {</span>
+<span class="nc" id="L388">            return null;</span>
+        } else {
+<span class="fc" id="L390">            return JsonUtils.minify(serializer.serialize(id).replace(&quot;\&quot;&quot;, &quot;'&quot;));</span>
+        }
+    }
+
+    private static String getIdsString(Object[] ids) throws UnsupportedDocumentIdException {
+<span class="pc bpc" id="L395" title="1 of 2 branches missed.">        if (ids == null) {</span>
+<span class="nc" id="L396">            return null;</span>
+        }
+
+<span class="fc" id="L399">        int cont = 0;</span>
+<span class="fc" id="L400">        String[] _ids = new String[ids.length];</span>
+
+<span class="fc bfc" id="L402" title="All 2 branches covered.">        for (Object id : ids) {</span>
+<span class="fc" id="L403">            _ids[cont] = getIdString(id);</span>
+<span class="fc" id="L404">            cont++;</span>
+        }
+
+<span class="fc" id="L407">        return JsonUtils.minify(Arrays.toString(_ids));</span>
+    }
+
+<span class="nc" id="L410">    private URLUtils() {</span>
+<span class="nc" id="L411">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

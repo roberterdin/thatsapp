@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>Relationship.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.hal.metadata</a> &gt; <span class="el_source">Relationship.java</span></div><h1>Relationship.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.hal.metadata;
+
+import com.mongodb.BasicDBList;
+import com.mongodb.DBObject;
+import org.restheart.handlers.RequestContext;
+import org.restheart.utils.URLUtils;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import org.restheart.hal.UnsupportedDocumentIdException;
+import org.restheart.utils.JsonUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class Relationship {
+
+<span class="nc" id="L39">    private static final Logger LOGGER = LoggerFactory.getLogger(Relationship.class);</span>
+
+<span class="nc" id="L41">    public enum TYPE {</span>
+<span class="nc" id="L42">        ONE_TO_ONE,</span>
+<span class="nc" id="L43">        ONE_TO_MANY,</span>
+<span class="nc" id="L44">        MANY_TO_ONE,</span>
+<span class="nc" id="L45">        MANY_TO_MANY</span>
+    };
+
+<span class="nc" id="L48">    public enum ROLE {</span>
+<span class="nc" id="L49">        OWNING,</span>
+<span class="nc" id="L50">        INVERSE</span>
+    };
+
+    public static final String RELATIONSHIPS_ELEMENT_NAME = &quot;rels&quot;;
+    public static final String REL_ELEMENT_NAME = &quot;rel&quot;;
+    public static final String TYPE_ELEMENT_NAME = &quot;type&quot;;
+    public static final String ROLE_ELEMENT_NAME = &quot;role&quot;;
+    public static final String TARGET_DB_ELEMENT_NAME = &quot;target-db&quot;;
+    public static final String TARGET_COLLECTION_ELEMENT_NAME = &quot;target-coll&quot;;
+    public static final String REF_ELEMENT_NAME = &quot;ref-field&quot;;
+
+    private final String rel;
+    private final TYPE type;
+    private final ROLE role;
+    private final String targetDb;
+    private final String targetCollection;
+    private final String referenceField;
+
+    /**
+     *
+     * @param rel
+     * @param type
+     * @param role
+     * @param targetDb
+     * @param targetCollection
+     * @param referenceField
+     */
+<span class="nc" id="L77">    public Relationship(String rel, TYPE type, ROLE role, String targetDb, String targetCollection, String referenceField) {</span>
+<span class="nc" id="L78">        this.rel = rel;</span>
+<span class="nc" id="L79">        this.type = type;</span>
+<span class="nc" id="L80">        this.role = role;</span>
+<span class="nc" id="L81">        this.targetDb = targetDb;</span>
+<span class="nc" id="L82">        this.targetCollection = targetCollection;</span>
+<span class="nc" id="L83">        this.referenceField = referenceField;</span>
+<span class="nc" id="L84">    }</span>
+
+    /**
+     *
+     * @param rel
+     * @param type
+     * @param role
+     * @param targetDb
+     * @param targetCollection
+     * @param referenceField
+     * @throws InvalidMetadataException
+     */
+<span class="nc" id="L96">    public Relationship(String rel, String type, String role, String targetDb, String targetCollection, String referenceField) throws InvalidMetadataException {</span>
+<span class="nc" id="L97">        this.rel = rel;</span>
+
+        try {
+<span class="nc" id="L100">            this.type = TYPE.valueOf(type);</span>
+<span class="nc" id="L101">        } catch (IllegalArgumentException iae) {</span>
+<span class="nc" id="L102">            throw new InvalidMetadataException(&quot;invalid type value: &quot; + type + &quot;. valid values are &quot; + Arrays.toString(TYPE.values()), iae);</span>
+<span class="nc" id="L103">        }</span>
+
+        try {
+<span class="nc" id="L106">            this.role = ROLE.valueOf(role);</span>
+<span class="nc" id="L107">        } catch (IllegalArgumentException iae) {</span>
+<span class="nc" id="L108">            throw new InvalidMetadataException(&quot;invalid role value &quot; + role + &quot;. valid values are &quot; + Arrays.toString(ROLE.values()), iae);</span>
+<span class="nc" id="L109">        }</span>
+
+<span class="nc" id="L111">        this.targetDb = targetDb;</span>
+<span class="nc" id="L112">        this.targetCollection = targetCollection;</span>
+<span class="nc" id="L113">        this.referenceField = referenceField;</span>
+<span class="nc" id="L114">    }</span>
+
+    /**
+     *
+     * @param collProps
+     * @return
+     * @throws InvalidMetadataException
+     */
+    public static List&lt;Relationship&gt; getFromJson(DBObject collProps) throws InvalidMetadataException {
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (collProps == null) {</span>
+<span class="nc" id="L124">            return null;</span>
+        }
+
+<span class="nc" id="L127">        ArrayList&lt;Relationship&gt; ret = new ArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L129">        Object _rels = collProps.get(RELATIONSHIPS_ELEMENT_NAME);</span>
+
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        if (_rels == null) {</span>
+<span class="nc" id="L132">            return ret;</span>
+        }
+
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (!(_rels instanceof BasicDBList)) {</span>
+<span class="nc" id="L136">            throw new InvalidMetadataException(&quot;element 'relationships' is not an array list.&quot; + _rels);</span>
+        }
+
+<span class="nc" id="L139">        BasicDBList rels = (BasicDBList) _rels;</span>
+
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        for (Object _rel : rels.toArray()) {</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (!(_rel instanceof DBObject)) {</span>
+<span class="nc" id="L143">                throw new InvalidMetadataException(&quot;element 'relationships' is not valid.&quot; + _rel);</span>
+            }
+
+<span class="nc" id="L146">            DBObject rel = (DBObject) _rel;</span>
+<span class="nc" id="L147">            ret.add(getRelFromJson(rel));</span>
+        }
+
+<span class="nc" id="L150">        return ret;</span>
+    }
+
+    private static Relationship getRelFromJson(DBObject content) throws InvalidMetadataException {
+<span class="nc" id="L154">        Object _rel = content.get(REL_ELEMENT_NAME);</span>
+<span class="nc" id="L155">        Object _type = content.get(TYPE_ELEMENT_NAME);</span>
+<span class="nc" id="L156">        Object _role = content.get(ROLE_ELEMENT_NAME);</span>
+<span class="nc" id="L157">        Object _targetDb = content.get(TARGET_DB_ELEMENT_NAME);</span>
+<span class="nc" id="L158">        Object _targetCollection = content.get(TARGET_COLLECTION_ELEMENT_NAME);</span>
+<span class="nc" id="L159">        Object _referenceField = content.get(REF_ELEMENT_NAME);</span>
+
+<span class="nc bnc" id="L161" title="All 4 branches missed.">        if (_rel == null || !(_rel instanceof String)) {</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">            throw new InvalidMetadataException((_rel == null ? &quot;missing &quot; : &quot;invalid &quot;) + REL_ELEMENT_NAME + &quot; element.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L165" title="All 4 branches missed.">        if (_type == null || !(_type instanceof String)) {</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">            throw new InvalidMetadataException((_type == null ? &quot;missing &quot; : &quot;invalid &quot;) + TYPE_ELEMENT_NAME + &quot; element.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L169" title="All 4 branches missed.">        if (_role == null || !(_role instanceof String)) {</span>
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            throw new InvalidMetadataException((_role == null ? &quot;missing &quot; : &quot;invalid &quot;) + ROLE_ELEMENT_NAME + &quot; element.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L173" title="All 4 branches missed.">        if (_targetDb != null &amp;&amp; !(_targetDb instanceof String)) {</span>
+<span class="nc" id="L174">            throw new InvalidMetadataException(&quot;invalid &quot; + TARGET_DB_ELEMENT_NAME + &quot; field.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L177" title="All 4 branches missed.">        if (_targetCollection == null || !(_targetCollection instanceof String)) {</span>
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            throw new InvalidMetadataException((_targetCollection == null ? &quot;missing &quot; : &quot;invalid &quot;) + TARGET_COLLECTION_ELEMENT_NAME + &quot; element.&quot;);</span>
+        }
+
+<span class="nc bnc" id="L181" title="All 4 branches missed.">        if (_referenceField == null || !(_referenceField instanceof String)) {</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">            throw new InvalidMetadataException((_referenceField == null ? &quot;missing &quot; : &quot;invalid &quot;) + REF_ELEMENT_NAME + &quot; element.&quot;);</span>
+        }
+
+<span class="nc" id="L185">        String rel = (String) _rel;</span>
+<span class="nc" id="L186">        String type = (String) _type;</span>
+<span class="nc" id="L187">        String role = (String) _role;</span>
+<span class="nc" id="L188">        String targetDb = (String) _targetDb;</span>
+<span class="nc" id="L189">        String targetCollection = (String) _targetCollection;</span>
+<span class="nc" id="L190">        String referenceField = (String) _referenceField;</span>
+
+<span class="nc" id="L192">        return new Relationship(rel, type, role, targetDb, targetCollection, referenceField);</span>
+    }
+
+    /**
+     *
+     * @param context
+     * @param dbName
+     * @param collName
+     * @param data
+     * @return
+     * @throws IllegalArgumentException
+     * @throws org.restheart.hal.UnsupportedDocumentIdException
+     */
+    public String getRelationshipLink(RequestContext context, String dbName, String collName, DBObject data) throws IllegalArgumentException, UnsupportedDocumentIdException {
+<span class="nc" id="L206">        Object _referenceValue = getReferenceFieldValue(referenceField, data);</span>
+
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        String db = (targetDb == null ? dbName : targetDb);</span>
+
+        // check _referenceValue
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        if (role == ROLE.OWNING) {</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">            if (_referenceValue == null) {</span>
+<span class="nc" id="L213">                return null; // the reference field is missing or it value is null =&gt; do not generate a link</span>
+            }
+
+<span class="nc bnc" id="L216" title="All 4 branches missed.">            if (type == TYPE.ONE_TO_ONE || type == TYPE.MANY_TO_ONE) {</span>
+<span class="nc" id="L217">                Object id = _referenceValue;</span>
+
+                // can be a BasicDBList if ref-field is a json path expression
+<span class="nc bnc" id="L220" title="All 4 branches missed.">                if (id instanceof BasicDBList &amp;&amp; ((BasicDBList) id).size() == 1) {</span>
+<span class="nc" id="L221">                    id = ((BasicDBList) id).get(0);</span>
+                }
+
+<span class="nc" id="L224">                return URLUtils.getUriWithDocId(context, db, targetCollection, id);</span>
+            } else {
+<span class="nc bnc" id="L226" title="All 2 branches missed.">                if (!(_referenceValue instanceof BasicDBList)) {</span>
+<span class="nc" id="L227">                    throw new IllegalArgumentException(&quot;in resource &quot; + dbName + &quot;/&quot; + collName + &quot;/&quot; + data.get(&quot;_id&quot;)</span>
+<span class="nc" id="L228">                            + &quot; the &quot; + type.name() + &quot; relationship ref-field &quot; + this.referenceField + &quot; should be an array, but it is &quot; + _referenceValue);</span>
+                }
+
+<span class="nc" id="L231">                Object[] ids = ((BasicDBList) _referenceValue).toArray();</span>
+<span class="nc" id="L232">                return URLUtils.getUriWithFilterMany(context, db, targetCollection, ids);</span>
+            }
+        } else {
+            // INVERSE
+<span class="nc" id="L236">            Object id = data.get(&quot;_id&quot;);</span>
+
+<span class="nc bnc" id="L238" title="All 4 branches missed.">            if (type == TYPE.ONE_TO_ONE || type == TYPE.ONE_TO_MANY) {</span>
+<span class="nc" id="L239">                return URLUtils.getUriWithFilterOne(context, db, targetCollection, referenceField, id);</span>
+<span class="nc bnc" id="L240" title="All 4 branches missed.">            } else if (type == TYPE.MANY_TO_ONE || type == TYPE.MANY_TO_MANY) {</span>
+<span class="nc" id="L241">                return URLUtils.getUriWithFilterManyInverse(context, db, targetCollection, referenceField, id);</span>
+            }
+        }
+
+<span class="nc" id="L245">        LOGGER.debug(&quot;returned null link. this = {}, data = {}&quot;, this, data);</span>
+<span class="nc" id="L246">        return null;</span>
+    }
+
+    /**
+     *
+     * @returns the reference field value, either it is an object or, in case
+     * referenceField is a json path, a BasicDBObject
+     *
+     *
+     */
+    private Object getReferenceFieldValue(String referenceField, DBObject data) {
+<span class="nc bnc" id="L257" title="All 2 branches missed.">        if (referenceField.startsWith(&quot;$.&quot;)) {</span>
+            // it is a json path expression
+
+            List&lt;Optional&lt;Object&gt;&gt; objs;
+
+            try {
+<span class="nc" id="L263">                objs = JsonUtils.getPropsFromPath(data, referenceField);</span>
+<span class="nc" id="L264">            } catch (IllegalArgumentException ex) {</span>
+<span class="nc" id="L265">                return null;</span>
+<span class="nc" id="L266">            }</span>
+
+<span class="nc bnc" id="L268" title="All 2 branches missed.">            if (objs == null) {</span>
+<span class="nc" id="L269">                return null;</span>
+            }
+
+<span class="nc" id="L272">            BasicDBList ret = new BasicDBList();</span>
+
+<span class="nc" id="L274">            objs.stream().forEach((Optional&lt;Object&gt; obj) -&gt; {</span>
+<span class="nc bnc" id="L275" title="All 4 branches missed.">                if (obj != null &amp;&amp; obj.isPresent()) {</span>
+<span class="nc" id="L276">                    ret.add(obj.get());</span>
+                } else {
+<span class="nc" id="L278">                    LOGGER.debug(&quot;the reference field {} resolved to {} from {}&quot;, referenceField, objs, data);</span>
+                }
+<span class="nc" id="L280">            });</span>
+
+<span class="nc bnc" id="L282" title="All 2 branches missed.">            if (ret.isEmpty()) {</span>
+<span class="nc" id="L283">                return null;</span>
+            } else {
+<span class="nc" id="L285">                return ret;</span>
+            }
+        } else {
+<span class="nc" id="L288">            return data.get(referenceField);</span>
+        }
+    }
+
+    /**
+     * @return the rel
+     */
+    public String getRel() {
+<span class="nc" id="L296">        return rel;</span>
+    }
+
+    /**
+     * @return the type
+     */
+    public TYPE getType() {
+<span class="nc" id="L303">        return type;</span>
+    }
+
+    /**
+     * @return the role
+     */
+    public ROLE getRole() {
+<span class="nc" id="L310">        return role;</span>
+    }
+
+    /**
+     * @return the targetDb
+     */
+    public String getTargetDb() {
+<span class="nc" id="L317">        return targetDb;</span>
+    }
+
+    /**
+     * @return the targetCollection
+     */
+    public String getTargetCollection() {
+<span class="nc" id="L324">        return targetCollection;</span>
+    }
+
+    /**
+     * @return the referenceField
+     */
+    public String getReferenceField() {
+<span class="nc" id="L331">        return referenceField;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>

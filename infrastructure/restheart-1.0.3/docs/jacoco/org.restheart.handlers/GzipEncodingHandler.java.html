@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="it"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../.resources/report.css" type="text/css"/><link rel="shortcut icon" href="../.resources/report.gif" type="image/gif"/><title>GzipEncodingHandler.java</title><link rel="stylesheet" href="../.resources/prettify.css" type="text/css"/><script type="text/javascript" src="../.resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../.sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Restheart</a> &gt; <a href="index.source.html" class="el_package">org.restheart.handlers</a> &gt; <span class="el_source">GzipEncodingHandler.java</span></div><h1>GzipEncodingHandler.java</h1><pre class="source lang-java linenums">/*
+ * RESTHeart - the data REST API server
+ * Copyright (C) 2014 - 2015 SoftInstigate Srl
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ * 
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package org.restheart.handlers;
+
+import org.restheart.utils.HttpStatus;
+import org.restheart.utils.ResponseHelper;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.server.handlers.encoding.ContentEncodingRepository;
+import io.undertow.server.handlers.encoding.EncodingHandler;
+import io.undertow.server.handlers.encoding.GzipEncodingProvider;
+import io.undertow.util.HeaderValues;
+import io.undertow.util.Headers;
+import java.util.Arrays;
+
+/**
+ *
+ * @author Andrea Di Cesare &lt;andrea@softinstigate.com&gt;
+ */
+public class GzipEncodingHandler extends EncodingHandler {
+
+<span class="nc" id="L37">    private boolean forceCompression = false;</span>
+
+    /**
+     * Creates a new instance of GzipEncodingHandler
+     *
+     * @param next
+     * @param forceCompression if true requests without gzip encoding in
+     * Accept-Encoding header will be rejected
+     */
+    public GzipEncodingHandler(HttpHandler next, boolean forceCompression) {
+<span class="nc" id="L47">        super(next, new ContentEncodingRepository().addEncodingHandler(&quot;gzip&quot;, new GzipEncodingProvider(), 50));</span>
+<span class="nc" id="L48">        this.forceCompression = forceCompression;</span>
+<span class="nc" id="L49">    }</span>
+
+    @Override
+    public void handleRequest(HttpServerExchange exchange) throws Exception {
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (forceCompression) {</span>
+<span class="nc" id="L54">            HeaderValues acceptedEncodings = exchange.getRequestHeaders().get(Headers.ACCEPT_ENCODING_STRING);</span>
+
+<span class="nc bnc" id="L56" title="All 2 branches missed.">            for (String values : acceptedEncodings) {</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                if (Arrays.stream(values.split(&quot;,&quot;)).anyMatch((v) -&gt; Headers.GZIP.toString().equals(v))) {</span>
+<span class="nc" id="L58">                    super.handleRequest(exchange);</span>
+<span class="nc" id="L59">                    return;</span>
+                }
+<span class="nc" id="L61">            }</span>
+
+<span class="nc" id="L63">            ResponseHelper.endExchangeWithMessage(exchange, HttpStatus.SC_BAD_REQUEST, &quot;Accept-Encoding header must include gzip&quot;);</span>
+<span class="nc" id="L64">        } else {</span>
+<span class="nc" id="L65">            super.handleRequest(exchange);</span>
+        }
+<span class="nc" id="L67">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.eclemma.org/jacoco">JaCoCo</a> 0.7.5.201505241946</span></div></body></html>
