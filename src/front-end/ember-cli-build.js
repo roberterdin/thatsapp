@@ -15,10 +15,10 @@ module.exports = function(defaults) {
     destDir: 'assets'
   });
 
-  app.import('bower_components/moment/moment.js');
-  app.import('bower_components/modernizr/modernizr.js');
+  //app.import('bower_components/moment/moment.js');
+  //app.import('bower_components/modernizr/modernizr.js');
 
-  app.import('bower_components/es6-shim/es6-shim.js');
+  //app.import('bower_components/es6-shim/es6-shim.js');
 
 
   /* vendors */
