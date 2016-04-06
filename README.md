@@ -7,11 +7,21 @@ The back-end is written in plain Java 8. The philosophy is that the data is the 
 ### RESTful API
 RESTHeart is currently installed and started seperately. This way it is easier to distribute the application to multiple cluster nodes compared to having an embedded API.
 
+### Example data
+In order to use the example data (e.g. for unit testing) you have to extract the passwort protected files in the resources directory.
+```
+mkdir chatHistories
+gpg -d chatHistories.tar.gz.gpg | tar xzvf - -C chatHistories/
+```
+In case you need to add example data, compress files as follows:
+```
+tar czvpf - file1.txt file2.txt | gpg --symmetric --cipher-algo aes256 -o chatHistories.tar.gz.gpg
+```
+**NEVER EVER, UNDER ANY CIRCUMSTANCES PUSH CHAT HISTORIES INTO THE REPOSITORY**
 
 ## Front-End
 This section outlines the details of collaborating on the front-end Ember application.
 
-A short introduction of this app could easily go here.
 
 ### Prerequisites
 
