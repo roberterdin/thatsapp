@@ -18,7 +18,7 @@ public class ParserTests {
     public void testParsing() throws FileNotFoundException {
 
         TimeFormatsProvider timeFormatsProvider = new TimeFormatsProvider();
-        InputStream is = new FileInputStream("../../resources/mashup.txt");
+        InputStream is = new FileInputStream("../../resources/chatHistories/mashup.txt");
         ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get());
 
         parserWorker.call();

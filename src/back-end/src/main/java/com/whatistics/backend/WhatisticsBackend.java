@@ -2,17 +2,14 @@ package com.whatistics.backend;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.whatistics.backend.configuration.LocalConfig;
 import com.whatistics.backend.dal.DataAccessLayerModule;
 import com.whatistics.backend.mail.MailModule;
-import com.whatistics.backend.mail.MailService;
 import com.whatistics.backend.parser.ParserModule;
 import com.whatistics.backend.statistics.StatisticsModule;
-import org.mongodb.morphia.Datastore;
-import org.mongodb.morphia.Morphia;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.Random;
 
 /**
@@ -30,13 +27,22 @@ public class WhatisticsBackend {
     final Logger logger = LoggerFactory.getLogger(WhatisticsBackend.class);
 
 
-    logger.debug("Hello, Woorld!");
-
     injector = Guice.createInjector(new MailModule(),
             new ParserModule(),
             new DataAccessLayerModule(),
             new WhatisticsModule(),
             new StatisticsModule());
+
+
+
+    // start the restheart server as a process
+    try {
+      Process restProc = Runtime.getRuntime().exec("java -server -jar build/libs/lib/restheart-1.1.7.jar");
+    } catch (IOException e) {
+      logger.error("Failed starting RESTHeart Server", e);
+      e.printStackTrace();
+    }
+
 
     WhatisticsService whatisticsService = injector.getInstance(WhatisticsService.class);
     whatisticsService.start();
