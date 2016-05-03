@@ -53,3 +53,5 @@ task copyToLib( type: Copy ) {
 }
 
 jar { dependsOn copyToLib }
+
+run { dependsOn copyToLib }
