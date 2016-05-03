@@ -5,7 +5,7 @@
 The back-end is written in plain Java 8. The philosophy is that the data is the interface, i.e. the relevant data will be exposed with a RESTful API running on top of the database. [MongoDB](https://www.mongodb.org/) and [RESTHeart](http://restheart.org/) are used for the persistence and exposure, respectively.
 
 ### RESTful API
-RESTHeart is currently installed and started seperately. This way it is easier to distribute the application to multiple cluster nodes compared to having an embedded API.
+RESTHeart is embedded as a runtime dependency and spawned at startup. 
 
 ### Example data
 In order to use the example data (e.g. for unit testing) you have to extract the password protected files in the resources directory.
