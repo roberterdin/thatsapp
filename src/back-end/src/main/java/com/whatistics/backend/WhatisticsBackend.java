@@ -36,6 +36,8 @@ public class WhatisticsBackend {
 
 
     // start the restheart server as a process
+    // todo: make RESTHeart use configuration file from resources
+    // todo: redirect stdout or call lib directly
     try {
       Process restProc = Runtime.getRuntime().exec("java -server -jar build/libs/lib/restheart-1.1.7.jar");
     } catch (IOException e) {
