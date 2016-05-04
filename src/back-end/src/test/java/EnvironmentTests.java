@@ -3,6 +3,7 @@ import com.whatistics.backend.configuration.LocalConfig;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.GlobalStatistics;
 import com.whatistics.backend.model.Message;
+import com.whatistics.backend.rest.RestService;
 import org.bson.types.ObjectId;
 import org.junit.Test;
 import org.mongodb.morphia.Datastore;
@@ -78,35 +79,23 @@ public class EnvironmentTests {
 
     @Test
     public void testRest(){
-        // start the restheart server as a process
-        // todo: make RESTHeart use configuration file from resources
-        // todo: redirect stdout
-        Process restProc;
+
+        RestService restService = new RestService();
+        restService.start();
+
         try {
-            restProc = Runtime.getRuntime().exec("java -server -jar build/libs/lib/restheart-1.1.7.jar");
-
-
-            try {
-                TimeUnit.SECONDS.sleep(5);
-                URL url = new URL("http://localhost:8080");
-                HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-                connection.setRequestMethod("GET");
-                connection.connect();
-                assertEquals(connection.getResponseCode(), 200);
-                assertEquals(connection.getHeaderField("Content-Type"), "application/hal+json");
-            } catch (Exception e) {
-                e.printStackTrace();
-                fail("Failed to create HTTP connection to test RESTHeart");
-            } finally {
-                restProc.destroyForcibly();
-            }
-        } catch (IOException e) {
-            fail("Process with RESTHeart server can't be spawned");
+            TimeUnit.SECONDS.sleep(5);
+            URL url = new URL("http://localhost:8080");
+            HttpURLConnection connection = (HttpURLConnection)url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.connect();
+            assertEquals(connection.getResponseCode(), 200);
+            assertEquals(connection.getHeaderField("Content-Type"), "application/hal+json");
+        } catch (Exception e) {
             e.printStackTrace();
+            fail("Failed to create HTTP connection to test RESTHeart");
+        } finally {
+            restService.stop();
         }
-
-
-
     }
-
 }

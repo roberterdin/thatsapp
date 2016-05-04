@@ -34,18 +34,6 @@ public class WhatisticsBackend {
                 new StatisticsModule());
 
 
-        // start the restheart server as a process
-        // todo: make RESTHeart use configuration file from resources
-        // todo: redirect stdout or call lib directly
-        // todo: movo into seperate model so
-        try {
-            Process restProc = Runtime.getRuntime().exec("java -server -jar build/libs/lib/restheart-1.1.7.jar");
-        } catch (IOException e) {
-            logger.error("Failed starting RESTHeart Server", e);
-            e.printStackTrace();
-        }
-
-
         WhatisticsService whatisticsService = injector.getInstance(WhatisticsService.class);
         whatisticsService.start();
 

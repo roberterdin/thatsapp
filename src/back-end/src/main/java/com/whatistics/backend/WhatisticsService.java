@@ -8,6 +8,7 @@ import com.whatistics.backend.mail.MailService;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.GlobalStatistics;
 import com.whatistics.backend.parser.ParserService;
+import com.whatistics.backend.rest.RestService;
 import com.whatistics.backend.statistics.StatisticsService;
 import org.mongodb.morphia.Datastore;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ public class WhatisticsService implements Observer, Service {
 
     private final Logger logger = LoggerFactory.getLogger(WhatisticsService.class);
 
+    private final RestService restService;
     private final MailService mailService;
     private final ParserService parserService;
     private final StatisticsService statisticsService;
@@ -34,7 +36,8 @@ public class WhatisticsService implements Observer, Service {
     private final String unprocessableFolder;
 
     @Inject
-    public WhatisticsService(MailService mailService,
+    public WhatisticsService(RestService restService,
+                             MailService mailService,
                              ParserService parserService,
                              StatisticsService statisticsService,
                              DataStoreProvider dataStoreProvider,
@@ -42,6 +45,7 @@ public class WhatisticsService implements Observer, Service {
                              @Named("processedFolder") String processedFolder,
                              @Named("unprocessableFolder") String unprocessableFolder){
 
+        this.restService = restService;
         this.mailService = mailService;
         this.parserService = parserService;
         this.statisticsService = statisticsService;
@@ -79,11 +83,23 @@ public class WhatisticsService implements Observer, Service {
 
     @Override
     public void start() {
+        this.restService.start();
         this.mailService.start();
         this.parserService.addObserver(this);
         this.parserService.start();
         this.statisticsService.start();
         this.statisticsService.addObserver(this);
+
+
+        // try to gracefully shutdown
+        WhatisticsService that = this;
+        Runtime.getRuntime().addShutdownHook(
+                new Thread("app-shutdown-hook") {
+                    @Override
+                    public void run() {
+                        that.stop();
+                    }
+                });
     }
 
     @Override
@@ -91,5 +107,6 @@ public class WhatisticsService implements Observer, Service {
         this.mailService.stop();
         this.parserService.stop();
         this.statisticsService.stop();
+        this.restService.stop();
     }
 }
