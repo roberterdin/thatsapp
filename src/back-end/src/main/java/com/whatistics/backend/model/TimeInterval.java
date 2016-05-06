@@ -6,6 +6,7 @@ import org.mongodb.morphia.annotations.Id;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 /**
@@ -23,14 +24,23 @@ public class TimeInterval{
     private String label;
     private Statistics statistics = new Statistics();
 
-    public TimeInterval(){
-    }
-
+    /**
+     * Creates a TimeInterval with a default label in the dd.MM.yyyy format.
+     * @param startInstant
+     * @param endInstant
+     */
     public TimeInterval(LocalDateTime startInstant, LocalDateTime endInstant) {
         this.startInstant = Date.from(startInstant.atZone(ZoneId.systemDefault()).toInstant());
         this.endInstant = Date.from(endInstant.atZone(ZoneId.systemDefault()).toInstant());
+        this.label = startInstant.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
     }
 
+    /**
+     * Overwrites default label.
+     * @param startInstant
+     * @param endInstant
+     * @param label
+     */
     public TimeInterval(LocalDateTime startInstant, LocalDateTime endInstant, String label) {
         this(startInstant, endInstant);
         this.label = label;
