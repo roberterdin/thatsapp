@@ -2,7 +2,9 @@
     <div class="col-md-4 text-left">
         <h2 class="text-center">Messages sent</h2>
 		<p class="ladder-subtitle text-center">Cant. Stop. Typing.</p>
-		<div id="chart-ladder-messages"></div>
+		<div id="chart-ladder-messages">
+            {{chartist-chart type="bar" ratio="ct-square" options=messageChart.chartOptions data=messageChart.chartData}}
+        </div>
     </div>
     <div class="col-md-4 text-left">
         <h2 class="text-center">Media sent</h2>
@@ -19,12 +21,7 @@
                 </tr>
             </thead>
             <tbody>
-                {{#each emojis}}
-                    <tr>
-                        <td class="emoji">{{emoji}}</td>
-                        <td>{{amount}}</td>
-                    </tr>
-                {{/each}}
+
             </tbody>
         </table>
     </div>

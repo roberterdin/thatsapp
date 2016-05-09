@@ -12,11 +12,11 @@ export default DS.JSONSerializer.extend(DS.EmbeddedRecordsMixin, {
     payload.conversation = payload.conversation.$id.$oid;
     payload.statistics = payload.statistics.$id.$oid;
 
-    for(var i = 0; i < payload.participants.length; i++) {
-      payload.participants[i] = payload.participants[i].$id.$oid;
+    for(let i = 0; i < payload.participants.length; i++) {
+      payload.participants[i] = { type: "person", id: payload.participants[i].$id.$oid };
     }
 
-    for(var i = 0; i < payload.aggregatedHistory.length; i++) {
+    for(let i = 0; i < payload.aggregatedHistory.length; i++) {
       payload.aggregatedHistory[i].id = payload.aggregatedHistory[i]._id.$oid;
       payload.aggregatedHistory[i].statistics.id = payload.aggregatedHistory[i]._id.$oid;
       payload.aggregatedHistory[i].startInstant = payload.aggregatedHistory[i].startInstant.$date;
