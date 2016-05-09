@@ -27,8 +27,6 @@ export default DS.JSONSerializer.extend(DS.EmbeddedRecordsMixin, {
         payload.id = payload._id.$oid;
         delete payload._id;
 
-        console.log(payload);
-
         return this._super(...arguments);
     }
 });

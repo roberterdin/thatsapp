@@ -2,13 +2,8 @@ import Ember from 'ember';
 
 export default Ember.Controller.extend({
 
-    parentController: Ember.computed.alias('controllers.results'),
-
-    init: function() {
-        console.log("ResultsLadderController created");
-    },
-
     messageChart: function() {
+
         var labels = [];
         var messageAmount = [];
 
@@ -80,6 +75,8 @@ export default Ember.Controller.extend({
                 }
             }
         };
-    }.property('mediaChart')
+    }.property('mediaChart'),
+
+
 });
 
