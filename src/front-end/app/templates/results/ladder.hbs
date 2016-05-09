@@ -9,6 +9,9 @@
     <div class="col-md-4 text-left">
         <h2 class="text-center">Media sent</h2>
 		<p class="ladder-subtitle text-center">Look at those cat pics!</p>
+        <div id="chart-ladder-media">
+            {{chartist-chart type="bar" ratio="ct-square" options=mediaChart.chartOptions data=mediaChart.chartData}}
+        </div>
     </div>
     <div class="col-md-4 text-left">
         <h2 class="text-center">Emoji's used</h2>

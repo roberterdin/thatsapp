@@ -23,10 +23,8 @@ export default Ember.Controller.extend({
         }).slice(0,9);
 
         sortedSlicedParticipants.forEach(function(participant) {
-            console.log(participant.get('name'));
             labels.push(participant.get('name'));
             messageAmount.push(participant.get('statistics.messageAmount'));
-            console.log(participant.get('statistics.messageAmount'));
         });
 
         return {
@@ -45,6 +43,43 @@ export default Ember.Controller.extend({
                 }
             }
         };
-    }.property('messageChart')
+    }.property('messageChart'),
 
+    mediaChart: function() {
+        var labels = [];
+        var mediaAmount = [];
+
+        var sortedSlicedParticipants = this.get('model.participants').toArray().sort(function(a, b){
+            if (a.get('statistics').get('mediaAmount') < b.get('statistics').get('mediaAmount')){
+                return 1;
+            }
+            if ( a.get('statistics').get('mediaAmount') > b.get('statistics').get('mediaAmount' )){
+                return -1;
+            }
+            return 0;
+        }).slice(0,9);
+
+        sortedSlicedParticipants.forEach(function(participant) {
+            labels.push(participant.get('name'));
+            mediaAmount.push(participant.get('statistics.mediaAmount'));
+        });
+
+        return {
+            chartData: {
+                labels: labels,
+                series: [
+                    mediaAmount
+                ]
+            },
+            chartOptions: {
+                seriesBarDistance: 10,
+                reverseData: true,
+                horizontalBars: true,
+                axisY: {
+                    offset: 70
+                }
+            }
+        };
+    }.property('mediaChart')
 });
+
