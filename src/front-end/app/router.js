@@ -12,4 +12,8 @@ export default Router.map(function() {
     this.resource('results.individual', {path: "/individual"}, function(){
     });
   });
+
+  this.route('error', function() {
+    this.route('whatsapp');
+  });
 });
