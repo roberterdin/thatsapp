@@ -1,0 +1,19 @@
+{{#if model.statistics}}
+    <div class="row">
+        <div class="col-md-4 text-center">
+            <p class="nbr-huge">{{model.statistics.wordAmount}}</p>
+
+            <p class="nbr-desc">Words</p>
+        </div>
+        <div class="col-md-4 text-center">
+            <p class="nbr-huge">{{model.statistics.messageAmount}}</p>
+
+            <p class="nbr-desc">Messages</p>
+        </div>
+        <div class="col-md-4 text-center">
+            <p class="nbr-huge">{{model.statistics.mediaAmount}}</p>
+
+            <p class="nbr-desc">Images</p>
+        </div>
+    </div>
+{{/if}}

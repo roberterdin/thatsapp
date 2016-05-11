@@ -1,20 +1,4 @@
-<div class="row">
-    <div class="col-md-4 text-center">
-        <p class="nbr-huge">{{model.statistics.wordAmount}}</p>
-
-        <p class="nbr-desc">Words</p>
-    </div>
-    <div class="col-md-4 text-center">
-        <p class="nbr-huge">{{model.statistics.messageAmount}}</p>
-
-        <p class="nbr-desc">Messages</p>
-    </div>
-    <div class="col-md-4 text-center">
-        <p class="nbr-huge">{{model.participants.length}}</p>
-
-        <p class="nbr-desc">People</p>
-    </div>
-</div>
+{{basic-statistics model=model}}
 <div id="timeline" class="row">
     <h1 class="text-center">Timeline</h1>
 

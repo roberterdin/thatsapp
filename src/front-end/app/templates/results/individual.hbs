@@ -1,1 +1,7 @@
-The mighty plank greedily fires the shore.
+<select onchange={{action "selectParticipant" value="target.value"}}>
+    <option value="">Plsease select a person</option>
+    {{#each model.participants as |participant|}}
+        <option value={{participant.id}}>{{participant.name}}</option>
+    {{/each}}
+</select>
+{{basic-statistics model=currentParticipant}}

@@ -29,6 +29,4 @@ export default Ember.Controller.extend({
             }
         };
     }.property('historyChart')
-
-
 });
