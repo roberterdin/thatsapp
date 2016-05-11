@@ -29,29 +29,5 @@
         </div>
     </div>
   <hr/>
-    <div class="row">
-        <div class="col-md-6 center-block">
-            {{#unless parsed}}
-                <form role="form">
-                    <div class="form-group">
-                        <h2>Upload it manually:</h2>
-                        <input type="file" id="inputFile" title="<span class='glyphicon glyphicon-folder-open'></span>   Search for a file to add" data-filename-placement="inside">
-                        <p class="help-block">Cold teleporters, to the moon?</p>
-                    </div>
-                    <button {{action 'submitFile'}} type="submit" class="btn btn-default" style="width: 186px;">
-                        <span class="glyphicon glyphicon-upload"></span>
-                    </button>
-                </form>
-            {{/unless}}
-        </div>
-        <div class="col-md-6 center-block">
-            {{#if parsing}}
-                <h3>Parsing...</h3>
-                <div class="parseProgress">
-                    {{parseProgress}}%
-                </div>
-            {{/if}}
-        </div>
-    </div>
 
 </div>
