@@ -25,16 +25,16 @@
             <thead>
             <tr>
                 <td>Emoji</td>
-                <td>Amount (msg: {{model.statistics.messageAmount}})</td>
+                <td>Amount</td>
             </tr>
             </thead>
             <tbody >
-            {{#each-in model.statistics.emoticons as |key value|}}
+            {{#each emoticons as |e|}}
                 <tr>
-                    <td class="emoji">{{key}}</td>
-                    <td>{{value}}</td>
+                    <td class="emoji">{{e.emoji}}</td>
+                    <td>{{e.amount}}</td>
                 </tr>
-            {{/each-in}}
+            {{/each}}
             <td></td>
             </tbody>
         </table>

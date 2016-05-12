@@ -77,6 +77,20 @@ export default Ember.Controller.extend({
         };
     }.property('mediaChart'),
 
+    emoticons: function(){
 
+        return $.map(this.get('model.statistics.emoticons'), (k,v) => {
+            return {emoji: v, amount: k};
+        }).sort((a, b) => {
+            if (a.amount < b.amount){
+                return 1;
+            }
+            if ( a.amount > b.amount){
+                return -1;
+            }
+            return 0;
+        }).slice(0,9);
+
+    }.property('emoticons')
 });
 

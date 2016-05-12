@@ -73,15 +73,14 @@ public class ParserWorker implements Callable<Conversation> {
                 }
 
 
-
                 LocalDateTime dateTime = getDate(currentLine);
 
                 if (dateTime == null) {
                     // add to previous {
-                    if(message != null){
+                    if (message != null) {
                         message.setContent(message.getContent() + System.lineSeparator() + currentLine);
-                    }else {
-                        logger.error("First line can't be part of multiline message",  new IllegalStateException("First line can't be part of multiline message"));
+                    } else {
+                        logger.error("First line can't be part of multiline message", new IllegalStateException("First line can't be part of multiline message"));
                     }
 
                 } else {
@@ -126,7 +125,7 @@ public class ParserWorker implements Callable<Conversation> {
 
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
-        logger.info("Time to parse message: " + duration/1000000 + "ms");
+        logger.info("Time to parse message: " + duration / 1000000 + "ms");
 
         return conversation;
     }
@@ -137,47 +136,47 @@ public class ParserWorker implements Callable<Conversation> {
 
         // if the line is shorter than the shortest time format, it has to be a multi line
         // this is an optimisation measure
-        if(line.length() < this.timeFormats.get(this.timeFormats.size()-1).getLength()){
+        if (line.length() < this.timeFormats.get(this.timeFormats.size() - 1).getLength()) {
             return null;
         }
 
         for (TimeFormat timeFormat : timeFormats) {
 
             String possibleDate;
-            for (int margin = 0; margin <= 2; margin++ ){
-                try{
-                    possibleDate = line.substring(0, timeFormat.getLength()+margin);
+            for (int margin = 0; margin <= 2; margin++) {
+                try {
+                    possibleDate = line.substring(0, timeFormat.getLength() + margin);
                     dateTime = LocalDateTime.parse(possibleDate, timeFormat.asDateTimeFormatter());
 
-                    if (dateTime != null){
+                    if (dateTime != null) {
                         return timeFormat;
                     }
 
-                }catch (StringIndexOutOfBoundsException e){
-//                    logger.info("potential multiline: " + line);
+                } catch (StringIndexOutOfBoundsException e) {
+                    // potential multiline
                     return null;
-                }catch (DateTimeParseException e2){
+                } catch (DateTimeParseException e2) {
                     // can be ignored
                 }
             }
 
         }
 
-        logger.info("Line can't be parsed: " + line);
+        logger.debug("Line can't be parsed: " + line);
         return null;
     }
 
     private LocalDateTime getDate(String line) {
         if (currentTimeFormat != null && currentTimeFormat.getLength() < line.length()) {
 
-            for (int margin = 0; margin <= 2; margin++ ){
-                try{
+            for (int margin = 0; margin <= 2; margin++) {
+                try {
                     String possibleDate = line.substring(0, currentTimeFormat.getLength() + margin);
                     this.margin = margin;
                     return LocalDateTime.parse(possibleDate, currentTimeFormat.asDateTimeFormatter());
-                } catch (StringIndexOutOfBoundsException e){
-                   return null;
-                } catch (DateTimeParseException e2){
+                } catch (StringIndexOutOfBoundsException e) {
+                    return null;
+                } catch (DateTimeParseException e2) {
                     // handled outside
                 }
             }
