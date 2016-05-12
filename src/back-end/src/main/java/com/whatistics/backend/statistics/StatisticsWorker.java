@@ -58,6 +58,10 @@ public class StatisticsWorker {
         int messagesPerDay = 0;
         Message prevMessage = null;
         for (Message message : conversation.getMessages()) {
+            // Check if system message, discard if so
+            if(message.getSender().getName().equals("_dummy"))
+                continue;
+
             // Increment message count
             //-------------
             globalStatistics.getStatistics().incrementMessageAmount();
@@ -102,6 +106,9 @@ public class StatisticsWorker {
         TimeInterval yesterday = TimeInterval.createDay(yesterdayDate);
         yesterday.getStatistics().setMessageAmount(messagesPerDay);
         globalStatistics.getAggregatedHistory().add(yesterday);
+
+        // remove system messages
+        globalStatistics.getParticipants().removeIf(p -> p.getName().equals("_dummy"));
 
         // get things in order
         globalStatistics.inflateAggregatedHistory();

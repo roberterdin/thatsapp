@@ -107,8 +107,11 @@ public class ParserWorker implements Callable<Conversation> {
                         message.setSender(senderMap.get(senderAndContent[0]));
                         message.setContent(senderAndContent[1]);
                     } else if (senderAndContent.length == 1) {
-                        // "system message"
-                        message.setSender(new Person("_dummy"));
+                        // "system message", like person added or icon changed, etc.
+                        if (!senderMap.containsKey("_dummy"))
+                            senderMap.put("_dummy", new Person("_dummy"));
+
+                        message.setSender(senderMap.get("_dummy"));
                         message.setContent(senderAndContent[0]);
                     }
                 }

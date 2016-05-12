@@ -26,12 +26,15 @@ public class GlobalStatistics {
     @Reference
     private Conversation conversation;
 
+    public Set<Person> getParticipants() {
+        return participants;
+    }
+
     // Proxy to Conversation.participants for ease of use in client (all messages are embedded in conversations. Would be an overkill to get the whole object for the participants)
     @Reference
     private Set<Person> participants;
 
     // List instead of a LinkedHashMap to preserve order in the database and serialization.
-//    private LinkedHashMap<Date, Integer> aggregatedHistory = new LinkedHashMap<>();
     private List<TimeInterval> aggregatedHistory = new LinkedList<>();
 
 
@@ -107,16 +110,8 @@ public class GlobalStatistics {
      */
     public void saveObjectGraph(Datastore ds){
         for (Person e : conversation.getParticipants()){
-            logger.info("saving person: " + e.getName());
             ds.save(e.getStatistics());
             ds.save(e);
-            logger.info("-------------");
-//            if(e.getName().equals("Robi")){
-//                e.getStatistics().getVocabulary().entrySet().forEach((entry) -> {
-//                    logger.info("writing word: " + entry.getKey());
-//                    ds.save(new DbTest(entry.getKey()));
-//                });
-//            }
         }
 
         ds.save(conversation);
