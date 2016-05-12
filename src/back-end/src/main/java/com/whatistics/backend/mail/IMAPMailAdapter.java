@@ -126,7 +126,14 @@ public class IMAPMailAdapter implements MailAdapter {
                 e.printStackTrace();
             }
         }else {
-            logger.error("Inbox not open");
+            logger.info("Inbox not open, trying to reconnect...");
+            connectToServer();
+            if(folders.get(inboxName).isOpen()){
+                logger.info("Reconnect successful, fetching mails");
+                fetchMails();
+            }else{
+                logger.error("Reconnect failed, inbox still not open.");
+            }
         }
     }
 
