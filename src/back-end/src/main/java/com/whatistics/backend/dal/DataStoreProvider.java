@@ -14,11 +14,14 @@ import org.mongodb.morphia.Morphia;
 @Singleton
 public class DataStoreProvider implements Provider<Datastore> {
 
+    private final Morphia morphia = new Morphia();
+
     private Datastore ds;
 
     @Inject
     public DataStoreProvider(@Named("hostname") String hostname, @Named("database") String database ){
-        ds = new Morphia().createDatastore(new MongoClient(hostname), database);
+        morphia.mapPackage("com.whatistics.backend.model");
+        ds = morphia.createDatastore(new MongoClient(hostname), database);
     }
 
     @Override

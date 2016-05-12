@@ -35,8 +35,12 @@ public class ParserWorker implements Callable<Conversation> {
 
     private Map<String, Person> senderMap = new HashMap<>();
 
-    private boolean doubleDigitFlag = false;
-
+    // A time format like M/d/yy can be
+    // 1/1/14
+    // 14/1/14
+    // 14/10/14
+    // thus the potential margin from the length of the time format M/d/yy
+    private int margin;
 
     public ParserWorker(InputStream inputStream, List<TimeFormat> timeFormats) {
         this.inputStream = inputStream;
@@ -89,13 +93,7 @@ public class ParserWorker implements Callable<Conversation> {
                     message = new com.whatistics.backend.model.Message();
 
                     // remove date from message
-                    if (!doubleDigitFlag) {
-                        currentLine = currentLine.substring(currentTimeFormat.getLength());
-                    } else {
-                        // date is one character longer due to double digits in
-                        currentLine = currentLine.substring(currentTimeFormat.getLength() + 1);
-                        this.doubleDigitFlag = false;
-                    }
+                    currentLine = currentLine.substring(currentTimeFormat.getLength() + this.margin);
 
                     message.setSendDate(dateTime);
 
@@ -132,32 +130,34 @@ public class ParserWorker implements Callable<Conversation> {
 
     private TimeFormat getTimeFormat(String line) {
 
-        String possibleDate1;
-        String possibleDate2;
-        LocalDateTime dateTime1 = null;
-        LocalDateTime dateTime2 = null;
+        LocalDateTime dateTime = null;
+
+        // if the line is shorter than the shortest time format, it has to be a multi line
+        // this is an optimisation measure
+        if(line.length() < this.timeFormats.get(this.timeFormats.size()-1).getLength()){
+            return null;
+        }
 
         for (TimeFormat timeFormat : timeFormats) {
 
-            if(line.length() < timeFormat.getLength()){
-                logger.info("message too short, probably multiline");
-                return null;
-            }
-            possibleDate1 = line.substring(0, timeFormat.getLength());
-            possibleDate2 = line.substring(0, timeFormat.getLength() + 1);
+            String possibleDate;
+            for (int margin = 0; margin <= 2; margin++ ){
+                try{
+                    possibleDate = line.substring(0, timeFormat.getLength()+margin);
+                    dateTime = LocalDateTime.parse(possibleDate, timeFormat.asDateTimeFormatter());
 
-            try {
-                dateTime1 = LocalDateTime.parse(possibleDate1, timeFormat.asDateTimeFormatter());
-            } catch (DateTimeParseException e) {
-                try {
-                    dateTime2 = LocalDateTime.parse(possibleDate2, timeFormat.asDateTimeFormatter());
-                    this.doubleDigitFlag = true;
-                } catch (DateTimeParseException e2) {
+                    if (dateTime != null){
+                        return timeFormat;
+                    }
+
+                }catch (StringIndexOutOfBoundsException e){
+//                    logger.info("potential multiline: " + line);
+                    return null;
+                }catch (DateTimeParseException e2){
                     // can be ignored
                 }
             }
-            if (dateTime1 != null | dateTime2 != null)
-                return timeFormat;
+
         }
 
         logger.info("Line can't be parsed: " + line);
@@ -166,20 +166,19 @@ public class ParserWorker implements Callable<Conversation> {
 
     private LocalDateTime getDate(String line) {
         if (currentTimeFormat != null && currentTimeFormat.getLength() < line.length()) {
-            try {
-                String possibleDate = line.substring(0, currentTimeFormat.getLength());
-                return LocalDateTime.parse(possibleDate, currentTimeFormat.asDateTimeFormatter());
-            } catch (DateTimeParseException e) {
-                try {
-                    String possibleDate = line.substring(0, currentTimeFormat.getLength() + 1);
-                    LocalDateTime result = LocalDateTime.parse(possibleDate, currentTimeFormat.asDateTimeFormatter());
-                    this.doubleDigitFlag = true;
-                    return result;
 
-                } catch (DateTimeParseException e1) {
+            for (int margin = 0; margin <= 2; margin++ ){
+                try{
+                    String possibleDate = line.substring(0, currentTimeFormat.getLength() + margin);
+                    this.margin = margin;
+                    return LocalDateTime.parse(possibleDate, currentTimeFormat.asDateTimeFormatter());
+                } catch (StringIndexOutOfBoundsException e){
+                   return null;
+                } catch (DateTimeParseException e2){
                     // handled outside
                 }
             }
+
         }
         return null;
     }

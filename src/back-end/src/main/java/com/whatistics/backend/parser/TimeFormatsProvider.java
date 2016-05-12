@@ -36,9 +36,13 @@ public class TimeFormatsProvider implements Provider<List<TimeFormat>> {
                 // 'Jan 10, 18:14 - '
                 new TimeFormat("MMM d, HH:mm - "),
 
+                //  Android en_us 24h  3/6/14, 09:48 -
+                // Android en_us 24h   4/20/15, 19:50 -
+                new TimeFormat("M/d/yy, HH:mm - "),
+
                 // IOS ??
                 // ﻿21.09.14 20:27:11: Moritz: Jou patrick!
-                new TimeFormat("dd.MM.uu HH:mm:ss: "),
+                new TimeFormat("dd.MM.yy HH:mm:ss: "),
 
                 // ?? 12h
                 // 8:16am, Oct 1 - Nicole Yumi Bae: have a

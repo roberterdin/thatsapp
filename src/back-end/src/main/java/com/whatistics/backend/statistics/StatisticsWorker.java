@@ -10,15 +10,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
-import java.sql.Time;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -142,15 +136,15 @@ public class StatisticsWorker {
 
                     // check if it was a combination of emojis and a word
                     if(emojiResult.wordCarryover.length() > 0){
-                        globalStatistics.getStatistics().incrementVocuabulary(emojiResult.wordCarryover);
-                        message.getSender().getStatistics().incrementVocuabulary(emojiResult.wordCarryover);
+                        globalStatistics.getStatistics().incrementVocabulary(emojiResult.wordCarryover);
+                        message.getSender().getStatistics().incrementVocabulary(emojiResult.wordCarryover);
                         wordCount++;
                     }
 
                 } else if (emojiResult.emojis.size() == 0) {
                     // it's (hopefully) a word.
-                    globalStatistics.getStatistics().incrementVocuabulary(token);
-                    message.getSender().getStatistics().incrementVocuabulary(token);
+                    globalStatistics.getStatistics().incrementVocabulary(token);
+                    message.getSender().getStatistics().incrementVocabulary(token);
                     wordCount++;
                 }
 

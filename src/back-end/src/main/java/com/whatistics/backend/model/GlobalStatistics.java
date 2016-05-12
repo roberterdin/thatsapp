@@ -5,6 +5,8 @@ import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -15,6 +17,8 @@ import java.util.*;
  */
 @Entity("globalstatistics")
 public class GlobalStatistics {
+
+    private final Logger logger = LoggerFactory.getLogger(GlobalStatistics.class);
 
     @Id
     private ObjectId id;
@@ -103,8 +107,16 @@ public class GlobalStatistics {
      */
     public void saveObjectGraph(Datastore ds){
         for (Person e : conversation.getParticipants()){
+            logger.info("saving person: " + e.getName());
             ds.save(e.getStatistics());
             ds.save(e);
+            logger.info("-------------");
+//            if(e.getName().equals("Robi")){
+//                e.getStatistics().getVocabulary().entrySet().forEach((entry) -> {
+//                    logger.info("writing word: " + entry.getKey());
+//                    ds.save(new DbTest(entry.getKey()));
+//                });
+//            }
         }
 
         ds.save(conversation);

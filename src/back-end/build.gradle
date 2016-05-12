@@ -13,6 +13,7 @@ apply plugin: 'idea'
 
 mainClassName = "com.whatistics.backend.WhatisticsBackend"
 
+applicationDefaultJvmArgs = ["-Dfile.encoding=UTF8"]
 
 // In this section you declare where to find the dependencies of your project
 repositories {
@@ -21,7 +22,7 @@ repositories {
 
 // In this section you declare the dependencies for your production and test code
 dependencies {
-    compile group: 'org.mongodb.morphia', name: 'morphia', version: '1.0.0-rc0'
+    compile group: 'org.mongodb.morphia', name: 'morphia', version: '1.1.1'
     compile group: 'com.thedeanda', name: 'lorem', version: '1.2'
     compile group: 'com.sun.mail', name: 'javax.mail', version: '1.5.3'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.4'
@@ -42,6 +43,16 @@ dependencies {
     // 'test.useTestNG()' to your build script.
     testCompile 'junit:junit:4.12'
 }
+
+idea {
+
+    module {
+        //and hate reading sources :)
+        downloadSources = true
+    }
+}
+
+
 
 run{
     systemProperties['org.slf4j.simpleLogger.defaultLogLevel'] = 'debug'

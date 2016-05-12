@@ -7,6 +7,7 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * @author robert
@@ -23,6 +24,9 @@ public class Statistics {
 
     private Map<String, Integer> vocabulary = new HashMap<>();
     private Map<String, Integer> emoticons = new HashMap<>();
+
+    Pattern leadingDollarPattern = Pattern.compile("^\\$");
+    Pattern containsDotPattern = Pattern.compile("\\.");
 
     public Statistics(){
 
@@ -72,9 +76,27 @@ public class Statistics {
 
     /**
      * Increment count of given word by 1.
+     * todo: check with profiler if validation is a considerable performance issue
      * @param word
      */
-    public void incrementVocuabulary(String word){
+    public void incrementVocabulary(String word){
+        String cleanWord = word;
+        if(leadingDollarPattern.matcher(word).find()){
+            cleanWord = leadingDollarPattern.matcher(word).replaceAll("");
+        }
+        if(containsDotPattern.matcher(cleanWord).find()){
+            for(String subWord : containsDotPattern.split(cleanWord)){
+                if (subWord.length() > 1){
+                    incrementValidatedVocabulary(subWord);
+                }
+            }
+        }else{
+            incrementValidatedVocabulary(cleanWord);
+        }
+    }
+
+
+    private void incrementValidatedVocabulary(String word){
         if(!vocabulary.containsKey(word))
             vocabulary.put(word, 0);
 
