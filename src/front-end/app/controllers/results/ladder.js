@@ -79,7 +79,7 @@ export default Ember.Controller.extend({
 
     emoticons: function(){
 
-        return $.map(this.get('model.statistics.emoticons'), (k,v) => {
+        return Ember.$.map(this.get('model.statistics.emoticons'), (k,v) => {
             return {emoji: v, amount: k};
         }).sort((a, b) => {
             if (a.amount < b.amount){

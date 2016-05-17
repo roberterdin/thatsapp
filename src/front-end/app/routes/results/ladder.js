@@ -21,7 +21,7 @@ export default Ember.Route.extend({
                         return this.store.find('globalstatistics', this.paramsFor('results').statistics_id);
                     });
                 });
-            })
+            });
         });
     }
 });
