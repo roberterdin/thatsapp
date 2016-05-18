@@ -192,11 +192,14 @@ public class IMAPMailAdapter implements MailAdapter {
     }
 
     @Override
+    /**
+     * Uses the same address as is to retrieve the incoming mails
+     */
     public void sendMail(String[] to, String subject, String text) {
         MimeMessage message = new MimeMessage(session);
 
         try {
-            message.setFrom(new InternetAddress("stats@beta.thatsapp.io"));
+            message.setFrom(new InternetAddress(email));
 
             for (int i = 0; i < to.length; i++) {
                 message.addRecipient(Message.RecipientType.TO, new InternetAddress(to[i]));
