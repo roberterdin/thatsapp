@@ -108,7 +108,8 @@ public class StatisticsWorker {
         globalStatistics.getAggregatedHistory().add(yesterday);
 
         // remove system messages
-        globalStatistics.getParticipants().removeIf(p -> p.getName().equals("_dummy"));
+        // todo: find a way to remove without breaking the db
+//        globalStatistics.getParticipants().removeIf(p -> p.getName().equals("_dummy"));
 
         // get things in order
         globalStatistics.inflateAggregatedHistory();

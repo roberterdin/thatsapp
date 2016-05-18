@@ -1,5 +1,4 @@
 import com.mongodb.MongoClient;
-import com.whatistics.backend.configuration.LocalConfig;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.GlobalStatistics;
 import com.whatistics.backend.model.Message;
@@ -9,16 +8,11 @@ import org.junit.Test;
 import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Morphia;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * Created by robert on 18/05/15.

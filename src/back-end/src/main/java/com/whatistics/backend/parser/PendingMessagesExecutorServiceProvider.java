@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.whatistics.backend.configuration.GlobalConfig;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,7 +18,7 @@ public class PendingMessagesExecutorServiceProvider implements Provider<Executor
     private int noOfParsers;
 
     @Inject
-    public PendingMessagesExecutorServiceProvider(@Named("parsers") int parsers){
+    public PendingMessagesExecutorServiceProvider(@Named("noOfParsers") int parsers){
         noOfParsers = parsers;
     }
 

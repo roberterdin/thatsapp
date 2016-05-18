@@ -2,7 +2,6 @@ package com.whatistics.backend.parser.mock;
 
 import com.google.inject.Inject;
 import com.whatistics.backend.mail.MailUtilities;
-import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.parser.ParserService;
 import com.whatistics.backend.parser.ParserWorker;
 import com.whatistics.backend.parser.TimeFormat;

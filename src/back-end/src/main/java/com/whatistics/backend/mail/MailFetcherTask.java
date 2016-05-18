@@ -2,14 +2,11 @@ package com.whatistics.backend.mail;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import com.whatistics.backend.configuration.GlobalConfig;
 import com.whatistics.backend.parser.ParserServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.internet.InternetAddress;
 import java.util.TimerTask;
 
 /**
@@ -39,7 +36,6 @@ public class MailFetcherTask extends TimerTask {
 
     @Override
     public void run() {
-        logger.debug("Running MailFetcherTask");
         mailAdapterService.fetchMails();
         for (Message message : mailAdapterService.getMails()) {
             // This check leads to retrieving the attachments twice.

@@ -5,7 +5,6 @@ import com.google.inject.name.Named;
 import com.whatistics.backend.Service;
 
 import javax.mail.Message;
-import java.util.Timer;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;

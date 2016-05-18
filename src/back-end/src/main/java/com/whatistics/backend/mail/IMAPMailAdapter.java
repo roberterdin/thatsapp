@@ -50,7 +50,7 @@ public class IMAPMailAdapter implements MailAdapter {
     @Inject
     public IMAPMailAdapter(@Named("host") String host,
                            @Named("email") String email,
-                           @Named("pass") String pass,
+                           @Named("password") String pass,
                            @Named("inboxName") String inboxName,
                            @Named("processedFolder") String processedFolder,
                            @Named("unprocessableFolder") String unprocessableFolder){

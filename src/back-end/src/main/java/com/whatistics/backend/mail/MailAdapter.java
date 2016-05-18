@@ -1,8 +1,6 @@
 package com.whatistics.backend.mail;
 
 import javax.mail.Message;
-import java.io.InputStream;
-import java.util.List;
 
 /**
  * @author robert

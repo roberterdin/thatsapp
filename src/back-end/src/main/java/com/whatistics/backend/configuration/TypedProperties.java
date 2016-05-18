@@ -4,7 +4,6 @@ import java.util.Properties;
 
 public class TypedProperties extends Properties {
 
-
     /**
      * Helper method to avoid having to call Integer.parseInt each time there is an int.
      * @param key

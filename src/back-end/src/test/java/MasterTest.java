@@ -2,7 +2,6 @@ import com.whatistics.backend.configuration.TypedProperties;
 
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Properties;
 
 /**
  * Load configuration for use in tests.

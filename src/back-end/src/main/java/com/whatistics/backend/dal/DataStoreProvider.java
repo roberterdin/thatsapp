@@ -19,8 +19,7 @@ public class DataStoreProvider implements Provider<Datastore> {
     private Datastore ds;
 
     @Inject
-    public DataStoreProvider(@Named("hostname") String hostname, @Named("database") String database ){
-        morphia.mapPackage("com.whatistics.backend.model");
+    public DataStoreProvider(@Named("mongoClientHostname") String hostname, @Named("dbName") String database ){
         ds = morphia.createDatastore(new MongoClient(hostname), database);
     }
 

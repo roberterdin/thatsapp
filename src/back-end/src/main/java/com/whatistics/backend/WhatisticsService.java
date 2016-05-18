@@ -62,10 +62,7 @@ public class WhatisticsService implements Observer, Service {
         if (data instanceof Conversation){
             Conversation conversation = (Conversation)data;
             if(conversation.getMessages().size() > 1){
-//                ds.save(conversation);
-
                 // reuses parsing thread to generate statistics
-
                 GlobalStatistics globalStatistics = statisticsService.generateStatistics(conversation);
 
                 globalStatistics.saveObjectGraph(ds);

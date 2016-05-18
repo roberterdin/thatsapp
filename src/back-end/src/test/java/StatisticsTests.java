@@ -1,4 +1,3 @@
-import com.whatistics.backend.configuration.GlobalConfig;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.parser.ParserWorker;
 import com.whatistics.backend.parser.TimeFormatsProvider;

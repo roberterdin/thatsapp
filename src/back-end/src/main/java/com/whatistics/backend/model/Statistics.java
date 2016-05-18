@@ -5,6 +5,7 @@ import com.whatistics.backend.WhatisticsBackend;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
+import org.mongodb.morphia.annotations.Transient;
 
 import java.util.*;
 import java.util.regex.Pattern;
@@ -25,7 +26,9 @@ public class Statistics {
     private Map<String, Integer> vocabulary = new HashMap<>();
     private Map<String, Integer> emoticons = new HashMap<>();
 
+    @Transient
     Pattern leadingDollarPattern = Pattern.compile("^\\$");
+    @Transient
     Pattern containsDotPattern = Pattern.compile("\\.");
 
     public Statistics(){

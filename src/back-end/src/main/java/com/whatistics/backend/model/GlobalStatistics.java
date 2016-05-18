@@ -109,6 +109,7 @@ public class GlobalStatistics {
      * @param ds
      */
     public void saveObjectGraph(Datastore ds){
+        long startTime = System.nanoTime();
         for (Person e : conversation.getParticipants()){
             ds.save(e.getStatistics());
             ds.save(e);
@@ -117,6 +118,9 @@ public class GlobalStatistics {
         ds.save(conversation);
         ds.save(statistics);
         ds.save(this);
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
+        logger.info("Time to save GlobalStatistics object: " + duration / 1000000 + "ms");
     }
 
 }
