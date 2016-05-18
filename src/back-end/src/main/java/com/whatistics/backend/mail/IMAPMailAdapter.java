@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.sun.mail.imap.IMAPFolder;
-import com.whatistics.backend.configuration.GlobalConfig;
+import com.sun.mail.util.MailSSLSocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,6 +13,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.search.FlagTerm;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -73,19 +74,37 @@ public class IMAPMailAdapter implements MailAdapter {
 
         /* Set the mail properties */
         Properties props = System.getProperties();
-        props.setProperty("mail.store.protocol", "imaps");
+        props.setProperty("mail.store.protocol", "imap");
+        props.setProperty("mail.imap.starttls.enable", "true");
+        props.setProperty("mail.imap.port", "143");
+        props.setProperty("mail.smtp.starttls.enable", "true");
+        props.setProperty("mail.smtp.port", "587");
+
+        MailSSLSocketFactory sf = null;
+        try {
+            sf = new MailSSLSocketFactory();
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+        }
+        sf.setTrustAllHosts(true);
+        props.put("mail.imap.ssl.trust", "*");
+        props.put("mail.imap.ssl.socketFactory", sf);
+        props.put("mail.smtp.ssl.trust", "*");
+        props.put("mail.smtp.socketFactory.port", "587");
+        props.put("mail.smtp.ssl.socketFactory", sf);
+
 
         try {
             /* Create the session and get the store for read the mail. */
             session = Session.getDefaultInstance(props, null);
-            store = session.getStore("imaps");
+            store = session.getStore("imap");
             store.connect(host, email, pass);
 
             this.openFolder(inboxName);
             this.openFolder(processedFolder);
             this.openFolder(unprocessableFolder);
 
-            transport = session.getTransport("smtps");
+            transport = session.getTransport("smtp");
             transport.connect(host, email, pass);
 
             logger.debug("... connected to mail server...");
@@ -177,7 +196,7 @@ public class IMAPMailAdapter implements MailAdapter {
         MimeMessage message = new MimeMessage(session);
 
         try {
-            message.setFrom(new InternetAddress("whatistics@gmail.com"));
+            message.setFrom(new InternetAddress("stats@beta.thatsapp.io"));
 
             for (int i = 0; i < to.length; i++) {
                 message.addRecipient(Message.RecipientType.TO, new InternetAddress(to[i]));
@@ -248,9 +267,17 @@ public class IMAPMailAdapter implements MailAdapter {
     }
 
     private IMAPFolder openFolder(String folderName) throws MessagingException {
-        /* Mention the folder name which you want to read. */
+        // check if folder exists
+        if (!store.getFolder(folderName).exists()){
+            // try to create it
+            Folder newFolder = store.getDefaultFolder().getFolder(folderName);
+            newFolder.create(Folder.HOLDS_MESSAGES);
+        }
+
         folders.put(folderName, (IMAPFolder) store.getFolder(folderName));
-        /* Open the inbox using store. */
+
+
+        // Open the folder using store.
         folders.get(folderName).open(Folder.READ_WRITE);
         return folders.get(folderName);
     }

@@ -1,10 +1,14 @@
-import com.whatistics.backend.configuration.GlobalConfig;
 import com.whatistics.backend.mail.IMAPMailAdapter;
 import org.junit.Test;
 
-public class MailTests {
+public class MailTests extends MasterTest {
 
-    IMAPMailAdapter mailAdapterService = new IMAPMailAdapter(GlobalConfig.HOST, GlobalConfig.EMAIL, GlobalConfig.PASSWORD, GlobalConfig.INBOX_NAME, GlobalConfig.PROCESSED_FOLDER, GlobalConfig.UNPROCESSABLE_FOLDER);
+    IMAPMailAdapter mailAdapterService = new IMAPMailAdapter(globalProperties.getProperty("host"),
+            globalProperties.getProperty("email"),
+            passwordsProperties.getProperty("password"),
+            globalProperties.getProperty("inboxName"),
+            globalProperties.getProperty("processedFolder"),
+            globalProperties.getProperty("unprocessableFolder"));
 
     @Test
     public void testConnection(){

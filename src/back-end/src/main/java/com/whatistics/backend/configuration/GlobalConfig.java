@@ -3,6 +3,7 @@ package com.whatistics.backend.configuration;
 /**
  * @author robert
  * TODO: move to properties file, load into Guice modules like described <a href="http://stackoverflow.com/questions/4805874/guice-and-general-application-configuration">here</a>}
+ * @deprecated
  */
 public class GlobalConfig {
 
