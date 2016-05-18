@@ -14,7 +14,7 @@ import java.io.InputStream;
 /**
  * @author robert
  */
-public class StatisticsTests {
+public class StatisticsTests extends MasterTest {
 
     @Test
     public void testStatistics() throws FileNotFoundException {
@@ -24,7 +24,7 @@ public class StatisticsTests {
 
         Conversation conversation = parserWorker.call();
 
-        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(), new EmojiPatternProvider(), GlobalConfig.STATISTICS_LENGTH);
+        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(), new EmojiPatternProvider(), globalProperties.getIntProp("statisticsLength"));
 
         statisticsWorker.compute(conversation);
     }

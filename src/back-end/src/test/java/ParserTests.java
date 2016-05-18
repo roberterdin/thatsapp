@@ -1,7 +1,5 @@
-import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.parser.ParserWorker;
 import com.whatistics.backend.parser.TimeFormatsProvider;
-import com.whatistics.backend.parser.mock.MockParserService;
 import org.junit.Test;
 
 import java.io.FileInputStream;
@@ -11,7 +9,7 @@ import java.io.InputStream;
 /**
  * @author robert
  */
-public class ParserTests {
+public class ParserTests extends MasterTest{
 
 
     @Test

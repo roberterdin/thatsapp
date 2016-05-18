@@ -23,7 +23,7 @@ import static org.junit.Assert.fail;
 /**
  * Created by robert on 18/05/15.
  */
-public class EnvironmentTests {
+public class EnvironmentTests extends MasterTest{
 
     @Test
     public void testTest() {
@@ -32,14 +32,19 @@ public class EnvironmentTests {
 
     @Test
     public void testMongoConnection(){
-        Datastore ds = new Morphia().createDatastore(new MongoClient(LocalConfig.MONGO_CLIENT_HOSTNAME), LocalConfig.DB_NAME);
+        Datastore ds = new Morphia().createDatastore(
+                new MongoClient(globalProperties.getProperty("mongoClientHostname")),
+                globalProperties.getProperty("dbName"));
         assertNotNull(ds);
+
+
+
     }
 
     @Test
     public void testCRUD(){
         // CREATE
-        Datastore ds = new Morphia().createDatastore(new MongoClient(LocalConfig.MONGO_CLIENT_HOSTNAME), LocalConfig.DB_TEST_NAME);
+        Datastore ds = new Morphia().createDatastore(new MongoClient(globalProperties.getProperty("mongoClientHostname")), globalProperties.getProperty("dbTestName"));
         Conversation conversation = new Conversation();
         conversation.addMessage(new Message().fillWithRandom());
         conversation.addMessage(new Message().fillWithRandom());

@@ -1,3 +1,5 @@
+import com.whatistics.backend.configuration.TypedProperties;
+
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
@@ -7,8 +9,8 @@ import java.util.Properties;
  * @author robert
  */
 public class MasterTest {
-    protected Properties globalProperties = new Properties();
-    protected Properties passwordsProperties= new Properties();
+    protected TypedProperties globalProperties = new TypedProperties();
+    protected TypedProperties passwordsProperties= new TypedProperties();
 
     MasterTest(){
         try {
