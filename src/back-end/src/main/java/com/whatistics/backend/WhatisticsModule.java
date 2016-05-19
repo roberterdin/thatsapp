@@ -13,17 +13,6 @@ public class WhatisticsModule extends AbstractModule {
 
         Names.bindProperties(binder(), WhatisticsBackend.globalProperties);
 
-//        bindConstant()
-//                .annotatedWith(Names.named("inboxName"))
-//                .to(GlobalConfig.INBOX_NAME);
-//
-//        bindConstant()
-//                .annotatedWith(Names.named("processedFolder"))
-//                .to(GlobalConfig.PROCESSED_FOLDER);
-//
-//        bindConstant()
-//                .annotatedWith(Names.named("unprocessableFolder"))
-//                .to(GlobalConfig.UNPROCESSABLE_FOLDER);
 
     }
 

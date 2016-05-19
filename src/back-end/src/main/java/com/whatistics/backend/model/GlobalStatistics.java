@@ -110,6 +110,7 @@ public class GlobalStatistics {
      */
     public void saveObjectGraph(Datastore ds){
         long startTime = System.nanoTime();
+
         for (Person e : conversation.getParticipants()){
             ds.save(e.getStatistics());
             ds.save(e);

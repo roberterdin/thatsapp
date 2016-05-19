@@ -26,10 +26,11 @@ public class WhatisticsService implements Observer, Service {
     private final Logger logger = LoggerFactory.getLogger(WhatisticsService.class);
 
     private final RestService restService;
+    private final boolean embedRestServer;
     private final MailService mailService;
     private final ParserService parserService;
     private final StatisticsService statisticsService;
-    private final Datastore ds;
+    private final DataStoreProvider dataStoreProvider;
 
     private final String inboxName;
     private final String processedFolder;
@@ -41,15 +42,17 @@ public class WhatisticsService implements Observer, Service {
                              ParserService parserService,
                              StatisticsService statisticsService,
                              DataStoreProvider dataStoreProvider,
+                             @Named("embedRestServer") boolean embedRestServer,
                              @Named("inboxName") String inboxName,
                              @Named("processedFolder") String processedFolder,
-                             @Named("unprocessableFolder") String unprocessableFolder){
+                             @Named("unprocessableFolder") String unprocessableFolder) {
 
         this.restService = restService;
+        this.embedRestServer = embedRestServer;
         this.mailService = mailService;
         this.parserService = parserService;
         this.statisticsService = statisticsService;
-        this.ds = dataStoreProvider.get();
+        this.dataStoreProvider = dataStoreProvider;
 
         this.inboxName = inboxName;
         this.processedFolder = processedFolder;
@@ -59,19 +62,19 @@ public class WhatisticsService implements Observer, Service {
 
     @Override
     public void update(Observable service, Object data) {
-        if (data instanceof Conversation){
-            Conversation conversation = (Conversation)data;
-            if(conversation.getMessages().size() > 1){
+        if (data instanceof Conversation) {
+            Conversation conversation = (Conversation) data;
+            if (conversation.getMessages().size() > 1) {
                 // reuses parsing thread to generate statistics
                 GlobalStatistics globalStatistics = statisticsService.generateStatistics(conversation);
 
-                globalStatistics.saveObjectGraph(ds);
+                globalStatistics.saveObjectGraph(dataStoreProvider.get());
 
-                if (globalStatistics.getId() != null){
+                if (globalStatistics.getId() != null) {
                     mailService.moveToFolder(conversation.getOriginalMessage(), inboxName, processedFolder);
                     mailService.sendMail(conversation.getSubmittedBy(), "Here are yor statistics", "http://127.0.0.1:4200/results/" + globalStatistics.getId().toHexString());
                 }
-            }else {
+            } else {
                 logger.error("Parsing failed for message", conversation.getOriginalMessage());
                 mailService.moveToFolder(conversation.getOriginalMessage(), inboxName, unprocessableFolder);
             }
@@ -80,7 +83,9 @@ public class WhatisticsService implements Observer, Service {
 
     @Override
     public void start() {
-        this.restService.start();
+        if (this.embedRestServer)
+            this.restService.start();
+
         this.mailService.start();
         this.parserService.addObserver(this);
         this.parserService.start();
