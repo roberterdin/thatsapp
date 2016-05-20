@@ -74,7 +74,7 @@ public class IMAPMailAdapter implements MailAdapter {
     }
 
     /**
-     * Connect to the IMAP server and open folders.
+     * Connect to the IMAP and SMTP server and open folders.
      */
     public void connectToServer() {
         logger.debug("trying to connect to mail server...");
@@ -215,7 +215,13 @@ public class IMAPMailAdapter implements MailAdapter {
             message.setSubject(subject);
             message.setText(text);
 
+            if( !transport.isConnected()){
+                logger.info("Connection interrupted, trying to reconnect to server...");
+                connectToServer();
+            }
+
             transport.sendMessage(message, message.getAllRecipients());
+
         } catch (MessagingException e) {
             logger.error("Error sending mail", e);
         } catch (UnsupportedEncodingException e) {
@@ -240,7 +246,7 @@ public class IMAPMailAdapter implements MailAdapter {
 
     @Override
     public void moveToFolder(Message message, String sourceFolder, String destFolder) {
-        if(!folders.containsKey(destFolder)){
+        if(!folders.containsKey(destFolder) || !folders.get(destFolder).isOpen()){
             try {
                 openFolder(destFolder);
             } catch (MessagingException e) {
@@ -254,9 +260,8 @@ public class IMAPMailAdapter implements MailAdapter {
             message.setFlag(Flags.Flag.DELETED, true);
             folders.get(sourceFolder).expunge();
         } catch (MessagingException e) {
-            e.printStackTrace();
+            logger.error("Error moving mail from " + sourceFolder + " to " + destFolder, e);
         }
-
     }
 
     /**
