@@ -13,7 +13,6 @@ public class WhatisticsModule extends AbstractModule {
 
         Names.bindProperties(binder(), WhatisticsBackend.globalProperties);
 
-
     }
 
 

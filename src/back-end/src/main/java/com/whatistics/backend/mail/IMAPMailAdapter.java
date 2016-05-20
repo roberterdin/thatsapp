@@ -13,6 +13,7 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.search.FlagTerm;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.util.Date;
 import java.util.HashMap;
@@ -28,7 +29,9 @@ public class IMAPMailAdapter implements MailAdapter {
 
     final Logger logger = LoggerFactory.getLogger(IMAPMailAdapter.class);
 
-    private final String host;
+    private final String imapHostName;
+    private final String smtpHostName;
+    private final String mailDomain;
     private final String email;
     private final String pass;
     private final String inboxName;
@@ -48,14 +51,18 @@ public class IMAPMailAdapter implements MailAdapter {
 
 
     @Inject
-    public IMAPMailAdapter(@Named("host") String host,
-                           @Named("email") String email,
+    public IMAPMailAdapter(@Named("email") String email,
+                           @Named("smtpHostName") String smtpHostName,
+                           @Named("imapHostName") String imapHostName,
                            @Named("password") String pass,
                            @Named("inboxName") String inboxName,
                            @Named("processedFolder") String processedFolder,
-                           @Named("unprocessableFolder") String unprocessableFolder){
-        this.host = host;
-        this.email = email;
+                           @Named("unprocessableFolder") String unprocessableFolder,
+                           @Named("mailDomain") String mailDomain){
+        this.smtpHostName = smtpHostName;
+        this.imapHostName = imapHostName;
+        this.mailDomain = mailDomain;
+        this.email = email + "@" + mailDomain;
         this.pass = pass;
         this.inboxName = inboxName;
         this.processedFolder = processedFolder;
@@ -98,14 +105,14 @@ public class IMAPMailAdapter implements MailAdapter {
             /* Create the session and get the store for read the mail. */
             session = Session.getDefaultInstance(props, null);
             store = session.getStore("imap");
-            store.connect(host, email, pass);
+            store.connect(imapHostName, email, pass);
 
             this.openFolder(inboxName);
             this.openFolder(processedFolder);
             this.openFolder(unprocessableFolder);
 
             transport = session.getTransport("smtp");
-            transport.connect(host, email, pass);
+            transport.connect(smtpHostName, email, pass);
 
             logger.debug("... connected to mail server...");
 
@@ -199,7 +206,7 @@ public class IMAPMailAdapter implements MailAdapter {
         MimeMessage message = new MimeMessage(session);
 
         try {
-            message.setFrom(new InternetAddress(email));
+            message.setFrom(new InternetAddress(email, "ThatsApp"));
 
             for (int i = 0; i < to.length; i++) {
                 message.addRecipient(Message.RecipientType.TO, new InternetAddress(to[i]));
@@ -210,6 +217,8 @@ public class IMAPMailAdapter implements MailAdapter {
 
             transport.sendMessage(message, message.getAllRecipients());
         } catch (MessagingException e) {
+            logger.error("Error sending mail", e);
+        } catch (UnsupportedEncodingException e) {
             logger.error("Error sending mail", e);
         }
 

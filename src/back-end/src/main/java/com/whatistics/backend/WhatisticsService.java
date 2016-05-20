@@ -35,6 +35,7 @@ public class WhatisticsService implements Observer, Service {
     private final String inboxName;
     private final String processedFolder;
     private final String unprocessableFolder;
+    private final String host;
 
     @Inject
     public WhatisticsService(RestService restService,
@@ -45,7 +46,8 @@ public class WhatisticsService implements Observer, Service {
                              @Named("embedRestServer") boolean embedRestServer,
                              @Named("inboxName") String inboxName,
                              @Named("processedFolder") String processedFolder,
-                             @Named("unprocessableFolder") String unprocessableFolder) {
+                             @Named("unprocessableFolder") String unprocessableFolder,
+                             @Named("host") String host) {
 
         this.restService = restService;
         this.embedRestServer = embedRestServer;
@@ -57,6 +59,7 @@ public class WhatisticsService implements Observer, Service {
         this.inboxName = inboxName;
         this.processedFolder = processedFolder;
         this.unprocessableFolder = unprocessableFolder;
+        this.host = host;
     }
 
 
@@ -72,7 +75,7 @@ public class WhatisticsService implements Observer, Service {
 
                 if (globalStatistics.getId() != null) {
                     mailService.moveToFolder(conversation.getOriginalMessage(), inboxName, processedFolder);
-                    mailService.sendMail(conversation.getSubmittedBy(), "Here are yor statistics", "http://127.0.0.1:4200/results/" + globalStatistics.getId().toHexString());
+                    mailService.sendMail(conversation.getSubmittedBy(), "Here are yor statistics", "https://" + host + "/results/" + globalStatistics.getId().toHexString());
                 }
             } else {
                 logger.error("Parsing failed for message", conversation.getOriginalMessage());
