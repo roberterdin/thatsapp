@@ -24,8 +24,6 @@ public class WhatisticsBackend {
     public static TypedProperties globalProperties = new TypedProperties();
 
     public static void main(String[] args) {
-        final Logger logger = LoggerFactory.getLogger(WhatisticsBackend.class);
-
         try {
             globalProperties.load(WhatisticsBackend.class.getClassLoader().getResourceAsStream("global.properties"));
             globalProperties.load(WhatisticsBackend.class.getClassLoader().getResourceAsStream("password.properties"));
@@ -37,13 +35,20 @@ public class WhatisticsBackend {
             } else if (args[0].equals("prod") || args[0].equals("test")) {
                 globalProperties.load(WhatisticsBackend.class.getClassLoader().getResourceAsStream("test.properties"));
             } else {
-                logger.error("Invalid command line parameter:" + args[0]);
+                System.err.println("Invalid command line parameter:" + args[0]);
                 System.exit(-1);
             }
         } catch (IOException e) {
-            logger.error("Error reading properties files", e);
+            System.err.println("Error reading properties files");
+            e.printStackTrace();
             System.exit(-1);
         }
+
+
+        //initialize logger
+
+
+        final Logger logger = LoggerFactory.getLogger(WhatisticsBackend.class);
 
 
         injector = Guice.createInjector(new MailModule(),

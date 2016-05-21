@@ -44,6 +44,9 @@ public class TimeFormatsProvider implements Provider<List<TimeFormat>> {
                 // ﻿21.09.14 20:27:11: Moritz: Jou patrick!
                 new TimeFormat("dd.MM.yy HH:mm:ss: "),
 
+                // 04.04.16, 19:18 - David Peter:
+                new TimeFormat("dd.MM.yy, HH:mm - "),
+
                 // ?? 12h
                 // 8:16am, Oct 1 - Nicole Yumi Bae: have a
                 new TimeFormat("h:mma, MMM d - "),

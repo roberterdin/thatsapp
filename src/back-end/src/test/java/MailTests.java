@@ -3,12 +3,14 @@ import org.junit.Test;
 
 public class MailTests extends MasterTest {
 
-    IMAPMailAdapter mailAdapterService = new IMAPMailAdapter(globalProperties.getProperty("host"),
-            globalProperties.getProperty("email"),
-            passwordsProperties.getProperty("password"),
+    IMAPMailAdapter mailAdapterService = new IMAPMailAdapter(globalProperties.getProperty("email"),
+            globalProperties.getProperty("smtpHostName"),
+            globalProperties.getProperty("imapHostName"),
+            globalProperties.getProperty("password"),
             globalProperties.getProperty("inboxName"),
             globalProperties.getProperty("processedFolder"),
-            globalProperties.getProperty("unprocessableFolder"));
+            globalProperties.getProperty("unprocessableFolder"),
+            globalProperties.getProperty("mailDomain"));
 
     @Test
     public void testConnection(){

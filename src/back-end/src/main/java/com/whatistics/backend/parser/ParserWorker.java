@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 
 /**
  * @author robert
@@ -34,6 +35,8 @@ public class ParserWorker implements Callable<Conversation> {
     private TimeFormat currentTimeFormat;
 
     private Map<String, Person> senderMap = new HashMap<>();
+
+    private Pattern nullPattern =  Pattern.compile("\\u0000");
 
     // A time format like M/d/yy can be
     // 1/1/14
@@ -65,6 +68,9 @@ public class ParserWorker implements Callable<Conversation> {
 
                 // remove leading and trailing white spaces
                 currentLine = currentLine.trim();
+
+                // remove null characters
+                currentLine = nullPattern.matcher(currentLine).replaceAll("");
 
                 // figure out current time format, if necessary
                 if (currentTimeFormat == null | getDate(currentLine) == null) {

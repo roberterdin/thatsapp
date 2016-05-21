@@ -9,14 +9,12 @@ import java.io.IOException;
  */
 public class MasterTest {
     protected TypedProperties globalProperties = new TypedProperties();
-    protected TypedProperties passwordsProperties= new TypedProperties();
 
     MasterTest(){
         try {
-            System.out.println("Working Directory = " +
-                    System.getProperty("user.dir"));
-            this.globalProperties.load(new FileReader("build/resources/main/global.properties"));
-            this.passwordsProperties.load(new FileReader("build/resources/main/password.properties"));
+            this.globalProperties.load(this.getClass().getClassLoader().getResourceAsStream("global.properties"));
+            this.globalProperties.load(this.getClass().getClassLoader().getResourceAsStream("password.properties"));
+            this.globalProperties.load(this.getClass().getClassLoader().getResourceAsStream("dev.properties"));
         } catch (IOException e) {
             e.printStackTrace();
         }

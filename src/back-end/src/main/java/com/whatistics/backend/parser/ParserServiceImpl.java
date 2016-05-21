@@ -9,7 +9,9 @@ import org.slf4j.LoggerFactory;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -49,7 +51,7 @@ public class ParserServiceImpl extends ParserService {
     public void parseMessage(Message message){
 
         CompletableFuture.supplyAsync(() ->
-                        new ParserWorker(MailUtilities.getAttachments(message).get(0), timeFormats).call()
+                        new ParserWorker(MailUtilities.getAttachments(message).firstEntry().getValue(), timeFormats).call()
                 , pendingMessagesExecutorService
         ).thenApply(conversation -> {
 

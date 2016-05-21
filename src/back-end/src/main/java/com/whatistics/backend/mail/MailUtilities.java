@@ -9,8 +9,7 @@ import javax.mail.Message;
 import javax.mail.Multipart;
 import javax.mail.Part;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * @author robert
@@ -18,7 +17,7 @@ import java.util.List;
 public class MailUtilities {
     private static final Logger logger = LoggerFactory.getLogger(MailUtilities.class);
 
-    public static List<InputStream> getAttachments(Message message) {
+    public static TreeMap<String, InputStream> getAttachments(Message message) {
         Object content;
         try {
             content = message.getContent();
@@ -27,9 +26,9 @@ public class MailUtilities {
             }
             if (content instanceof Multipart) {
                 Multipart multipart = (Multipart) content;
-                List<InputStream> result = new ArrayList<InputStream>();
+                TreeMap<String, InputStream> result = new TreeMap<>();
                 for (int i = 0; i < multipart.getCount(); i++) {
-                    result.addAll(getAttachments(multipart.getBodyPart(i)));
+                    result.putAll(getAttachments(multipart.getBodyPart(i)));
                 }
                 return result;
             }
@@ -40,15 +39,15 @@ public class MailUtilities {
         }
     }
 
-    private static List<InputStream> getAttachments(BodyPart part) throws Exception {
-        List<InputStream> result = new ArrayList<InputStream>();
+    private static TreeMap<String, InputStream> getAttachments(BodyPart part) throws Exception {
+        TreeMap<String, InputStream> result= new TreeMap<>();
         Object content = part.getContent();
         if (content instanceof InputStream || content instanceof String) {
             if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) || StringUtils.isNotBlank(part.getFileName())) {
-                result.add(part.getInputStream());
+                result.put(part.getFileName(), part.getInputStream());
                 return result;
             } else {
-                return new ArrayList<InputStream>();
+                return new TreeMap<String, InputStream>();
             }
         }
 
@@ -56,21 +55,24 @@ public class MailUtilities {
             Multipart multipart = (Multipart) content;
             for (int i = 0; i < multipart.getCount(); i++) {
                 BodyPart bodyPart = multipart.getBodyPart(i);
-                result.addAll(getAttachments(bodyPart));
+                result.putAll(getAttachments(bodyPart));
             }
         }
         return result;
     }
 
     static boolean isValid(Message message){
-        List<InputStream> attachments = MailUtilities.getAttachments(message);
+        Map<String, InputStream> attachments = MailUtilities.getAttachments(message);
+
+        // remove all non .txt messages
+        // todo: write proper regex to make sure it's at the end
+        attachments.entrySet().removeIf(entry -> ! entry.getKey().contains(".txt"));
+
         if (attachments.size() == 1){
             return true;
-        }else{
-            logger.info(
-                    "Number of attachments != 1, the actual number is: " + attachments.size());
+        }else if (attachments.size() == 0){
+            logger.info("Number of attachments is 0");
         }
         return false;
     }
-
 }
