@@ -35,8 +35,6 @@ public class ParserWorker implements Callable<Conversation> {
 
     private InputStream inputStream;
     private TimeFormat currentTimeFormat;
-    private int unparseableCount = 0;
-    private int lineCount = 0;
 
     private Map<String, Person> senderMap = new HashMap<>();
 
@@ -70,7 +68,7 @@ public class ParserWorker implements Callable<Conversation> {
                 if (currentLine.equals(""))
                     continue;
 
-                this.lineCount++;
+                this.conversation.incrementLineCount();
 
                 // remove leading and trailing white spaces
                 currentLine = currentLine.trim();
@@ -148,6 +146,12 @@ public class ParserWorker implements Callable<Conversation> {
         return conversation;
     }
 
+    /**
+     * Returns the TimeFormat of the line or null if it can't be parsed.
+     * Not being able to parse the line is an indicator for a multi line message
+     * @param line
+     * @return
+     */
     private TimeFormat getTimeFormat(String line) {
 
         LocalDateTime dateTime = null;
@@ -180,8 +184,8 @@ public class ParserWorker implements Callable<Conversation> {
 
         }
 
-        logger.debug("Line can't be parsed: " + line);
-        this.unparseableCount++;
+        logger.debug("Line can't be parsed: " + line); // nothing to worry per se. It's probably a multi line message
+        this.conversation.incrementUnparseableCount();
         return null;
     }
 

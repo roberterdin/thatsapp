@@ -67,6 +67,7 @@ public class WhatisticsService implements Observer, Service {
     public void update(Observable service, Object data) {
         if (data instanceof Conversation) {
             Conversation conversation = (Conversation) data;
+            // todo: include Conversation.getUnparseableCount and .getLineCount in the check!
             if (conversation.getMessages().size() > 1) {
                 // reuses parsing thread to generate statistics
                 GlobalStatistics globalStatistics = statisticsService.generateStatistics(conversation);

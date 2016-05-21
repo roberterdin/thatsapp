@@ -27,6 +27,12 @@ public class Conversation {
     @Transient
     private javax.mail.Message originalMessage;
 
+    @Transient
+    private int unparseableCount = 0;
+
+    @Transient
+    private int lineCount = 0;
+
     public Conversation() {
     }
 
@@ -66,5 +72,20 @@ public class Conversation {
 
     public Set<Person> getParticipants() {
         return participants;
+    }
+
+    public void incrementUnparseableCount(){
+        this.unparseableCount++;
+    }
+    public void incrementLineCount(){
+        this.lineCount++;
+    }
+
+    public int getUnparseableCount() {
+        return unparseableCount;
+    }
+
+    public int getLineCount() {
+        return lineCount;
     }
 }
