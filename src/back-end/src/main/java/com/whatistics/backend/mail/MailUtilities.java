@@ -1,21 +1,28 @@
 package com.whatistics.backend.mail;
 
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.net.QuotedPrintableCodec;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.mail.BodyPart;
-import javax.mail.Message;
-import javax.mail.Multipart;
-import javax.mail.Part;
+import javax.mail.*;
+import javax.mail.internet.MimeUtility;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * @author robert
  */
 public class MailUtilities {
     private static final Logger logger = LoggerFactory.getLogger(MailUtilities.class);
+    // todo: the =2Etxt part is just a workaround. Proper quoted-printable decoding would be preferable
+    private static Pattern extPattern = Pattern.compile("(.+?)(\\.txt|=2Etxt\\?=)$");
 
     public static TreeMap<String, InputStream> getAttachments(Message message) {
         Object content;
@@ -62,11 +69,10 @@ public class MailUtilities {
     }
 
     static boolean isValid(Message message){
-        Map<String, InputStream> attachments = MailUtilities.getAttachments(message);
+        TreeMap<String, InputStream> attachments = MailUtilities.getAttachments(message);
 
         // remove all non .txt messages
-        // todo: write proper regex to make sure it's at the end
-        attachments.entrySet().removeIf(entry -> ! entry.getKey().contains(".txt"));
+        attachments.entrySet().removeIf(entry -> ! extPattern.matcher(entry.getKey()).matches());
 
         if (attachments.size() == 1){
             return true;
