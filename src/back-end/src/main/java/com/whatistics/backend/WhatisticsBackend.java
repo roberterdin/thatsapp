@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Random;
-import java.util.concurrent.SynchronousQueue;
 
 /**
  * Main Whatistics class
@@ -67,5 +66,4 @@ public class WhatisticsBackend {
     public static Injector getInjector() {
         return injector;
     }
-
 }

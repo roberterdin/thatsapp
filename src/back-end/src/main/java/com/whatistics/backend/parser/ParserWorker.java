@@ -1,16 +1,16 @@
 package com.whatistics.backend.parser;
 
 import com.whatistics.backend.model.Conversation;
+import com.whatistics.backend.model.Message;
 import com.whatistics.backend.model.Person;
 import org.apache.commons.io.input.BOMInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
@@ -27,12 +27,16 @@ import java.util.regex.Pattern;
 public class ParserWorker implements Callable<Conversation> {
     final Logger logger = LoggerFactory.getLogger(ParserWorker.class);
 
+    public static DateTimeFormatter logFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_");
+
     private List<TimeFormat> timeFormats;
 
-    Conversation conversation;
+    private Conversation conversation;
 
     private InputStream inputStream;
     private TimeFormat currentTimeFormat;
+    private int unparseableCount = 0;
+    private int lineCount = 0;
 
     private Map<String, Person> senderMap = new HashMap<>();
 
@@ -60,11 +64,13 @@ public class ParserWorker implements Callable<Conversation> {
         String currentLine;
 
         try {
-            com.whatistics.backend.model.Message message = null;
+            Message message = null;
             while ((currentLine = reader.readLine()) != null) {
                 // skip newlines
                 if (currentLine.equals(""))
                     continue;
+
+                this.lineCount++;
 
                 // remove leading and trailing white spaces
                 currentLine = currentLine.trim();
@@ -86,7 +92,13 @@ public class ParserWorker implements Callable<Conversation> {
                     if (message != null) {
                         message.setContent(message.getContent() + System.lineSeparator() + currentLine);
                     } else {
-                        logger.error("First line can't be part of multiline message", new IllegalStateException("First line can't be part of multiline message"));
+                        File errorFile = new File("/var/log/thatsapp/unparseable/" + LocalDateTime.now().format(logFormatter) + conversation.getSubmittedBy() + ".txt");
+                        logger.error("First line can't be part of multiline message, will write file to " + errorFile.getAbsolutePath() + " for further investigation.",
+                                new IllegalStateException("First line can't be part of multiline message"));
+
+                        // this means that the file can't be parsed. Save output to a file to investigate
+                        Files.copy(inputStream, errorFile.toPath());
+                        break;
                     }
 
                 } else {
@@ -169,6 +181,7 @@ public class ParserWorker implements Callable<Conversation> {
         }
 
         logger.debug("Line can't be parsed: " + line);
+        this.unparseableCount++;
         return null;
     }
 
