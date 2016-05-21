@@ -40,6 +40,9 @@ public class TimeFormatsProvider implements Provider<List<TimeFormat>> {
                 // Android en_us 24h   4/20/15, 19:50 -
                 new TimeFormat("M/d/yy, HH:mm - "),
 
+                // 04/02/16 21:20:47: Silas: <image omitted>
+                new TimeFormat("dd/MM/yy HH:mm:ss: "),
+
                 // IOS ??
                 // ﻿21.09.14 20:27:11: Moritz: Jou patrick!
                 new TimeFormat("dd.MM.yy HH:mm:ss: "),

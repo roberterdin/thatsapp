@@ -1,20 +1,19 @@
 package com.whatistics.backend.mail;
 
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.net.QuotedPrintableCodec;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.mail.*;
-import javax.mail.internet.MimeUtility;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import javax.mail.BodyPart;
+import javax.mail.Message;
+import javax.mail.Multipart;
+import javax.mail.Part;
+import java.io.*;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  * @author robert
@@ -22,7 +21,49 @@ import java.util.regex.Pattern;
 public class MailUtilities {
     private static final Logger logger = LoggerFactory.getLogger(MailUtilities.class);
     // todo: the =2Etxt part is just a workaround. Proper quoted-printable decoding would be preferable
-    private static Pattern extPattern = Pattern.compile("(.+?)(\\.txt|=2Etxt\\?=)$");
+    private static Pattern txtPattern = Pattern.compile("(.+?)(\\.txt|=2Etxt\\?=)$");
+    private static Pattern zipPattern = Pattern.compile("(.+?)(\\.zip|=2Ezip\\?=)$");
+
+
+
+    public static TreeMap<String, InputStream> getCleanAttachments(Message message){
+
+        TreeMap<String, InputStream> attachments = MailUtilities.getAttachments(message);
+
+
+        // unzip potential .zip files
+        for (Map.Entry<String, InputStream> entry : attachments.entrySet()){
+            if (zipPattern.matcher(entry.getKey()).matches()){
+
+                ZipInputStream zis = new ZipInputStream(entry.getValue());
+                ZipEntry zipEntry;
+
+                try {
+                    while ((zipEntry = zis.getNextEntry()) != null)
+                    {
+                        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+                        // consume all the data from this entry
+                        while (zis.available() > 0)
+                            outputStream.write(zis.read());
+
+                        // add file to attachments
+                        // todo: don't do in memory
+                        attachments.put(zipEntry.getName(), new ByteArrayInputStream(outputStream.toByteArray()));
+
+                    }
+                } catch (IOException e) {
+                    logger.error("Failed reading .zip file", e);
+                }
+            }
+        }
+
+
+        // remove all non .txt or .zip messages
+        attachments.entrySet().removeIf(entry -> ! txtPattern.matcher(entry.getKey()).matches());
+
+        return attachments;
+    }
 
     public static TreeMap<String, InputStream> getAttachments(Message message) {
         Object content;
@@ -69,10 +110,7 @@ public class MailUtilities {
     }
 
     static boolean isValid(Message message){
-        TreeMap<String, InputStream> attachments = MailUtilities.getAttachments(message);
-
-        // remove all non .txt messages
-        attachments.entrySet().removeIf(entry -> ! extPattern.matcher(entry.getKey()).matches());
+        Map attachments = getCleanAttachments(message);
 
         if (attachments.size() == 1){
             return true;

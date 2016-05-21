@@ -51,7 +51,7 @@ public class ParserServiceImpl extends ParserService {
     public void parseMessage(Message message){
 
         CompletableFuture.supplyAsync(() ->
-                        new ParserWorker(MailUtilities.getAttachments(message).firstEntry().getValue(), timeFormats).call()
+                        new ParserWorker(MailUtilities.getCleanAttachments(message).firstEntry().getValue(), timeFormats).call()
                 , pendingMessagesExecutorService
         ).thenApply(conversation -> {
 

@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.mail.Message;
+import javax.mail.MessagingException;
 import java.util.TimerTask;
 
 /**

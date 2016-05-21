@@ -41,8 +41,6 @@ public class MailService implements Service {
         this.mailAdapterService.connectToServer();
 
         this.scheduledExecutorService.scheduleAtFixedRate(this.mailFetcherTask, 0, this.mailFetchingInterval, TimeUnit.SECONDS);
-        // todo: execute with timer
-//        this.mailFetcherTask.run();
     }
 
     @Override
