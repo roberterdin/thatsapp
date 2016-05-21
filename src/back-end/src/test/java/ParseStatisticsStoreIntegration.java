@@ -25,7 +25,7 @@ public class ParseStatisticsStoreIntegration extends MasterTest {
         Datastore ds = new Morphia().createDatastore(new MongoClient(globalProperties.getProperty("mongoClientHostname")), globalProperties.getProperty("dbTestName"));
 
         TimeFormatsProvider timeFormatsProvider = new TimeFormatsProvider();
-        InputStream is = new FileInputStream("../../resources/chatHistories/seebi_2.txt");
+        InputStream is = new FileInputStream("../../resources/chatHistories/moritz.txt");
         ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get());
 
         Conversation conversation = parserWorker.call();

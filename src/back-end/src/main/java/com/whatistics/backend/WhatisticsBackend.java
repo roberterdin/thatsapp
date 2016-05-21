@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Random;
+import java.util.concurrent.SynchronousQueue;
 
 /**
  * Main Whatistics class
@@ -46,8 +47,7 @@ public class WhatisticsBackend {
 
 
         //initialize logger
-
-
+        System.getProperties().setProperty("org.slf4j.simpleLogger.logFile", globalProperties.getProperty("logFile"));
         final Logger logger = LoggerFactory.getLogger(WhatisticsBackend.class);
 
 

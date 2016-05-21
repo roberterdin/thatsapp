@@ -15,7 +15,10 @@ public class ParserTests extends MasterTest{
     @Test
     public void testParsing() throws FileNotFoundException {
 
+        TimeFormatsProvider timeFormatsProvider = new TimeFormatsProvider();
+        InputStream is = new FileInputStream("../../resources/chatHistories/dave.txt");
+        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get());
 
-
+        parserWorker.call();
     }
 }
