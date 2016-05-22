@@ -18,7 +18,7 @@ public class StatisticsTests extends MasterTest {
     public void testStatistics() throws FileNotFoundException {
         TimeFormatsProvider timeFormatsProvider = new TimeFormatsProvider();
         InputStream is = new FileInputStream("../../resources/chatHistories/k_chat_long.txt");
-        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get());
+        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get(), ds);
 
         Conversation conversation = parserWorker.call();
 

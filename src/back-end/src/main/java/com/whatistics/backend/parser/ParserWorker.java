@@ -3,7 +3,12 @@ package com.whatistics.backend.parser;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.Message;
 import com.whatistics.backend.model.Person;
+import com.whatistics.meta.TimeFormatCounter;
 import org.apache.commons.io.input.BOMInputStream;
+import org.mongodb.morphia.Datastore;
+import org.mongodb.morphia.mapping.Mapper;
+import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.UpdateOperations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +32,8 @@ import java.util.regex.Pattern;
 public class ParserWorker implements Callable<Conversation> {
     final Logger logger = LoggerFactory.getLogger(ParserWorker.class);
 
+    private Datastore ds;
+
     public static DateTimeFormatter logFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_");
 
     private List<TimeFormat> timeFormats;
@@ -47,15 +54,23 @@ public class ParserWorker implements Callable<Conversation> {
     // thus the potential margin from the length of the time format M/d/yy
     private int margin;
 
-    public ParserWorker(InputStream inputStream, List<TimeFormat> timeFormats) {
+    public ParserWorker(InputStream inputStream,
+                        List<TimeFormat> timeFormats,
+                        Datastore ds) {
         this.inputStream = inputStream;
         this.timeFormats = timeFormats;
         this.conversation = new Conversation();
+        this.ds = ds;
     }
 
     @Override
     public Conversation call() {
         long startTime = System.nanoTime();
+
+        // prepare to persist information to which time formats are used
+        UpdateOperations<TimeFormatCounter> ops = ds.createUpdateOperations(TimeFormatCounter.class);
+        Query<TimeFormatCounter> updateQuery = ds.createQuery(TimeFormatCounter.class)
+                .field(Mapper.ID_KEY).equal(1);
 
         // ignore Unicode BOM in input stream (breaks time parsing)
         BufferedReader reader = new BufferedReader(new InputStreamReader(new BOMInputStream(inputStream)));
@@ -79,7 +94,11 @@ public class ParserWorker implements Callable<Conversation> {
                 // figure out current time format, if necessary
                 if (currentTimeFormat == null | getDate(currentLine) == null) {
                     // we need to figure out current time format
-                    currentTimeFormat = getTimeFormat(currentLine);
+                    TimeFormat tmp = getTimeFormat(currentLine);
+                    if (tmp != null){
+                        currentTimeFormat = tmp;
+                        ops.disableValidation().inc(currentTimeFormat.getRawFormat().replaceAll("\\.", "\uFFFD"));
+                    }
                 }
 
 
@@ -137,6 +156,9 @@ public class ParserWorker implements Callable<Conversation> {
             logger.error("Error while reading attachment", e);
             e.printStackTrace();
         }
+
+        // persist time format meta data
+        ds.update(updateQuery, ops, true);
 
 
         long endTime = System.nanoTime();
@@ -203,7 +225,6 @@ public class ParserWorker implements Callable<Conversation> {
                     // handled outside
                 }
             }
-
         }
         return null;
     }

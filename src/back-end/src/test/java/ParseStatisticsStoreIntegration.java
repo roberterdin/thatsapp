@@ -21,11 +21,9 @@ public class ParseStatisticsStoreIntegration extends MasterTest {
     @Test
     public void testParseStatisticsStoreIntegration() throws FileNotFoundException {
 
-        Datastore ds = new Morphia().createDatastore(new MongoClient(globalProperties.getProperty("mongoClientHostname")), globalProperties.getProperty("dbTestName"));
-
         TimeFormatsProvider timeFormatsProvider = new TimeFormatsProvider();
         InputStream is = new FileInputStream("../../resources/chatHistories/moritz.txt");
-        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get());
+        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get(), ds);
 
         Conversation conversation = parserWorker.call();
 

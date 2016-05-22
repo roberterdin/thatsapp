@@ -17,7 +17,7 @@ public class ParserTests extends MasterTest{
 
         TimeFormatsProvider timeFormatsProvider = new TimeFormatsProvider();
         InputStream is = new FileInputStream("../../resources/chatHistories/dave.txt");
-        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get());
+        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get(), ds);
 
         parserWorker.call();
     }

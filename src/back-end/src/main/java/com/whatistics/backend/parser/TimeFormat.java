@@ -43,6 +43,10 @@ public class TimeFormat implements Comparable {
         return formatter;
     }
 
+    public String getRawFormat() {
+        return rawFormat;
+    }
+
     public int getLength(){
         return rawFormat.length();
     }
