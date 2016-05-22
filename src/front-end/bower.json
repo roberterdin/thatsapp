@@ -7,6 +7,7 @@
     "ember-qunit-notifications": "0.1.0",
     "jquery": "2.1",
     "bootstrap": "~3.3.0",
-    "chartist": "~0.9.5"
+    "chartist": "~0.9.5",
+    "emojione": "^2.1.4"
   }
 }

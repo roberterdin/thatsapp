@@ -79,8 +79,8 @@ export default Ember.Controller.extend({
 
     emoticons: function(){
 
-        return Ember.$.map(this.get('model.statistics.emoticons'), (k,v) => {
-            return {emoji: v, amount: k};
+        var result = Ember.$.map(this.get('model.statistics.emoticons'), (k,v) => {
+            return {unicode: v, amount: k};
         }).sort((a, b) => {
             if (a.amount < b.amount){
                 return 1;
@@ -90,6 +90,12 @@ export default Ember.Controller.extend({
             }
             return 0;
         }).slice(0,9);
+
+        result.forEach(emoji => {
+            emoji.html = emojione.unicodeToImage(emoji.unicode);
+        });
+
+        return result;
 
     }.property('emoticons')
 });

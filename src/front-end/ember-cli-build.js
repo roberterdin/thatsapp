@@ -5,6 +5,7 @@ module.exports = function(defaults) {
         // Any other options
     });
 
+    // BOOTSTRAP
     app.import('bower_components/bootstrap/dist/js/bootstrap.js');
     app.import('bower_components/bootstrap/dist/css/bootstrap.css');
 
@@ -26,6 +27,9 @@ module.exports = function(defaults) {
     app.import('bower_components/bootstrap/dist/css/bootstrap.css.map', {
         destDir: 'assets'
     });
+
+    // Emojione
+    app.import('bower_components/emojione/lib/js/emojione.min.js');
 
     //app.import('bower_components/moment/moment.js');
     //app.import('bower_components/modernizr/modernizr.js');
