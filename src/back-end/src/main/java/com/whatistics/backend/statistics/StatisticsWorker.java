@@ -2,6 +2,7 @@ package com.whatistics.backend.statistics;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.vdurmont.emoji.EmojiParser;
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.GlobalStatistics;
 import com.whatistics.backend.model.Message;
@@ -20,7 +21,7 @@ import java.util.regex.Pattern;
 
 /**
  * @author robert
- * Class should be threadsafe (not tested)
+ *         Class should be threadsafe (not tested)
  */
 public class StatisticsWorker {
 
@@ -29,7 +30,6 @@ public class StatisticsWorker {
     private final int statisticsLength;
 
     private final Pattern mediaPattern;
-    private final Pattern emojiPattern;
     private final Pattern cleaningPattern;
 
     private final DateTimeFormatter sameDayChecker = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -37,11 +37,9 @@ public class StatisticsWorker {
 
     @Inject
     public StatisticsWorker(MediaPatternProvider mediaPatternProvider,
-                            EmojiPatternProvider emojiPatternProvider,
-                            @Named("statisticsLength") int statisticsLength){
+                            @Named("statisticsLength") int statisticsLength) {
         this.statisticsLength = statisticsLength;
         this.mediaPattern = mediaPatternProvider.get();
-        this.emojiPattern = emojiPatternProvider.get();
 
         /* (\p{Punct}+) --> punctuation
          * ((?<=\s)\s+) --> all whitespaces following a whitespace
@@ -50,7 +48,7 @@ public class StatisticsWorker {
         this.cleaningPattern = Pattern.compile("((\\p{Punct}+)|((?<=\\s)\\s+)|(^\\s+|\\s+$))", Pattern.UNICODE_CHARACTER_CLASS);
     }
 
-    public GlobalStatistics compute(Conversation conversation){
+    public GlobalStatistics compute(Conversation conversation) {
         long startTime = System.nanoTime();
 
         GlobalStatistics globalStatistics = new GlobalStatistics(conversation);
@@ -59,7 +57,7 @@ public class StatisticsWorker {
         Message prevMessage = null;
         for (Message message : conversation.getMessages()) {
             // Check if system message, discard if so
-            if(message.getSender().getName().equals("_dummy"))
+            if (message.getSender().getName().equals("_dummy"))
                 continue;
 
             // Increment message count
@@ -81,11 +79,11 @@ public class StatisticsWorker {
 
             // aggregatedHistory
             //-------------
-            if(prevMessage != null && message.getSendDate().format(sameDayChecker).equals(prevMessage.getSendDate().format(sameDayChecker))){
+            if (prevMessage != null && message.getSendDate().format(sameDayChecker).equals(prevMessage.getSendDate().format(sameDayChecker))) {
                 // still same day
                 messagesPerDay++;
-            }else {
-                if(prevMessage != null){ // skip first day
+            } else {
+                if (prevMessage != null) { // skip first day
                     // new day
                     LocalDateTime yesterday = message.getSendDate().minusDays(1);
 
@@ -123,87 +121,31 @@ public class StatisticsWorker {
     /**
      * Counts the amount of words and emojis. The words get added to the vocabulary.
      * Grouped together for performance reasons.
+     *
      * @param globalStatistics
      * @param message
      */
     private void wordCountEmojiAndVocab(GlobalStatistics globalStatistics, Message message) {
         String cleanMessage = this.cleaningPattern.matcher(message.getContent()).replaceAll("");
 
-        int wordCount = 0;
+        List<EmojiParser.UnicodeCandidate> emojis = EmojiParser.getUnicodeCandidates(message.getContent());
+
+        for (EmojiParser.UnicodeCandidate uc : emojis) {
+            globalStatistics.getStatistics().incrementEmoji(uc.getEmoji().getUnicode());
+            message.getSender().getStatistics().incrementEmoji(uc.getEmoji().getUnicode());
+        }
+
+        cleanMessage = EmojiParser.removeAllEmojis(cleanMessage);
+
         if (!cleanMessage.isEmpty()) {
             String[] possibleWords = cleanMessage.split("\\s+");
+            globalStatistics.getStatistics().incrementWordAmount(possibleWords.length);
+            message.getSender().getStatistics().incrementWordAmount(possibleWords.length);
 
             for (String token : possibleWords) {
-                ExtractEmojiResult emojiResult = extractEmoji(token);
-                if (emojiResult.emojis.size() > 0) {
-
-                    for (String emoji : emojiResult.emojis) {
-                        globalStatistics.getStatistics().incrementEmoji(emoji);
-                        message.getSender().getStatistics().incrementEmoji(emoji);
-                    }
-
-                    // check if it was a combination of emojis and a word
-                    if(emojiResult.wordCarryover.length() > 0){
-                        globalStatistics.getStatistics().incrementVocabulary(emojiResult.wordCarryover);
-                        message.getSender().getStatistics().incrementVocabulary(emojiResult.wordCarryover);
-                        wordCount++;
-                    }
-
-                } else if (emojiResult.emojis.size() == 0) {
-                    // it's (hopefully) a word.
-                    globalStatistics.getStatistics().incrementVocabulary(token);
-                    message.getSender().getStatistics().incrementVocabulary(token);
-                    wordCount++;
-                }
-
-                globalStatistics.getStatistics().incrementWordAmount(wordCount);
-                message.getSender().getStatistics().incrementWordAmount(wordCount);
+                globalStatistics.getStatistics().incrementVocabulary(token);
+                message.getSender().getStatistics().incrementVocabulary(token);
             }
         }
-    }
-
-    /**
-     * Checks whether the provided word is an emoji
-     * Might also catch non-emojis if non-latin alphabets are used. In this case, have a look <a href="http://stackoverflow.com/a/24841069/695457">here</a>. Also have a look at the emoji csv in the resources folder in the root of the project.
-     * @param possibleWord
-     * @return
-     */
-    private ExtractEmojiResult extractEmoji(String possibleWord){
-        try {
-
-            ExtractEmojiResult result = new ExtractEmojiResult();
-
-            byte[] utf8 = possibleWord.getBytes("UTF-8");
-            // there are two bits for each character here
-            String token = new String(utf8, "UTF-8");
-            Matcher emojiMatcher = emojiPattern.matcher(token);
-
-            result.emojis = new ArrayList<>();
-
-            while (emojiMatcher.find()){
-                result.emojis.add(emojiMatcher.group());
-            }
-
-            // carry over possible characters, e.g. from cake🍹
-            if (result.emojis.size() > 0 ){
-                result.wordCarryover = emojiMatcher.replaceAll(""); //cake? --> cake
-            }else {
-                result.wordCarryover = "";
-            }
-
-            return result;
-
-        } catch (UnsupportedEncodingException e) {
-            logger.error("Encoding error while checking for emoji", e);
-            return null;
-        }
-    }
-
-    /**
-     * Result tuple for {@link StatisticsWorker#extractEmoji(String)}
-     */
-    private static class ExtractEmojiResult{
-        String wordCarryover;
-        List<String> emojis;
     }
 }

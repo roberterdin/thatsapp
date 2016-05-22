@@ -29,6 +29,24 @@ dependencies {
     compile group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.12'
     compile group: 'commons-io', name: 'commons-io', version: '2.4'
     compile group: 'com.google.guava', name: 'guava', version: '12.0'
+//    compile 'com.vdurmont:emoji-java:3.1.1'
+
+
+    compile fileTree(dir: 'vendor', include: '*.jar')
+    // temporary for usage with local version emoji-java
+    compile group: 'org.json', name: 'json', version: '20160212'
+
+
+
+
+//    compile files("/home/robert/Development/emoji-java/target/classes") {
+//        builtBy "compileMavenProject"
+//    }
+
+//    compile files("/home/robert/Development/emoji-java/target/libs") {
+//        builtBy "downloadMavenDependencies"
+//    }
+
 
     //runtime
     runtime group: 'org.restheart', name: 'restheart', version: '1.1.7'
@@ -50,6 +68,11 @@ run{
 task copyToLib( type: Copy ) {
     into "$buildDir/libs/lib"
     from configurations.runtime
+}
+
+task compileMavenProject(type: Exec) {
+    workingDir "/home/robert/Development/emoji-java/"
+    commandLine "/usr/bin/mvn", "clean", "compile"
 }
 
 jar { dependsOn copyToLib }
