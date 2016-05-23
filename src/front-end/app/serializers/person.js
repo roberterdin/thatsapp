@@ -12,6 +12,13 @@ export default DS.JSONSerializer.extend({
         payload.id = payload._id.$oid;
         delete payload._id.$oid;
 
+        if(payload.name !== "_dummy"){
+            payload.isSysMsg = false;
+        }else {
+            payload.isSysMsg = true;
+        }
+
+
         return this._super(...arguments);
     }
 

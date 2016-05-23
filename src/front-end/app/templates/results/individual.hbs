@@ -1,7 +1,9 @@
 <select onchange={{action "selectParticipant" value="target.value"}}>
     <option value="">Plsease select a person</option>
     {{#each model.participants as |participant|}}
-        <option value={{participant.id}}>{{participant.name}}</option>
+        {{#unless participant.isSysMsg}}
+            <option value={{participant.id}}>{{participant.name}}</option>
+        {{/unless}}
     {{/each}}
 </select>
 {{basic-statistics model=currentParticipant}}
