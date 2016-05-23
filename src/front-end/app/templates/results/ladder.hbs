@@ -18,25 +18,6 @@
         </div>
     </div>
     <div class="col-md-4 text-left">
-        <h2 class="text-center">Emoji's used</h2>
-
-        <p class="ladder-subtitle text-center">whut m8, do u even english?</p>
-        <table class="table">
-            <thead>
-            <tr>
-                <td>Emoji</td>
-                <td>Amount</td>
-            </tr>
-            </thead>
-            <tbody >
-            {{#each emoticons as |e|}}
-                <tr>
-                    <td class="emoji">{{{e.html}}}</td>
-                    <td>{{e.amount}}</td>
-                </tr>
-            {{/each}}
-            <td></td>
-            </tbody>
-        </table>
+        {{emoji-table model=model.statistics.emoticons}}
     </div>
 </div>

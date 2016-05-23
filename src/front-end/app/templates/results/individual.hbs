@@ -1,9 +1,16 @@
 <select onchange={{action "selectParticipant" value="target.value"}}>
-    <option value="">Plsease select a person</option>
+    <option value="">
+        Please select a person
+    </option>
     {{#each model.participants as |participant|}}
         {{#unless participant.isSysMsg}}
-            <option value={{participant.id}}>{{participant.name}}</option>
+            <option value={{participant.id}} selected={{eq participant currentParticipant}}>{{participant.name}}</option>
         {{/unless}}
     {{/each}}
 </select>
 {{basic-statistics model=currentParticipant}}
+<div class="row">
+    <div class="col-md-4 text-left">
+        {{emoji-table model=currentEmoticons}}
+    </div>
+</div>

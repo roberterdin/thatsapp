@@ -1,0 +1,21 @@
+{{#if model}}
+    <h2 class="text-center">Emoji's used</h2>
+    <p class="ladder-subtitle text-center">whut m8, do u even english?</p>
+    <table class="table">
+        <thead>
+        <tr>
+            <td>Emoji</td>
+            <td>Amount</td>
+        </tr>
+        </thead>
+        <tbody>
+        {{#each filteredEmoticons as |e|}}
+            <tr>
+                <td class="emoji">{{{e.html}}}</td>
+                <td>{{e.amount}}</td>
+            </tr>
+        {{/each}}
+        <td></td>
+        </tbody>
+    </table>
+{{/if}}
