@@ -131,6 +131,7 @@ public class ParserWorker implements Callable<Conversation> {
 
                     message.setSendDate(dateTime);
 
+                    //todo handle participant names containing ": "
                     String[] senderAndContent = currentLine.split(": ", 2);
                     if (senderAndContent.length == 2) {
                         // normal line
@@ -152,10 +153,15 @@ public class ParserWorker implements Callable<Conversation> {
 
             }
 
+            // add last message
+            conversation.addMessage(message);
+
         } catch (IOException e) {
             logger.error("Error while reading attachment", e);
             e.printStackTrace();
         }
+
+
 
         // persist time format meta data
         ds.update(updateQuery, ops, true);
