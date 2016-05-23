@@ -19,6 +19,7 @@ public class MediaPatternProvider implements Provider<Pattern> {
                 "<Media omitted>"
                 , "<Mediendatei entfernt>"
                 , "<Medien weggelassen>"
+                , "<\u200EBild weggelassen>"
         );
 
         String pattern = "(" + mediaPattern.get(0);
