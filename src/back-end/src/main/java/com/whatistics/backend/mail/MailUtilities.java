@@ -25,22 +25,20 @@ public class MailUtilities {
     private static Pattern zipPattern = Pattern.compile("(.+?)(\\.zip|=2Ezip\\?=)$");
 
 
-
-    public static TreeMap<String, InputStream> getCleanAttachments(Message message){
+    public static TreeMap<String, InputStream> getCleanAttachments(Message message) {
 
         TreeMap<String, InputStream> attachments = MailUtilities.getAttachments(message);
 
 
         // unzip potential .zip files
-        for (Map.Entry<String, InputStream> entry : attachments.entrySet()){
-            if (zipPattern.matcher(entry.getKey()).matches()){
+        for (Map.Entry<String, InputStream> entry : attachments.entrySet()) {
+            if (zipPattern.matcher(entry.getKey()).matches()) {
 
                 ZipInputStream zis = new ZipInputStream(entry.getValue());
                 ZipEntry zipEntry;
 
                 try {
-                    while ((zipEntry = zis.getNextEntry()) != null)
-                    {
+                    while ((zipEntry = zis.getNextEntry()) != null) {
                         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 
                         // consume all the data from this entry
@@ -60,7 +58,7 @@ public class MailUtilities {
 
 
         // remove all non .txt or .zip messages
-        attachments.entrySet().removeIf(entry -> ! txtPattern.matcher(entry.getKey()).matches());
+        attachments.entrySet().removeIf(entry -> !txtPattern.matcher(entry.getKey()).matches());
 
         return attachments;
     }
@@ -70,7 +68,7 @@ public class MailUtilities {
         try {
             content = message.getContent();
             if (content instanceof String) {
-                return null;
+                return new TreeMap<String, InputStream>();
             }
             if (content instanceof Multipart) {
                 Multipart multipart = (Multipart) content;
@@ -88,7 +86,7 @@ public class MailUtilities {
     }
 
     private static TreeMap<String, InputStream> getAttachments(BodyPart part) throws Exception {
-        TreeMap<String, InputStream> result= new TreeMap<>();
+        TreeMap<String, InputStream> result = new TreeMap<>();
         Object content = part.getContent();
         if (content instanceof InputStream || content instanceof String) {
             if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) || StringUtils.isNotBlank(part.getFileName())) {
@@ -109,12 +107,12 @@ public class MailUtilities {
         return result;
     }
 
-    static boolean isValid(Message message){
+    static boolean isValid(Message message) {
         Map attachments = getCleanAttachments(message);
 
-        if (attachments.size() == 1){
+        if (attachments.size() == 1) {
             return true;
-        }else if (attachments.size() == 0){
+        } else if (attachments.size() == 0) {
             logger.info("Number of attachments is 0");
         }
         return false;

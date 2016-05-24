@@ -22,7 +22,7 @@ configurations {
 dependencies {
     compile group: 'org.mongodb.morphia', name: 'morphia', version: '1.1.1'
     compile group: 'com.thedeanda', name: 'lorem', version: '1.2'
-    compile group: 'com.sun.mail', name: 'javax.mail', version: '1.5.3'
+    compile group: 'com.sun.mail', name: 'javax.mail', version: '1.5.5'
     compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.4'
     compile group: 'com.google.inject', name: 'guice', version: '4.0'
     compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.12'

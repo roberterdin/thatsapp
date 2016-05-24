@@ -81,6 +81,7 @@ public class IMAPMailAdapter implements MailAdapter {
 
         /* Set the mail properties */
         Properties props = System.getProperties();
+        props.setProperty("mail.mime.decodefilename", "true");
         props.setProperty("mail.store.protocol", "imap");
         props.setProperty("mail.imap.starttls.enable", "true");
         props.setProperty("mail.imap.port", "143");
