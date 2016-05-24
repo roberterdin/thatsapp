@@ -15,6 +15,11 @@ public class MailModule extends AbstractModule {
         // configuration / constant binding
         Names.bindProperties(binder(), WhatisticsBackend.globalProperties);
 
+        // bind password property
+
+        bindConstant()
+                .annotatedWith(Names.named("password"))
+                .to(WhatisticsBackend.globalProperties.getProperty(WhatisticsBackend.globalProperties.getProperty("password.property")));
 
         // component binding
         bind(MailAdapter.class).to(IMAPMailAdapter.class);
