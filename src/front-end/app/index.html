@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Whatistics</title>
-    <meta name="description" content="">
+    <title>ThatsApp - Statistics for WhatsApp</title>
+    <meta name="description" content="Statistics for WhatsApp chats">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!--Open Graph-->
+    <meta property="og:title" content="ThatsApp"/>
+    <!--<meta property="og:image" content="http://ia.media-imdb.com/images/rock.jpg"/>-->
 
     {{content-for "head"}}
 
@@ -13,13 +17,13 @@
     <link rel="stylesheet" href="assets/whatistics.css">
 
     {{content-for "head-footer"}}
-  </head>
-  <body>
-    {{content-for "body"}}
+</head>
+<body>
+{{content-for "body"}}
 
-    <script src="assets/vendor.js"></script>
-    <script src="assets/whatistics.js"></script>
+<script src="assets/vendor.js"></script>
+<script src="assets/whatistics.js"></script>
 
-    {{content-for "body-footer"}}
-  </body>
+{{content-for "body-footer"}}
+</body>
 </html>
