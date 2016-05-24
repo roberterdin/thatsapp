@@ -20,15 +20,14 @@ import java.util.zip.ZipInputStream;
  */
 public class MailUtilities {
     private static final Logger logger = LoggerFactory.getLogger(MailUtilities.class);
-    // todo: the =2Etxt part is just a workaround. Proper quoted-printable decoding would be preferable
-    private static Pattern txtPattern = Pattern.compile("(.+?)(\\.txt|=2Etxt\\?=)$");
-    private static Pattern zipPattern = Pattern.compile("(.+?)(\\.zip|=2Ezip\\?=)$");
+
+    private static Pattern txtPattern = Pattern.compile("(.+?)(\\.txt)$");
+    private static Pattern zipPattern = Pattern.compile("(.+?)(\\.zip)$");
 
 
     public static TreeMap<String, InputStream> getCleanAttachments(Message message) {
 
         TreeMap<String, InputStream> attachments = MailUtilities.getAttachments(message);
-
 
         // unzip potential .zip files
         for (Map.Entry<String, InputStream> entry : attachments.entrySet()) {
