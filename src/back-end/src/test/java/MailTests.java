@@ -6,7 +6,7 @@ public class MailTests extends MasterTest {
     IMAPMailAdapter mailAdapterService = new IMAPMailAdapter(globalProperties.getProperty("email"),
             globalProperties.getProperty("smtpHostName"),
             globalProperties.getProperty("imapHostName"),
-            globalProperties.getProperty("password"),
+            globalProperties.getProperty("dev.mail.password"),
             globalProperties.getProperty("inboxName"),
             globalProperties.getProperty("processedFolder"),
             globalProperties.getProperty("unprocessableFolder"),
