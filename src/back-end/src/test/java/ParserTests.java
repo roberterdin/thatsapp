@@ -56,6 +56,6 @@ public class ParserTests extends MasterTest{
 
         new LanguageDetectorWorker(languageDetector, result).call();
 
-        assertEquals(33, result.getMessages().size());
+        assertEquals("en", result.getLanguage());
     }
 }

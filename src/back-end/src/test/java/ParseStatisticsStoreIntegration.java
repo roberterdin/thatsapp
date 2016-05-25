@@ -3,6 +3,7 @@ import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.GlobalStatistics;
 import com.whatistics.backend.parser.ParserWorker;
 import com.whatistics.backend.parser.TimeFormatsProvider;
+import com.whatistics.backend.statistics.CachingStopWordsProvider;
 import com.whatistics.backend.statistics.MediaPatternProvider;
 import com.whatistics.backend.statistics.StatisticsWorker;
 import org.junit.Test;
@@ -27,7 +28,9 @@ public class ParseStatisticsStoreIntegration extends MasterTest {
 
         Conversation conversation = parserWorker.call();
 
-        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(), globalProperties.getIntProp("statisticsLength"));
+        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(),
+                new CachingStopWordsProvider(),
+                globalProperties.getIntProp("statisticsLength"));
 
         GlobalStatistics gs = statisticsWorker.compute(conversation);
 

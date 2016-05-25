@@ -23,7 +23,7 @@ public class MediaPatternProvider implements Provider<Pattern> {
         );
 
         String pattern = "(" + mediaPattern.get(0);
-        for (int i = 1; i<mediaPattern.size(); i++){
+        for (int i = 1; i < mediaPattern.size(); i++){
             pattern += ("|" + mediaPattern.get(i));
         }
         pattern += ")";

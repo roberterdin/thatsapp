@@ -56,6 +56,10 @@ public class GlobalStatistics {
         return statistics;
     }
 
+    public Conversation getConversation() {
+        return conversation;
+    }
+
     public List<TimeInterval> getAggregatedHistory() {
         return aggregatedHistory;
     }

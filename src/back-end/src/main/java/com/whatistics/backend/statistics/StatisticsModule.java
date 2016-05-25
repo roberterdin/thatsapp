@@ -17,5 +17,6 @@ public class StatisticsModule extends AbstractModule {
 //                .annotatedWith(Names.named("statisticsLength"))
 //                .to(GlobalConfig.STATISTICS_LENGTH);
 
+        bind(StopWordsProvider.class).to(CachingStopWordsProvider.class);
     }
 }

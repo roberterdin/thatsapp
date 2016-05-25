@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,14 +33,19 @@ public class StatisticsWorker {
     private final Pattern mediaPattern;
     private final Pattern cleaningPattern;
 
+    private final StopWordsProvider stopWordsProvider;
+
     private final DateTimeFormatter sameDayChecker = DateTimeFormatter.ofPattern("yyyyMMdd");
 
 
     @Inject
     public StatisticsWorker(MediaPatternProvider mediaPatternProvider,
+                            StopWordsProvider stopWordsProvider,
                             @Named("statisticsLength") int statisticsLength) {
         this.statisticsLength = statisticsLength;
         this.mediaPattern = mediaPatternProvider.get();
+
+        this.stopWordsProvider = stopWordsProvider;
 
         /* (\p{Punct}+) --> punctuation
          * ((?<=\s)\s+) --> all whitespaces following a whitespace
@@ -119,7 +125,7 @@ public class StatisticsWorker {
     }
 
     /**
-     * Counts the amount of words and emojis. The words get added to the vocabulary.
+     * Counts the amount of words and emojis. If the word is no stop word, it gets added to the vocabulary.
      * Grouped together for performance reasons.
      *
      * @param globalStatistics
@@ -138,11 +144,23 @@ public class StatisticsWorker {
         cleanMessage = EmojiParser.removeAllEmojis(cleanMessage);
 
         if (!cleanMessage.isEmpty()) {
-            String[] possibleWords = cleanMessage.split("\\s+");
-            globalStatistics.getStatistics().incrementWordAmount(possibleWords.length);
-            message.getSender().getStatistics().incrementWordAmount(possibleWords.length);
+            String[] allWords = cleanMessage.split("\\s+");
+            globalStatistics.getStatistics().incrementWordAmount(allWords.length);
+            message.getSender().getStatistics().incrementWordAmount(allWords.length);
 
-            for (String token : possibleWords) {
+            // todo: check if there is better performance without applying the remove on the whole message
+            // todo: (i.e., match directly on the members of allWords
+            String cleanMessageNoStopWords;
+            if (globalStatistics.getConversation().getLanguageProbability() > 0.5) {
+                cleanMessageNoStopWords = this.stopWordsProvider.stopWordsPatternFor(globalStatistics.getConversation().getLanguage()).matcher(cleanMessage).replaceAll("");
+            } else {
+                cleanMessageNoStopWords = cleanMessage;
+            }
+
+            String[] noStopWords = cleanMessageNoStopWords.split("\\s+");
+
+
+            for (String token : noStopWords) {
                 globalStatistics.getStatistics().incrementVocabulary(token);
                 message.getSender().getStatistics().incrementVocabulary(token);
             }

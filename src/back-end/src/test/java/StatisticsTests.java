@@ -2,6 +2,10 @@ import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.model.GlobalStatistics;
 import com.whatistics.backend.parser.ParserWorker;
 import com.whatistics.backend.parser.TimeFormatsProvider;
+import com.whatistics.backend.parser.language.LanguageDetector;
+import com.whatistics.backend.parser.language.LanguageDetectorOptimaize;
+import com.whatistics.backend.parser.language.LanguageDetectorWorker;
+import com.whatistics.backend.statistics.CachingStopWordsProvider;
 import com.whatistics.backend.statistics.MediaPatternProvider;
 import com.whatistics.backend.statistics.StatisticsWorker;
 import org.junit.Test;
@@ -27,7 +31,9 @@ public class StatisticsTests extends MasterTest {
 
         Conversation conversation = parserWorker.call();
 
-        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(), globalProperties.getIntProp("statisticsLength"));
+        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(),
+                new CachingStopWordsProvider(),
+                globalProperties.getIntProp("statisticsLength"));
 
         GlobalStatistics result = statisticsWorker.compute(conversation);
 
@@ -43,7 +49,9 @@ public class StatisticsTests extends MasterTest {
 
         Conversation conversation = parserWorker.call();
 
-        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(), globalProperties.getIntProp("statisticsLength"));
+        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(),
+                new CachingStopWordsProvider(),
+                globalProperties.getIntProp("statisticsLength"));
 
         GlobalStatistics result = statisticsWorker.compute(conversation);
 
@@ -59,11 +67,34 @@ public class StatisticsTests extends MasterTest {
 
         Conversation conversation = parserWorker.call();
 
-        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(), globalProperties.getIntProp("statisticsLength"));
+        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(),
+                new CachingStopWordsProvider(),
+                globalProperties.getIntProp("statisticsLength"));
 
         GlobalStatistics result = statisticsWorker.compute(conversation);
 
         assertEquals(3, result.getStatistics().getMediaAmount());
 
+    }
+
+
+    @Test
+    public void testStopWords() throws FileNotFoundException {
+        InputStream is = new FileInputStream("../../resources/chatHistories/testing/english.txt");
+        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get(), ds);
+
+        Conversation conversation = parserWorker.call();
+
+        LanguageDetector languageDetector = new LanguageDetectorOptimaize();
+
+        new LanguageDetectorWorker(languageDetector, conversation).call();
+
+        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(),
+                new CachingStopWordsProvider(),
+                globalProperties.getIntProp("statisticsLength"));
+
+        GlobalStatistics result = statisticsWorker.compute(conversation);
+
+        assertEquals(false, result.getStatistics().getVocabulary().containsKey("i"));
     }
 }
