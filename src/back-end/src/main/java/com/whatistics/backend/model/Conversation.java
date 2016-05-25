@@ -24,6 +24,10 @@ public class Conversation {
 
     private String submittedBy;
 
+    private String language;
+
+    private double languageProbability;
+
     @Transient
     private javax.mail.Message originalMessage;
 
@@ -87,5 +91,21 @@ public class Conversation {
 
     public int getLineCount() {
         return lineCount;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public double getLanguageProbability() {
+        return languageProbability;
+    }
+
+    public void setLanguageProbability(double languageProbability) {
+        this.languageProbability = languageProbability;
     }
 }

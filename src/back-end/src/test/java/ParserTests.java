@@ -1,6 +1,9 @@
 import com.whatistics.backend.model.Conversation;
 import com.whatistics.backend.parser.ParserWorker;
 import com.whatistics.backend.parser.TimeFormatsProvider;
+import com.whatistics.backend.parser.language.LanguageDetector;
+import com.whatistics.backend.parser.language.LanguageDetectorOptimaize;
+import com.whatistics.backend.parser.language.LanguageDetectorWorker;
 import org.junit.Test;
 
 import java.io.FileInputStream;
@@ -38,6 +41,20 @@ public class ParserTests extends MasterTest{
         ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get(), ds);
 
         Conversation result = parserWorker.call();
+
+        assertEquals(33, result.getMessages().size());
+    }
+
+    @Test
+    public void testLanguage() throws FileNotFoundException {
+        InputStream is = new FileInputStream("../../resources/chatHistories/testing/english.txt");
+        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get(), ds);
+
+        Conversation result = parserWorker.call();
+
+        LanguageDetector languageDetector = new LanguageDetectorOptimaize();
+
+        new LanguageDetectorWorker(languageDetector, result).call();
 
         assertEquals(33, result.getMessages().size());
     }
