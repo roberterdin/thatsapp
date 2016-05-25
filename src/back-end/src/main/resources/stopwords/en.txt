@@ -22,6 +22,7 @@ anybody
 anyone
 anything
 anywhere
+am
 are
 area
 areas
@@ -70,12 +71,14 @@ come
 could
 d
 did
+didnt
 differ
 different
 differently
 do
 does
 done
+dont
 down
 down
 downed
@@ -144,8 +147,10 @@ h
 had
 has
 have
+havent
 having
 he
+hes
 her
 here
 herself
@@ -161,6 +166,8 @@ how
 however
 i
 if
+ill
+im
 important
 in
 interest
@@ -172,6 +179,7 @@ is
 it
 its
 itself
+ive
 j
 just
 k
@@ -341,6 +349,7 @@ take
 taken
 than
 that
+thats
 the
 their
 them
@@ -425,5 +434,6 @@ young
 younger
 youngest
 your
+youre
 yours
 z

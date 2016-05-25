@@ -10,13 +10,9 @@ import com.whatistics.backend.model.TimeInterval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.UnsupportedEncodingException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -105,6 +101,10 @@ public class StatisticsWorker {
             prevMessage = message;
         }
 
+        // clean vocabulary
+        // todo: find out which regex causes the empty keys
+        globalStatistics.getStatistics().getVocabulary().remove("");
+
         // put last message into aggregated history
         LocalDateTime yesterdayDate = prevMessage.getSendDate().minusDays(1);
         TimeInterval yesterday = TimeInterval.createDay(yesterdayDate);
@@ -161,8 +161,8 @@ public class StatisticsWorker {
 
 
             for (String token : noStopWords) {
-                globalStatistics.getStatistics().incrementVocabulary(token);
-                message.getSender().getStatistics().incrementVocabulary(token);
+                globalStatistics.getStatistics().incrementVocabulary(token.toLowerCase());
+                message.getSender().getStatistics().incrementVocabulary(token.toLowerCase());
             }
         }
     }
