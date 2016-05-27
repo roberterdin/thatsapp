@@ -61,6 +61,7 @@ c
 came
 can
 cannot
+cant
 case
 cases
 certain

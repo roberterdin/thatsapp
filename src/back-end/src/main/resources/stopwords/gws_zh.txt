@@ -128,7 +128,7 @@ zu
 zum
 zur
 über
-// swiss german extension to german
+# zurich swiss german extension to german
 en
 e
 nei
@@ -185,3 +185,4 @@ wär
 nur
 won
 det
+wiiter
