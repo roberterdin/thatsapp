@@ -28,6 +28,7 @@ public class StatisticsWorker {
 
     private final Pattern mediaPattern;
     private final Pattern cleaningPattern;
+    private final Pattern hahaPattern;
 
     private final StopWordsProvider stopWordsProvider;
 
@@ -48,6 +49,8 @@ public class StatisticsWorker {
          * (^\s+|\s+$) --> leading and trailing whitespaces
          */
         this.cleaningPattern = Pattern.compile("((\\p{Punct}+)|((?<=\\s)\\s+)|(^\\s+|\\s+$))", Pattern.UNICODE_CHARACTER_CLASS);
+
+        this.hahaPattern = Pattern.compile("a?haha(a|h)*", Pattern.CASE_INSENSITIVE);
     }
 
     public GlobalStatistics compute(Conversation conversation) {
@@ -156,6 +159,9 @@ public class StatisticsWorker {
             } else {
                 cleanMessageNoStopWords = cleanMessage;
             }
+
+            // reduce all instances of "laughter" like hahaha, ahahaha, etc. to haha
+            cleanMessageNoStopWords = this.hahaPattern.matcher(cleanMessageNoStopWords).replaceAll("haha");
 
             String[] noStopWords = cleanMessageNoStopWords.split("\\s+");
 
