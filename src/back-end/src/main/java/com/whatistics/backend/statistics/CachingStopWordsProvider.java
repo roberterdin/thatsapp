@@ -20,24 +20,26 @@ import java.util.stream.Collectors;
 public class CachingStopWordsProvider implements StopWordsProvider {
     private final Logger logger = LoggerFactory.getLogger(CachingStopWordsProvider.class);
 
-    private Map<String, Set<String>> setCache = new HashMap<>();
+    private Map<String, Set<String>> rawCache = new HashMap<>();
     private Map<String, Pattern> patternCache = new HashMap<>();
+
+    private final Pattern commentPattern = Pattern.compile("\\s*#.*");
 
     @Override
     public Set<String> stopWordsFor(String language) {
-        if(this.setCache.containsKey(language))
-            return this.setCache.get(language);
+        if(this.rawCache.containsKey(language))
+            return this.rawCache.get(language);
 
         try {
             BufferedReader br = Files.newBufferedReader(Paths.get(this.getClass().getResource("/stopwords/" + language + ".txt").toURI()));
-            this.setCache.put(language, br.lines().collect(Collectors.toSet()));
+            this.rawCache.put(language, br.lines().filter(line -> !commentPattern.matcher(line).matches()).collect(Collectors.toSet()));
         } catch (IOException | URISyntaxException e) {
             this.logger.error("Unable to find given language: " + language + ". Will return an empty stop words set. ", e);
 
-            this.setCache.put(language, new HashSet<>());
+            this.rawCache.put(language, new HashSet<>());
         }
 
-        return this.setCache.get(language);
+        return this.rawCache.get(language);
     }
 
     @Override
