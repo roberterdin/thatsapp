@@ -13,7 +13,12 @@ import com.optimaize.langdetect.text.TextObjectFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,19 +53,31 @@ public class LanguageDetectorOptimaize implements LanguageDetector {
 
         //query:
         TextObject textObject = this.textObjectFactory.forText(inputText);
-        List<DetectedLanguage> detectedLanguages= this.languageDetector.getProbabilities(textObject);
+        List<DetectedLanguage> detectedLanguages = this.languageDetector.getProbabilities(textObject);
 
         return new ProbabilisticLocale(detectedLanguages.get(0).getLocale().getLanguage(),
                 detectedLanguages.get(0).getProbability());
     }
 
-    private void lazyInitialize(){
+    private void lazyInitialize() {
         // lazy initialization
-        if (languageDetector == null){
+        if (languageDetector == null) {
             //load all languages:
             try {
+                // read built-in profiles
                 this.languageProfiles = new LanguageProfileReader().readAllBuiltIn();
-            } catch (IOException e) {
+
+                // read custom profiles
+                // according to the documentation LanguageProfileReader#readAll should not be used for files within the .jar.
+                List<String> profileFileNames = new ArrayList<>();
+                Files.walk(Paths.get(this.getClass().getResource("/languageProfiles").toURI()))
+                        .forEach(file -> {
+                            if (!Files.isDirectory(file))
+                                profileFileNames.add(file.getFileName().toString());
+                        });
+
+                this.languageProfiles.addAll(new LanguageProfileReader().read("/languageProfiles", profileFileNames));
+            } catch (IOException | URISyntaxException e) {
                 logger.error("Error loading language profiles", e);
             }
 

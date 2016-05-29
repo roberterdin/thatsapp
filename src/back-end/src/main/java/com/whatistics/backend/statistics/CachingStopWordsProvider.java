@@ -26,7 +26,7 @@ public class CachingStopWordsProvider implements StopWordsProvider {
     private final Pattern commentPattern = Pattern.compile("\\s*#.*");
 
     @Override
-    public Set<String> stopWordsFor(String language) {
+    public synchronized Set<String> stopWordsFor(String language) {
         if(this.rawCache.containsKey(language))
             return this.rawCache.get(language);
 
@@ -43,7 +43,7 @@ public class CachingStopWordsProvider implements StopWordsProvider {
     }
 
     @Override
-    public Pattern stopWordsPatternFor(String language) {
+    public synchronized Pattern stopWordsPatternFor(String language) {
 
         if (!patternCache.containsKey(language)){
             StringBuilder stringBuilder = new StringBuilder("\\b(?:");
