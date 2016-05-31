@@ -166,6 +166,7 @@ public class IMAPMailAdapter implements MailAdapter {
 
     @Override
     public Message[] getMails() {
+        // todo: check if messages have to be exposed.
         return messages;
     }
 

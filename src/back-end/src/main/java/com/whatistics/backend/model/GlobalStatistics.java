@@ -70,8 +70,6 @@ public class GlobalStatistics {
      * TODO: This could also done in the initial traversal of the messages array.
      */
     public void inflateAggregatedHistory(){
-        LinkedHashMap<Date, Integer> inflated = new LinkedHashMap<>();
-
         for(ListIterator<TimeInterval> iter = this.aggregatedHistory.listIterator(); iter.hasNext();){
             TimeInterval current = iter.next();
             if(iter.hasNext()){

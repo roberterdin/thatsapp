@@ -51,6 +51,12 @@ public class MailUtilities {
                     }
                 } catch (IOException e) {
                     logger.error("Failed reading .zip file", e);
+                } finally {
+                    try {
+                        zis.close();
+                    } catch (IOException e) {
+                        logger.error("Failed closing ZIP Stream", e);
+                    }
                 }
             }
         }

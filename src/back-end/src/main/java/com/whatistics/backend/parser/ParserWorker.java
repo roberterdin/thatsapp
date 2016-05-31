@@ -34,7 +34,7 @@ public class ParserWorker implements Callable<Conversation> {
 
     private Datastore ds;
 
-    public static DateTimeFormatter logFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_");
+    public static final DateTimeFormatter logFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_");
 
     private List<TimeFormat> timeFormats;
 
@@ -45,7 +45,7 @@ public class ParserWorker implements Callable<Conversation> {
 
     private Map<String, Person> senderMap = new HashMap<>();
 
-    private Pattern nullPattern =  Pattern.compile("\\u0000");
+    private Pattern nullPattern = Pattern.compile("\\u0000");
 
     // A time format like M/d/yy can be
     // 1/1/14
@@ -92,10 +92,10 @@ public class ParserWorker implements Callable<Conversation> {
                 currentLine = nullPattern.matcher(currentLine).replaceAll("");
 
                 // figure out current time format, if necessary
-                if (currentTimeFormat == null | getDate(currentLine) == null) {
+                if (currentTimeFormat == null || getDate(currentLine) == null) {
                     // we need to figure out current time format
                     TimeFormat tmp = getTimeFormat(currentLine);
-                    if (tmp != null){
+                    if (tmp != null) {
                         currentTimeFormat = tmp;
                         ops.disableValidation().inc(currentTimeFormat.getRawFormat().replaceAll("\\.", "\uFFFD"));
                     }
@@ -154,18 +154,22 @@ public class ParserWorker implements Callable<Conversation> {
             }
 
             // add last message
-            conversation.addMessage(message);
+            if (message != null)
+                conversation.addMessage(message);
 
         } catch (IOException e) {
             logger.error("Error while reading attachment", e);
             e.printStackTrace();
+        } finally {
+            try {
+                reader.close();
+            } catch (IOException e) {
+                logger.error("Error closing stream", e);
+            }
         }
-
-
 
         // persist time format meta data
         ds.update(updateQuery, ops, true);
-
 
         long endTime = System.nanoTime();
         long duration = (endTime - startTime);  //divide by 1000000 to get milliseconds.
@@ -177,6 +181,7 @@ public class ParserWorker implements Callable<Conversation> {
     /**
      * Returns the TimeFormat of the line or null if it can't be parsed.
      * Not being able to parse the line is an indicator for a multi line message
+     *
      * @param line
      * @return
      */

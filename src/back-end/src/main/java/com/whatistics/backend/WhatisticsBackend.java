@@ -20,8 +20,8 @@ import java.util.Random;
 public class WhatisticsBackend {
 
     private static Injector injector;
-    public static Random rand = new Random();
-    public static TypedProperties globalProperties = new TypedProperties();
+    public static final Random rand = new Random();
+    public static final TypedProperties globalProperties = new TypedProperties();
 
     public static void main(String[] args) {
         try {

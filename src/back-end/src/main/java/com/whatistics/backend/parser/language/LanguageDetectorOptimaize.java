@@ -76,7 +76,7 @@ public class LanguageDetectorOptimaize implements LanguageDetector {
                                 profileFileNames.add(file.getFileName().toString());
                         });
 
-                this.languageProfiles.addAll(new LanguageProfileReader().read("/languageProfiles", profileFileNames));
+                this.languageProfiles.addAll(new LanguageProfileReader().read("languageProfiles", profileFileNames));
             } catch (IOException | URISyntaxException e) {
                 logger.error("Error loading language profiles", e);
             }

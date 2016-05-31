@@ -22,13 +22,13 @@ public class MediaPatternProvider implements Provider<Pattern> {
                 , "<\u200EBild weggelassen>"
         );
 
-        String pattern = "(" + mediaPattern.get(0);
+        StringBuilder pattern = new StringBuilder("(" + mediaPattern.get(0));
         for (int i = 1; i < mediaPattern.size(); i++){
-            pattern += ("|" + mediaPattern.get(i));
+            pattern.append("|" + mediaPattern.get(i));
         }
-        pattern += ")";
+        pattern.append(")");
 
-        result = Pattern.compile(pattern);
+        result = Pattern.compile(pattern.toString());
     }
 
 

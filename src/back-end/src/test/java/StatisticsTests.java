@@ -97,4 +97,24 @@ public class StatisticsTests extends MasterTest {
 
         assertEquals(false, result.getStatistics().getVocabulary().containsKey("i"));
     }
+
+    @Test
+    public void testCustomLanguage() throws FileNotFoundException {
+        InputStream is = new FileInputStream("../../resources/chatHistories/testing/gsw.txt");
+        ParserWorker parserWorker = new ParserWorker(is, timeFormatsProvider.get(), ds);
+
+        Conversation conversation = parserWorker.call();
+
+        LanguageDetector languageDetector = new LanguageDetectorOptimaize();
+
+        new LanguageDetectorWorker(languageDetector, conversation).call();
+
+        StatisticsWorker statisticsWorker = new StatisticsWorker(new MediaPatternProvider(),
+                new CachingStopWordsProvider(),
+                globalProperties.getIntProp("statisticsLength"));
+
+        GlobalStatistics result = statisticsWorker.compute(conversation);
+
+        assertEquals(false, result.getStatistics().getVocabulary().containsKey("ich"));
+    }
 }

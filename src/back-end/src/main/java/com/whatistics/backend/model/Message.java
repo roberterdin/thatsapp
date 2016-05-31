@@ -54,7 +54,7 @@ public class Message {
     }
 
     public void setSendDate(Date date){
-        this.sendDate = date;
+        this.sendDate = new Date(date.getTime());
     }
 
     public Message fillWithRandom(){

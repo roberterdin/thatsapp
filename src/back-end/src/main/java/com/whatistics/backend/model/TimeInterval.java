@@ -65,7 +65,7 @@ public class TimeInterval{
     }
 
     public void setStartInstant(Date startInstant) {
-        this.startInstant = startInstant;
+        this.startInstant = new Date(startInstant.getTime());
     }
 
     public LocalDateTime getEndInstant() {
@@ -73,7 +73,7 @@ public class TimeInterval{
     }
 
     public void setEndInstant(Date endInstant) {
-        this.endInstant = endInstant;
+        this.endInstant = new Date(endInstant.getTime());
     }
 
     public String getLabel() {
