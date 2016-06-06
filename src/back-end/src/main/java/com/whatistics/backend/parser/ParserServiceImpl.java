@@ -77,11 +77,15 @@ public class ParserServiceImpl extends ParserService {
                         e.printStackTrace();
                     }
 
-
                     return conversation;
                 })
-                .thenApplyAsync(conversation -> new LanguageDetectorWorker(this.languageDetector, conversation).call()).thenApply(conversation -> {
+                .thenApplyAsync(conversation -> {
+                    logger.debug("Starting language detection worker");
+                    new LanguageDetectorWorker(this.languageDetector, conversation).call();
+                    return conversation;
+                }, pendingMessagesExecutorService).thenApply(conversation -> {
             // pass to observer
+            logger.debug("Sending conversation to Observer");
             this.setChanged();
             this.notifyObservers(conversation);
 

@@ -47,6 +47,8 @@ public class WhatisticsBackend {
 
         //initialize logger
         System.getProperties().setProperty("org.slf4j.simpleLogger.logFile", globalProperties.getProperty("logFile"));
+        System.getProperties().setProperty("org.slf4j.simpleLogger.defaultLogLevel", globalProperties.getProperty("defaultLogLevel"));
+        System.getProperties().setProperty("org.slf4j.simpleLogger.showDateTime", globalProperties.getProperty("showDateTime"));
         final Logger logger = LoggerFactory.getLogger(WhatisticsBackend.class);
 
 

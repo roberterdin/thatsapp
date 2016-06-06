@@ -54,6 +54,7 @@ public class StatisticsWorker {
     }
 
     public GlobalStatistics compute(Conversation conversation) {
+        logger.debug("starting to generate statistics...");
         long startTime = System.nanoTime();
 
         GlobalStatistics globalStatistics = new GlobalStatistics(conversation);

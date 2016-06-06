@@ -217,7 +217,7 @@ public class ParserWorker implements Callable<Conversation> {
 
         }
 
-        logger.debug("Line can't be parsed: " + line); // nothing to worry per se. It's probably a multi line message
+        logger.trace("Line can't be parsed: " + line); // nothing to worry per se. It's probably a multi line message
         this.conversation.incrementUnparseableCount();
         return null;
     }

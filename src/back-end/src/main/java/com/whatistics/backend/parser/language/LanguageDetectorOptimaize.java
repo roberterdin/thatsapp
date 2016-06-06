@@ -15,12 +15,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.nio.file.*;
+import java.util.*;
 
 /**
  * Language detector based on the language-detector library.
@@ -62,20 +60,28 @@ public class LanguageDetectorOptimaize implements LanguageDetector {
     private void lazyInitialize() {
         // lazy initialization
         if (languageDetector == null) {
+            logger.debug("Initializing language detector...");
             //load all languages:
             try {
                 // read built-in profiles
                 this.languageProfiles = new LanguageProfileReader().readAllBuiltIn();
 
                 // read custom profiles
-                // according to the documentation LanguageProfileReader#readAll should not be used for files within the .jar.
+
                 List<String> profileFileNames = new ArrayList<>();
-                Files.walk(Paths.get(this.getClass().getResource("/languageProfiles").toURI()))
+
+                // prevent FileSystemNotFoundException...
+                final Map<String, String> env = new HashMap<>();
+                final String[] array = this.getClass().getResource("/languageProfiles").toURI().toString().split("!");
+                final FileSystem fs = FileSystems.newFileSystem(URI.create(array[0]), env);
+                final Path path = fs.getPath(array[1]);
+                Files.walk(path)
                         .forEach(file -> {
                             if (!Files.isDirectory(file))
                                 profileFileNames.add(file.getFileName().toString());
                         });
 
+                // according to the documentation LanguageProfileReader#readAll should not be used for files within the .jar.
                 this.languageProfiles.addAll(new LanguageProfileReader().read("languageProfiles", profileFileNames));
             } catch (IOException | URISyntaxException e) {
                 logger.error("Error loading language profiles", e);
@@ -84,6 +90,7 @@ public class LanguageDetectorOptimaize implements LanguageDetector {
             this.languageDetector = LanguageDetectorBuilder.create(NgramExtractors.standard()).withProfiles(languageProfiles).build();
 
             this.textObjectFactory = CommonTextObjectFactories.forDetectingOnLargeText();
+            logger.debug("... language detector initialized");
         }
     }
 }
