@@ -81,6 +81,7 @@ public class LanguageDetectorOptimaize implements LanguageDetector {
                                 profileFileNames.add(file.getFileName().toString());
                         });
 
+                fs.close();
                 // according to the documentation LanguageProfileReader#readAll should not be used for files within the .jar.
                 this.languageProfiles.addAll(new LanguageProfileReader().read("languageProfiles", profileFileNames));
             } catch (IOException | URISyntaxException e) {

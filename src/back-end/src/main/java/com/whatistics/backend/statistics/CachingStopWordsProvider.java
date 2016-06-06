@@ -6,9 +6,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -31,8 +31,14 @@ public class CachingStopWordsProvider implements StopWordsProvider {
             return this.rawCache.get(language);
 
         try {
-            BufferedReader br = Files.newBufferedReader(Paths.get(this.getClass().getResource("/stopwords/" + language + ".txt").toURI()));
+            // prevent FileSystemNotFoundException...
+            final Map<String, String> env = new HashMap<>();
+            final String[] array = this.getClass().getResource("/stopwords/" + language + ".txt").toURI().toString().split("!");
+            final FileSystem fs = FileSystems.newFileSystem(URI.create(array[0]), env);
+            final Path path = fs.getPath(array[1]);
+            BufferedReader br = Files.newBufferedReader(path);
             this.rawCache.put(language, br.lines().filter(line -> !commentPattern.matcher(line).matches()).collect(Collectors.toSet()));
+            fs.close();
         } catch (IOException | URISyntaxException e) {
             this.logger.error("Unable to find given language: " + language + ". Will return an empty stop words set. ", e);
 
