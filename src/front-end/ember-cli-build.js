@@ -31,6 +31,11 @@ module.exports = function(defaults) {
     // Emojione
     app.import('bower_components/emojione/lib/js/emojione.min.js');
 
+    // Tag Cloud
+    app.import('bower_components/d3/d3.min.js');
+    app.import('bower_components/d3-cloud/build/d3.layout.cloud.js');
+
+
     //app.import('bower_components/moment/moment.js');
     //app.import('bower_components/modernizr/modernizr.js');
 

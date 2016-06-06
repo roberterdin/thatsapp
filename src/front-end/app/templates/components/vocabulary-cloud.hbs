@@ -1,0 +1,12 @@
+{{#if model}}
+    <h2 class="text-center">Vocabulary</h2>
+    <p class="ladder-subtitle text-center">whut m8, do u even english?</p>
+
+    {{#each limitedVocabulary as |word|}}
+        {{word.text}}: {{word.size}} <br>
+    {{/each}}
+
+    <div id="vocabCloud">
+    </div>
+
+{{/if}}

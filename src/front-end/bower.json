@@ -8,6 +8,8 @@
     "jquery": "2.1",
     "bootstrap": "~3.3.0",
     "chartist": "~0.9.5",
-    "emojione": "^2.1.4"
+    "emojione": "^2.1.4",
+    "d3": "^3.5.17",
+    "d3-cloud": "^1.2.1"
   }
 }
