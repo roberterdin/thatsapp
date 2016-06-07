@@ -27,18 +27,26 @@ public class CachingStopWordsProvider implements StopWordsProvider {
 
     @Override
     public synchronized Set<String> stopWordsFor(String language) {
-        if(this.rawCache.containsKey(language))
+        if (this.rawCache.containsKey(language))
             return this.rawCache.get(language);
 
         try {
             // prevent FileSystemNotFoundException...
             final Map<String, String> env = new HashMap<>();
             final String[] array = this.getClass().getResource("/stopwords/" + language + ".txt").toURI().toString().split("!");
-            final FileSystem fs = FileSystems.newFileSystem(URI.create(array[0]), env);
-            final Path path = fs.getPath(array[1]);
+
+            FileSystem fs = null;
+            Path path;
+            if (array.length > 1) {
+                fs = FileSystems.newFileSystem(URI.create(array[0]), env);
+                path = fs.getPath(array[1]);
+            } else {
+                path = Paths.get(this.getClass().getResource("/stopwords/" + language + ".txt").toURI());
+            }
             BufferedReader br = Files.newBufferedReader(path);
             this.rawCache.put(language, br.lines().filter(line -> !commentPattern.matcher(line).matches()).collect(Collectors.toSet()));
-            fs.close();
+            if (fs != null)
+                fs.close();
         } catch (IOException | URISyntaxException e) {
             this.logger.error("Unable to find given language: " + language + ". Will return an empty stop words set. ", e);
 
@@ -51,7 +59,7 @@ public class CachingStopWordsProvider implements StopWordsProvider {
     @Override
     public synchronized Pattern stopWordsPatternFor(String language) {
 
-        if (!patternCache.containsKey(language)){
+        if (!patternCache.containsKey(language)) {
             StringBuilder stringBuilder = new StringBuilder("\\b(?:");
             stringBuilder.append(stopWordsFor(language).stream().collect(Collectors.joining("|")));
             stringBuilder.append(")\\b\\s*");

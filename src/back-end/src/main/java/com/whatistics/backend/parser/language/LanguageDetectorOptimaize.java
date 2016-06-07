@@ -73,15 +73,23 @@ public class LanguageDetectorOptimaize implements LanguageDetector {
                 // prevent FileSystemNotFoundException...
                 final Map<String, String> env = new HashMap<>();
                 final String[] array = this.getClass().getResource("/languageProfiles").toURI().toString().split("!");
-                final FileSystem fs = FileSystems.newFileSystem(URI.create(array[0]), env);
-                final Path path = fs.getPath(array[1]);
+                Path path;
+                FileSystem fs = null;
+                if (array.length > 1) {
+                    fs = FileSystems.newFileSystem(URI.create(array[0]), env);
+                    path = fs.getPath(array[1]);
+                } else {
+                    path = Paths.get(this.getClass().getResource("/languageProfiles").toURI());
+                }
+
                 Files.walk(path)
                         .forEach(file -> {
                             if (!Files.isDirectory(file))
                                 profileFileNames.add(file.getFileName().toString());
                         });
 
-                fs.close();
+                if (fs != null)
+                    fs.close();
                 // according to the documentation LanguageProfileReader#readAll should not be used for files within the .jar.
                 this.languageProfiles.addAll(new LanguageProfileReader().read("languageProfiles", profileFileNames));
             } catch (IOException | URISyntaxException e) {
