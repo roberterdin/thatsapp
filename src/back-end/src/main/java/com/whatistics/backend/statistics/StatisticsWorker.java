@@ -27,7 +27,8 @@ public class StatisticsWorker {
     private final int statisticsLength;
 
     private final Pattern mediaPattern;
-    private final Pattern cleaningPattern;
+    private final Pattern cleaningPattern1;
+    private final Pattern cleaningPattern2;
     private final Pattern hahaPattern;
 
     private final StopWordsProvider stopWordsProvider;
@@ -44,11 +45,14 @@ public class StatisticsWorker {
 
         this.stopWordsProvider = stopWordsProvider;
 
-        /* (\p{Punct}+) --> punctuation
+        // all punctuation and numbers standing alone
+        this.cleaningPattern1 = Pattern.compile("[^\\pL\\p{Nd}_\\s]+|(?<=^|\\s+|\\p{Punct}+)\\d+(?=\\s+|$|\\p{Punct}+)");
+
+        /*
          * ((?<=\s)\s+) --> all whitespaces following a whitespace
          * (^\s+|\s+$) --> leading and trailing whitespaces
          */
-        this.cleaningPattern = Pattern.compile("((\\p{Punct}+)|((?<=\\s)\\s+)|(^\\s+|\\s+$))", Pattern.UNICODE_CHARACTER_CLASS);
+        this.cleaningPattern2 = Pattern.compile("((?<=\\s)\\s+)|(^\\s+|\\s+$)", Pattern.UNICODE_CHARACTER_CLASS);
 
         this.hahaPattern = Pattern.compile("a?haha(a|h)*", Pattern.CASE_INSENSITIVE);
     }
@@ -136,8 +140,6 @@ public class StatisticsWorker {
      * @param message
      */
     private void wordCountEmojiAndVocab(GlobalStatistics globalStatistics, Message message) {
-        String cleanMessage = this.cleaningPattern.matcher(message.getContent()).replaceAll("");
-
         List<EmojiParser.UnicodeCandidate> emojis = EmojiParser.getUnicodeCandidates(message.getContent());
 
         for (EmojiParser.UnicodeCandidate uc : emojis) {
@@ -145,7 +147,11 @@ public class StatisticsWorker {
             message.getSender().getStatistics().incrementEmoji(uc.getEmoji().getUnicode());
         }
 
-        cleanMessage = EmojiParser.removeAllEmojis(cleanMessage);
+        String cleanMessage = EmojiParser.removeAllEmojis(message.getContent());
+        cleanMessage = this.cleaningPattern1.matcher(cleanMessage).replaceAll("");
+        cleanMessage = this.cleaningPattern2.matcher(cleanMessage).replaceAll("");
+
+
 
         if (!cleanMessage.isEmpty()) {
             String[] allWords = cleanMessage.split("\\s+");
