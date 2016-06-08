@@ -1,4 +1,6 @@
-# Whatistics
+# ThatsApp
+
+Platform to parse WhatsApp chat histories, generate statistics and provide NLP insights like sentiment analysis or identifying trends or trendsetters, etc.
 
 ## Back-End
 
